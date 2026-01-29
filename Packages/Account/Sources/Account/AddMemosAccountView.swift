@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+// ...existing code...
 import Models
 import MemosV0Service
 import DesignSystem
@@ -15,6 +16,7 @@ public struct AddMemosAccountView: View {
     @State private var host = ""
     @State private var username = ""
     @State private var password = ""
+    @State private var showingRegister = false
         @Environment(\.dismiss) private var dismiss
     @Environment(AccountViewModel.self) private var accountViewModel
     @State private var loginError: Error?
@@ -66,8 +68,22 @@ public struct AddMemosAccountView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .padding(.top, 20)
+
+            Button {
+                showingRegister = true
+            } label: {
+                Text("没有账号？注册新账号")
+                    .font(.footnote)
+                    .foregroundColor(.blue)
+            }
+            .padding(.top, 8)
         }
         .padding()
+        .sheet(isPresented: $showingRegister) {
+            NavigationStack {
+                RegisterMemosAccountView()
+            }
+        }
         .toast(isPresenting: $showingErrorToast, alertType: .systemImage("xmark.circle", loginError?.localizedDescription))
         .toast(isPresenting: $showLoadingToast, alertType: .loading)
         .navigationTitle("account.add-memos-account")

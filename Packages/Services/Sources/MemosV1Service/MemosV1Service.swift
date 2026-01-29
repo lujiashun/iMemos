@@ -4,6 +4,12 @@
 //
 //  Created by Mudkip on 2024/6/9.
 //
+//
+//  MemosV1Service.swift
+//
+//
+//  Created by Mudkip on 2024/6/9.
+//
 
 import Foundation
 import OpenAPIRuntime
@@ -39,6 +45,36 @@ public final class MemosV1Service: RemoteService {
         )
     }
 
+    /// 注册新用户
+    public func signUp(username: String, password: String, email: String?) async throws {
+        let signupURL = hostURL.appending(path: "api").appending(path: "v1").appending(path: "users")
+        var req = URLRequest(url: signupURL)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        var payload: [String: Any] = [
+            "username": username,
+            "password": password
+        ]
+        if let email = email, !email.isEmpty {
+            payload["email"] = email
+        }
+        req.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
+
+        print("[MemosV1Service] signUp request url:\(signupURL.absoluteString) method:\(req.httpMethod ?? "") headers:\(req.allHTTPHeaderFields ?? [:])")
+        if let body = req.httpBody, let bodyString = String(data: body, encoding: .utf8) {
+            print("[MemosV1Service] signUp request body:\(bodyString)")
+        }
+
+        let (data, response) = try await urlSession.data(for: req)
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            let bodyString = String(data: data, encoding: .utf8) ?? ""
+            print("[MemosV1Service] signUp HTTP \(http.statusCode) body:\(bodyString)")
+            throw URLError(.badServerResponse)
+        }
+        print("[MemosV1Service] signUp response body:\(String(data: data, encoding: .utf8) ?? "")")
+        print("[MemosV1Service] signUp success for username:\(username)")
+    }
+
     private func signInIfNeeded() async throws {
         if accessToken != nil { return }
         guard let username = username, let password = password, !username.isEmpty, !password.isEmpty else { return }
@@ -50,12 +86,17 @@ public final class MemosV1Service: RemoteService {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             let payload: [String: Any] = ["passwordCredentials": ["username": username, "password": password]]
             req.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
+            print("[MemosV1Service] signIn request url:\(signinURL.absoluteString) method:\(req.httpMethod ?? "") headers:\(req.allHTTPHeaderFields ?? [:])")
+            if let body = req.httpBody, let bodyString = String(data: body, encoding: .utf8) {
+                print("[MemosV1Service] signIn request body:\(bodyString)")
+            }
             let (data, response) = try await urlSession.data(for: req)
             if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
                 let bodyString = String(data: data, encoding: .utf8) ?? ""
                 print("[MemosV1Service] signIn HTTP \(http.statusCode) body:\(bodyString)")
                 throw URLError(.badServerResponse)
             }
+            print("[MemosV1Service] signIn response body:\(String(data: data, encoding: .utf8) ?? "")")
             struct SignInResp: Decodable { let accessToken: String? }
             let decoder = JSONDecoder()
             let respObj = try decoder.decode(SignInResp.self, from: data)
