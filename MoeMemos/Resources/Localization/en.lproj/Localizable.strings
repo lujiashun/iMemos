@@ -46,6 +46,7 @@
 "login.sign-in" = "Sign in";
 "login.passwd" = "Password";
 "login.user" = "User";
+"login.user-password.hint" = "Use your memos username and password.";
 
 "stats.day" = "Day";
 "stats.memo" = "Memo";

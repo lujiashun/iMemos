@@ -46,6 +46,7 @@
 "login.sign-in" = "登录";
 "login.passwd" = "密码";
 "login.user" = "用户名";
+"login.user-password.hint" = "使用您在 memos 的用户名与密码。";
 
 "stats.day" = "天";
 "stats.memo" = "灵感";

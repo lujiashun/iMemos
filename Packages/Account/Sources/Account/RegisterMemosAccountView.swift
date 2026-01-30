@@ -2,18 +2,16 @@ import SwiftUI
 import Models
 import ServiceUtils
 import MemosV1Service
-import MemosV1Service
 
 @MainActor
 public struct RegisterMemosAccountView: View {
-    @State private var host = ""
+    @State private var host = "demo.usememos.com"
     @State private var username = ""
     @State private var password = ""
     @State private var email = ""
     @State private var registerError: Error?
     @State private var showingErrorToast = false
     @State private var showLoadingToast = false
-    @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
     
     public init() {}
@@ -23,12 +21,7 @@ public struct RegisterMemosAccountView: View {
             Text("注册新账号")
                 .font(.title2)
                 .padding(.bottom, 20)
-            TextField("服务器地址", text: $host)
-                .textContentType(.URL)
-                .keyboardType(.URL)
-                .textInputAutocapitalization(.never)
-                .disableAutocorrection(true)
-                .textFieldStyle(.roundedBorder)
+            // Host is fixed to demo.usememos.com
             TextField("用户名", text: $username)
                 .textFieldStyle(.roundedBorder)
             SecureField("密码", text: $password)
@@ -63,6 +56,15 @@ public struct RegisterMemosAccountView: View {
         .toast(isPresenting: $showLoadingToast, alertType: .loading)
         .navigationTitle("注册账号")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+            }
+        }
     }
     
     private func doRegister() async throws {

@@ -44,6 +44,9 @@
 "login.access-token.hint" = "✍️memosの設定からアクセストークンを作成します。";
 "login.hint" = "\n[✍️memos](https://github.com/usememos/memos) サーバーのログイン情報を入力してください。";
 "login.sign-in" = "サインイン";
+"login.user" = "ユーザー名";
+"login.passwd" = "パスワード";
+"login.user-password.hint" = "memos のユーザー名とパスワードを入力してください。";
 
 "stats.day" = "日";
 "stats.memo" = "メモ";

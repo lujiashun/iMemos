@@ -52,6 +52,8 @@ struct ContentView: View {
                 throw MoeMemosError.notLogin
             }
             try await accountViewModel.reloadUsers()
+            // After successful login, show the Memos (Inspiration) page
+            selection = .memos
         } catch MoeMemosError.notLogin {
             appPath.presentedSheet = .addAccount
         } catch {

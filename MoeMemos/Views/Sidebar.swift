@@ -16,24 +16,41 @@ struct Sidebar: View {
     @Environment(AccountViewModel.self) private var userState: AccountViewModel
     @Binding var selection: Route?
 
+    private var isPadOrVision: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad || UIDevice.current.userInterfaceIdiom == .vision
+    }
+
+    private func SidebarLink<V: View>(value: Route, @ViewBuilder label: () -> V) -> some View {
+        Group {
+            if isPadOrVision {
+                NavigationLink(value: value, label: label)
+            } else {
+                Button(action: { selection = value }) {
+                    label()
+                }
+                .foregroundStyle(.primary)
+            }
+        }
+    }
+
     var body: some View {
-        List(selection: UIDevice.current.userInterfaceIdiom == .pad || UIDevice.current.userInterfaceIdiom == .vision ? $selection : nil) {
+        let list = List(selection: isPadOrVision ? $selection : nil) {
             Stats()
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(EmptyView())
             
             Section {
-                NavigationLink(value: Route.memos) {
+                SidebarLink(value: Route.memos) {
                     Label("memo.memos", systemImage: "rectangle.grid.1x2")
                 }
-                NavigationLink(value: Route.explore) {
+                SidebarLink(value: Route.explore) {
                     Label("explore", systemImage: "house")
                 }
-                NavigationLink(value: Route.resources) {
+                SidebarLink(value: Route.resources) {
                     Label("resources", systemImage: "photo.on.rectangle")
                 }
-                NavigationLink(value: Route.archived) {
+                SidebarLink(value: Route.archived) {
                     Label("memo.archived", systemImage: "archivebox")
                 }
             } header: {
@@ -42,7 +59,7 @@ struct Sidebar: View {
             
             Section {
                 OutlineGroup(memosViewModel.nestedTags, children: \.children) { item in
-                    NavigationLink(value: Route.tag(Tag(name: item.fullName))) {
+                    SidebarLink(value: Route.tag(Tag(name: item.fullName))) {
                         Label(item.name, systemImage: "number")
                     }
                 }
@@ -52,18 +69,26 @@ struct Sidebar: View {
         }
         .listStyle(.sidebar)
         .toolbar {
-            if UIDevice.current.userInterfaceIdiom == .pad || UIDevice.current.userInterfaceIdiom == .vision {
+            if isPadOrVision {
                 Button(action: {
                     selection = .settings
                 }) {
                     Image(systemName: "ellipsis")
                 }
             } else {
-                NavigationLink(value: Route.settings) {
+                Button(action: { selection = .settings }) {
                     Image(systemName: "ellipsis")
                 }
             }
         }
-        .navigationTitle(userState.currentUser?.nickname ?? NSLocalizedString("memo.memos", comment: "Memos"))
+
+        Group {
+            if isPadOrVision {
+                list
+                    .navigationTitle(userState.currentUser?.nickname ?? NSLocalizedString("memo.memos", comment: "Memos"))
+            } else {
+                list
+            }
+        }
     }
 }

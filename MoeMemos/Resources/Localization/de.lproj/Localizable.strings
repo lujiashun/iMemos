@@ -44,6 +44,9 @@
 "login.access-token.hint" = "Create an Access Token from Setting in ✍️memos.";
 "login.hint" = "Bitte geben Sie die Anmeldeinformationen für Ihren ✍️memos Server ein (https://github.com/usememos/memos) ein.";
 "login.sign-in" = "Anmelden";
+"login.user" = "Benutzer";
+"login.passwd" = "Passwort";
+"login.user-password.hint" = "Verwenden Sie Ihren memos-Benutzernamen und Ihr Passwort.";
 
 "stats.day" = "Tag";
 "stats.memo" = "Memo";

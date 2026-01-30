@@ -13,7 +13,7 @@ import DesignSystem
 
 @MainActor
 public struct AddMemosAccountView: View {
-    @State private var host = ""
+    @State private var host = "demo.usememos.com"
     @State private var username = ""
     @State private var password = ""
     @State private var showingRegister = false
@@ -32,18 +32,13 @@ public struct AddMemosAccountView: View {
                 .foregroundStyle(.secondary)
                 .padding(.bottom, 20)
             
-            TextField("login.host", text: $host)
-                .textContentType(.URL)
-                .keyboardType(.URL)
-                .textInputAutocapitalization(.never)
-                .disableAutocorrection(true)
-                .textFieldStyle(.roundedBorder)
+            // Host is fixed to demo.usememos.com
             
-            TextField("login.username", text: $username)
+            TextField("login.user", text: $username)
                 .textFieldStyle(.roundedBorder)
-            SecureField("login.password", text: $password)
+            SecureField("login.passwd", text: $password)
                 .textFieldStyle(.roundedBorder)
-            Text("login.username-password.hint")
+            Text("login.user-password.hint")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
             
@@ -59,6 +54,10 @@ public struct AddMemosAccountView: View {
                         print("[AddMemosAccountView] login failed for host:\(host) username:\(username) error:\(error)")
                         loginError = error
                         showingErrorToast = true
+                        Task { @MainActor in
+                            try? await Task.sleep(nanoseconds: 1_500_000_000)
+                            showingErrorToast = false
+                        }
                     }
                     showLoadingToast = false
                 }
@@ -84,7 +83,7 @@ public struct AddMemosAccountView: View {
                 RegisterMemosAccountView()
             }
         }
-        .toast(isPresenting: $showingErrorToast, alertType: .systemImage("xmark.circle", loginError?.localizedDescription))
+        .toast(isPresenting: $showingErrorToast, duration: 1.5, alertType: .systemImage("xmark.circle", loginError?.localizedDescription))
         .toast(isPresenting: $showLoadingToast, alertType: .loading)
         .navigationTitle("account.add-memos-account")
         .navigationBarTitleDisplayMode(.inline)
@@ -92,9 +91,6 @@ public struct AddMemosAccountView: View {
     
     private func doLogin() async throws {
         print("[AddMemosAccountView] doLogin start host:\(host)")
-        if host.isEmpty {
-            throw MoeMemosError.invalidParams
-        }
         
         var hostAddress = host.trimmingCharacters(in: .whitespaces)
         if !hostAddress.contains("//") {
