@@ -63,12 +63,33 @@ private struct SidebarButtonModifier: ViewModifier {
     }
 }
 
+private struct BackButtonModifier: ViewModifier {
+    @Environment(\.navigationSelect) private var navigationSelect
+    
+    func body(content: Content) -> some View {
+        content
+            .navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        navigationSelect.perform(.memos)
+                    }) {
+                        Image(systemName: "chevron.left")
+                    }
+                }
+            }
+    }
+}
+
 extension View {
     fileprivate func withSidebarButton() -> some View {
         modifier(SidebarButtonModifier())
     }
     fileprivate func withTopToolbar() -> some View {
         modifier(SidebarButtonModifier())
+    }
+    fileprivate func withBackButton() -> some View {
+        modifier(BackButtonModifier())
     }
 }
 
@@ -90,6 +111,7 @@ extension Route {
             MemosList(tag: tag)
         case .settings:
             Settings()
+                .withBackButton()
         case .explore:
             Explore()
                 .withTopToolbar()
