@@ -46,10 +46,13 @@ import Factory
     }
     
     internal func delete(account: Account) {
+        print("AccountManager: Deleting account: \(account.key)")
         accounts.removeAll { $0.key == account.key }
         account.delete()
         if currentAccount?.key == account.key {
+            print("AccountManager: Current account is being deleted, resetting...")
             currentAccount = accounts.last
+            print("AccountManager: New current account is \(currentAccount?.key ?? "nil")")
         }
     }
 }

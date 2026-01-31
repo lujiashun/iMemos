@@ -15,6 +15,7 @@ struct Sidebar: View {
     @Environment(AccountManager.self) private var accountManager: AccountManager
     @Environment(AccountViewModel.self) private var userState: AccountViewModel
     @Binding var selection: Route?
+    var onSidebarItemSelect: (() -> Void)? = nil
 
     private var isPadOrVision: Bool {
         UIDevice.current.userInterfaceIdiom == .pad || UIDevice.current.userInterfaceIdiom == .vision
@@ -25,7 +26,10 @@ struct Sidebar: View {
             if isPadOrVision {
                 NavigationLink(value: value, label: label)
             } else {
-                Button(action: { selection = value }) {
+                Button(action: {
+                    selection = value
+                    onSidebarItemSelect?()
+                }) {
                     label()
                 }
                 .foregroundStyle(.primary)
@@ -67,6 +71,25 @@ struct Sidebar: View {
                 Text("tags")
             }
         }
+        .safeAreaInset(edge: .top) {
+            if !isPadOrVision {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        selection = .settings
+                        onSidebarItemSelect?()
+                    }) {
+                        Image(systemName: "gearshape")
+                            .foregroundStyle(.primary)
+                            .font(.title2)
+                    }
+                    .padding(.trailing, 20)
+                    .padding(.top, 10) // Small top padding inside the safe area container
+                }
+                .frame(height: 50)
+                .background(Color(UIColor.secondarySystemBackground))
+            }
+        }
         .listStyle(.sidebar)
         .toolbar {
             if isPadOrVision {
@@ -82,13 +105,13 @@ struct Sidebar: View {
             }
         }
 
-        Group {
-            if isPadOrVision {
-                list
-                    .navigationTitle(userState.currentUser?.nickname ?? NSLocalizedString("memo.memos", comment: "Memos"))
-            } else {
-                list
+            Group {
+                if isPadOrVision {
+                    list
+                        .navigationTitle(userState.currentUser?.nickname ?? NSLocalizedString("memo.memos", comment: "Memos"))
+                } else {
+                    list
+                }
             }
-        }
     }
 }

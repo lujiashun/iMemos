@@ -65,6 +65,7 @@ struct Stats: View {
             }
             .frame(minHeight: 120, maxHeight: 120)
             .padding(.bottom, 10)
+            .padding(.horizontal, 20)
         }
     }
     

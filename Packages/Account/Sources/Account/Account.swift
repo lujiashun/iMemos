@@ -57,7 +57,9 @@ public extension Account {
             return User(accountKey: key, nickname: NSLocalizedString("account.local-user", comment: ""))
         }
         if let remoteService = remoteService() {
-            return try await remoteService.getCurrentUser()
+            let user = try await remoteService.getCurrentUser()
+            user.accountKey = key
+            return user
         }
         throw MoeMemosError.notLogin
     }

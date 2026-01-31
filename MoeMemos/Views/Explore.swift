@@ -11,19 +11,22 @@ struct Explore: View {
     @State private var viewModel = ExploreViewModel()
 
     var body: some View {
-        List(viewModel.memoList, id: \.remoteId) { memo in
-            Section {
-                ExploreMemoCard(memo: memo)
-                    .onAppear {
-                        Task {
-                            if viewModel.memoList.firstIndex(where: { $0.remoteId == memo.remoteId }) == viewModel.memoList.count - 2 {
-                                try await viewModel.loadMoreMemos()
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                ForEach(viewModel.memoList, id: \.remoteId) { memo in
+                    ExploreMemoCard(memo: memo)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .onAppear {
+                            Task {
+                                if viewModel.memoList.firstIndex(where: { $0.remoteId == memo.remoteId }) == viewModel.memoList.count - 2 {
+                                    try await viewModel.loadMoreMemos()
+                                }
                             }
                         }
-                    }
+                }
             }
         }
-        .listStyle(InsetGroupedListStyle())
         .navigationTitle("explore")
         .task {
             do {

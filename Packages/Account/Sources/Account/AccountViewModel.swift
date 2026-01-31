@@ -43,10 +43,16 @@ import MemosV0Service
                     existingUser.avatarData = user.avatarData
                     existingUser.nickname = user.nickname
                     existingUser.defaultVisibility = user.defaultVisibility
+                    existingUser.email = user.email
+                    existingUser.creationDate = user.creationDate
+                    existingUser.remoteId = user.remoteId
+                    allUsers.append(existingUser)
                 } else {
+                    // Canonicalize accountKey so it always matches Account.key.
+                    user.accountKey = account.key
                     currentContext.insert(user)
+                    allUsers.append(user)
                 }
-                allUsers.append(user)
             } else if let user = savedUsers.first(where: { $0.accountKey == account.key }) {
                 allUsers.append(user)
             } else if let user = try? await account.toUser() {
@@ -65,8 +71,19 @@ import MemosV0Service
     
     @MainActor
     func logout(account: Account) async throws {
-        accountManager.delete(account: account)
-        try await reloadUsers()
+        print("AccountViewModel: logout started for account \(account.key)")
+        do {
+            let wasCurrentAccount = accountManager.currentAccount?.key == account.key
+            accountManager.delete(account: account)
+            if wasCurrentAccount {
+                accountManager.currentAccount = nil
+            }
+            try await reloadUsers()
+            print("AccountViewModel: logout finished for account \(account.key)")
+        } catch {
+            print("AccountViewModel: logout failed with error: \(error)")
+            throw error
+        }
     }
     
     @MainActor

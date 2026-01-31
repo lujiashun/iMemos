@@ -28,6 +28,15 @@ struct ContentView: View {
         
         Navigation(selection: $selection)
             .environment(appPath)
+            .onChange(of: accountManager.currentAccount) { _, newValue in
+                if newValue == nil {
+                    appPath.presentedSheet = .addAccount
+                } else {
+                    Task {
+                        await loadCurrentUser()
+                    }
+                }
+            }
             .onChange(of: scenePhase, initial: true, { _, newValue in
                 if newValue == .active {
                     Task {
