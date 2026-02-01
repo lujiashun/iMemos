@@ -89,3 +89,10 @@
 "account.section.account-settings" = "帳號設定";
 "account.section.service-info" = "服務資訊";
 "account.section.sign-out" = "註銷帳號";
+
+"account.section.delete-account" = "刪除我的帳號和所有相關資料";
+"account.delete-account-and-data" = "刪除我的帳號和所有相關資料";
+"account.delete-account" = "刪除";
+"account.delete-account.message" = "此操作會從本裝置移除該帳號，並清除此帳號在本地快取的資料。";
+
+"settings.sign-out.confirm" = "確定要登出嗎？";

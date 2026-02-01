@@ -89,3 +89,10 @@
 "account.section.account-settings" = "账号设置";
 "account.section.service-info" = "服务信息";
 "account.section.sign-out" = "注销账号";
+
+"account.section.delete-account" = "删除我的账号和所有相关数据";
+"account.delete-account-and-data" = "删除我的账号和所有相关数据";
+"account.delete-account" = "删除";
+"account.delete-account.message" = "此操作会从本设备移除该账号，并清除此账号在本地缓存的数据。";
+
+"settings.sign-out.confirm" = "确定要退出登录吗？";

@@ -15,6 +15,7 @@ public struct MemosAccountView: View {
     @State var version: MemosVersion? = nil
     @State private var isLoggingOut = false
     @State private var imageStorageUsedBytes: Int? = nil
+    @State private var showingDeleteConfirm = false
     private let accountKey: String
     @Environment(AccountManager.self) private var accountManager
     @Environment(AccountViewModel.self) private var accountViewModel
@@ -188,39 +189,42 @@ public struct MemosAccountView: View {
                 }
             }
 
-            Section("account.section.sign-out") {
+            Section("account.section.delete-account") {
                 Button(role: .destructive) {
-                    Task { @MainActor in
-                        print("MemosAccountView: Sign out button tapped")
-                        guard let account = account else {
-                            print("MemosAccountView: Sign out failed - account not found for key \(accountKey)")
-                            print("MemosAccountView: known accounts: \(accountManager.accounts.map(\.key))")
-                            return
-                        }
-                        isLoggingOut = true
-                        defer { isLoggingOut = false }
-
-                        do {
-                            try await accountViewModel.logout(account: account)
-                        } catch {
-                            print(error)
-                        }
-
-                        // Force re-presentation even if the sheet is already shown.
-                        appPath.presentedSheet = nil
-                        appPath.presentedSheet = .addAccount
-                    }
+                    showingDeleteConfirm = true
                 } label: {
-                    Group {
-                        if isLoggingOut {
-                            ProgressView()
-                        } else {
-                            Text("settings.sign-out")
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .center)
+                    Text("account.delete-account-and-data")
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
                 .disabled(isLoggingOut)
+                .confirmationDialog("account.delete-account-and-data", isPresented: $showingDeleteConfirm, titleVisibility: .visible) {
+                    Button(role: .destructive) {
+                        Task { @MainActor in
+                            print("MemosAccountView: Delete account button confirmed")
+                            guard let account = account else {
+                                print("MemosAccountView: Delete failed - account not found for key \(accountKey)")
+                                print("MemosAccountView: known accounts: \(accountManager.accounts.map(\.key))")
+                                return
+                            }
+                            isLoggingOut = true
+                            defer { isLoggingOut = false }
+
+                            do {
+                                try await accountViewModel.logout(account: account)
+                            } catch {
+                                print(error)
+                            }
+
+                            // Force re-presentation even if the sheet is already shown.
+                            appPath.presentedSheet = nil
+                            appPath.presentedSheet = .addAccount
+                        }
+                    } label: {
+                        Text("account.delete-account")
+                    }
+                } message: {
+                    Text("account.delete-account.message")
+                }
             }
         }
         .navigationTitle("account.account-detail")
