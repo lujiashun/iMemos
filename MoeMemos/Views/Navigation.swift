@@ -13,10 +13,11 @@ struct Navigation: View {
     @State private var path = NavigationPath()
     @State private var isSidebarVisible = false
     @State private var dragOffset: CGFloat = 0
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
         if UIDevice.current.userInterfaceIdiom == .pad || UIDevice.current.userInterfaceIdiom == .vision {
-            NavigationSplitView(sidebar: {
+            NavigationSplitView(columnVisibility: $columnVisibility, sidebar: {
                 Sidebar(selection: $selection)
             }) {
                 NavigationStack {
@@ -34,6 +35,11 @@ struct Navigation: View {
                     selection = route
                 })
             }
+            .environment(\.sidebarToggle, SidebarToggleAction {
+                withAnimation(.easeOut) {
+                    columnVisibility = (columnVisibility == .detailOnly) ? .all : .detailOnly
+                }
+            })
         } else {
             let sidebarWidth = UIScreen.main.bounds.width * 0.8
             NavigationStack(path: $path) {

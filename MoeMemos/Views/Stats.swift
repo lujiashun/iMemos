@@ -7,6 +7,8 @@
 
 import SwiftUI
 import Account
+import Env
+import Models
 
 fileprivate let weekDaySymbols: [String] = {
     var symbols = Calendar.current.shortWeekdaySymbols
@@ -17,6 +19,15 @@ fileprivate let weekDaySymbols: [String] = {
 struct Stats: View {
     @Environment(MemosViewModel.self) private var memosViewModel: MemosViewModel
     @Environment(AccountViewModel.self) var userState: AccountViewModel
+    @Environment(\.navigationSelect) private var navigationSelect
+    @Environment(\.sidebarToggle) private var sidebarToggle
+    @Environment(AppPath.self) private var appPath
+
+    var onSidebarItemSelect: (() -> Void)? = nil
+
+    private var isPadOrVision: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad || UIDevice.current.userInterfaceIdiom == .vision
+    }
     
     var body: some View {
         VStack {
@@ -61,7 +72,18 @@ struct Stats: View {
                     Text(weekDaySymbols.last ?? "")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
-                Heatmap(matrix: memosViewModel.matrix, alignment: .trailing)
+                Heatmap(matrix: memosViewModel.matrix, alignment: .trailing) { day in
+                    appPath.selectedMemoDay = day.date
+                    navigationSelect.perform(.memos)
+
+                    // On iPhone, the sidebar is an overlay; explicitly dismiss it.
+                    onSidebarItemSelect?()
+
+                    // On iPad/vision, collapse the split view sidebar.
+                    if isPadOrVision {
+                        sidebarToggle.perform()
+                    }
+                }
             }
             .frame(minHeight: 120, maxHeight: 120)
             .padding(.bottom, 10)

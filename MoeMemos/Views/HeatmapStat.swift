@@ -9,20 +9,27 @@ import SwiftUI
 
 struct HeatmapStat: View {
     let day: DailyUsageStat
+    var onTap: ((DailyUsageStat) -> Void)? = nil
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        if Calendar.current.isDateInToday(day.date) {
-            RoundedRectangle(cornerRadius: 2)
-                .stroke(.foreground, style: StrokeStyle(lineWidth: 1))
-                .background(RoundedRectangle(cornerRadius: 2).fill(color(of: day)))
-                .aspectRatio(1, contentMode: .fit)
-                
-        } else {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(color(of: day))
-                .aspectRatio(1, contentMode: .fit)
+        Group {
+            if Calendar.current.isDateInToday(day.date) {
+                RoundedRectangle(cornerRadius: 2)
+                    .stroke(.foreground, style: StrokeStyle(lineWidth: 1))
+                    .background(RoundedRectangle(cornerRadius: 2).fill(color(of: day)))
+                    .aspectRatio(1, contentMode: .fit)
+            } else {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(color(of: day))
+                    .aspectRatio(1, contentMode: .fit)
+            }
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onTap?(day)
+        }
+        .accessibilityAddTraits(.isButton)
     }
     
     func color(of day: DailyUsageStat) -> Color {

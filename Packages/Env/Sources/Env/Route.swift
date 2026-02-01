@@ -6,6 +6,7 @@
 //
 
 import Models
+import Foundation
 import Observation
 import Factory
 
@@ -39,6 +40,10 @@ public enum SheetDestination: Identifiable, Hashable {
 @Observable public final class AppPath: Sendable {
     @MainActor
     public var presentedSheet: SheetDestination?
+
+    // When set, the memos list should filter to this day.
+    @MainActor
+    public var selectedMemoDay: Date?
     
     public init() {}
 }

@@ -39,7 +39,7 @@ struct Sidebar: View {
 
     var body: some View {
         let list = List(selection: isPadOrVision ? $selection : nil) {
-            Stats()
+            Stats(onSidebarItemSelect: onSidebarItemSelect)
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(EmptyView())
