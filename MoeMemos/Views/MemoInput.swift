@@ -95,8 +95,10 @@ struct MemoInput: View {
     private func editor() -> some View {
         ZStack(alignment: .bottom) {
             VStack(alignment: .leading) {
-                privacyMenu
-                    .padding(.horizontal)
+                if memo != nil {
+                    privacyMenu
+                        .padding(.horizontal)
+                }
                 TextView(text: $text, selection: $selection, shouldChangeText: shouldChangeText(in:replacementText:))
                     .focused($focused)
                     .overlay(alignment: .topLeading) {

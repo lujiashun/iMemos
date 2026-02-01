@@ -126,6 +126,7 @@ public final class MemosV1Service: RemoteService {
     }
     
     public func listMemos() async throws -> [Memo] {
+        try await signInIfNeeded()
         guard let userId = userId else { throw MoeMemosError.notLogin }
         var memos = [Memo]()
         var nextPageToken: String? = nil
@@ -141,6 +142,7 @@ public final class MemosV1Service: RemoteService {
     }
     
     public func listArchivedMemos() async throws -> [Memo] {
+        try await signInIfNeeded()
         guard let userId = userId else { throw MoeMemosError.notLogin }
         var memos = [Memo]()
         var nextPageToken: String? = nil
@@ -156,12 +158,14 @@ public final class MemosV1Service: RemoteService {
     }
     
     public func listWorkspaceMemos(pageSize: Int, pageToken: String?) async throws -> (list: [Memo], nextPageToken: String?) {
+        try await signInIfNeeded()
         let resp = try await client.MemoService_ListMemos(query: .init(pageSize: 200, pageToken: pageToken))
         let data = try resp.ok.body.json
         return (data.memos?.map { $0.toMemo(host: hostURL) } ?? [], data.nextPageToken)
     }
     
     public func createMemo(content: String, visibility: MemoVisibility?, resources: [Resource], tags: [String]?) async throws -> Memo {
+        try await signInIfNeeded()
         let resp = try await client.MemoService_CreateMemo(body: .json(MemosV1Memo(
             state: .NORMAL,
             content: content,
@@ -189,6 +193,7 @@ public final class MemosV1Service: RemoteService {
     }
     
     public func updateMemo(remoteId: String, content: String?, resources: [Resource]?, visibility: MemoVisibility?, tags: [String]?, pinned: Bool?) async throws -> Memo {
+        try await signInIfNeeded()
         let resp = try await client.MemoService_UpdateMemo(path: .init(memo: getId(remoteId: remoteId)), body: .json(MemosV1Memo(
             state: .NORMAL,
             updateTime: .now,
@@ -214,21 +219,25 @@ public final class MemosV1Service: RemoteService {
     }
     
     public func deleteMemo(remoteId: String) async throws {
+        try await signInIfNeeded()
         let resp = try await client.MemoService_DeleteMemo(path: .init(memo: getId(remoteId: remoteId)))
         _ = try resp.ok
     }
     
     public func archiveMemo(remoteId: String) async throws {
+        try await signInIfNeeded()
         let resp = try await client.MemoService_UpdateMemo(path: .init(memo: getId(remoteId: remoteId)), body: .json(MemosV1Memo(state: .ARCHIVED, content: "", visibility: .PRIVATE)))
         _ = try resp.ok
     }
     
     public func restoreMemo(remoteId: String) async throws {
+        try await signInIfNeeded()
         let resp = try await client.MemoService_UpdateMemo(path: .init(memo: getId(remoteId: remoteId)), body: .json(MemosV1Memo(state: .NORMAL, content: "", visibility: .PRIVATE)))
         _ = try resp.ok
     }
     
     public func listTags() async throws -> [Tag] {
+        try await signInIfNeeded()
         guard let userId = userId else { throw MoeMemosError.notLogin }
         let resp = try await client.UserService_GetUserStats(path: .init(user: "\(userId)"))
         let data = try resp.ok.body.json
@@ -243,12 +252,14 @@ public final class MemosV1Service: RemoteService {
     }
     
     public func listResources() async throws -> [Resource] {
+        try await signInIfNeeded()
         let resp = try await client.AttachmentService_ListAttachments()
         let data = try resp.ok.body.json
         return data.attachments?.map { $0.toResource(host: hostURL) } ?? []
     }
     
     public func createResource(filename: String, data: Data, type: String, memoRemoteId: String?) async throws -> Resource {
+        try await signInIfNeeded()
         let resp = try await client.AttachmentService_CreateAttachment(body: .json(.init(
             filename: filename,
             content: data.base64EncodedString(),
@@ -260,6 +271,7 @@ public final class MemosV1Service: RemoteService {
     }
     
     public func deleteResource(remoteId: String) async throws {
+        try await signInIfNeeded()
         let resp = try await client.AttachmentService_DeleteAttachment(path: .init(attachment: getId(remoteId: remoteId)))
         _ = try resp.ok
     }
@@ -283,6 +295,7 @@ public final class MemosV1Service: RemoteService {
     }
     
     public func getWorkspaceProfile() async throws -> MemosV1Profile {
+        try await signInIfNeeded()
         let resp = try await client.InstanceService_GetInstanceProfile()
         return try resp.ok.body.json
     }

@@ -48,9 +48,6 @@ struct Sidebar: View {
                 SidebarLink(value: Route.memos) {
                     Label("memo.memos", systemImage: "rectangle.grid.1x2")
                 }
-                SidebarLink(value: Route.explore) {
-                    Label("explore", systemImage: "house")
-                }
                 SidebarLink(value: Route.resources) {
                     Label("resources", systemImage: "photo.on.rectangle")
                 }
