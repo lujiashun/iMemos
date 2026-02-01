@@ -11,6 +11,11 @@ struct HeatmapStat: View {
     let day: DailyUsageStat
     var onTap: ((DailyUsageStat) -> Void)? = nil
     @Environment(\.colorScheme) var colorScheme
+
+    private var isSelectable: Bool {
+        let today = Calendar(identifier: .gregorian).startOfDay(for: .now)
+        return day.date <= today
+    }
     
     var body: some View {
         Group {
@@ -27,9 +32,11 @@ struct HeatmapStat: View {
         }
         .contentShape(Rectangle())
         .onTapGesture {
-            onTap?(day)
+            if isSelectable {
+                onTap?(day)
+            }
         }
-        .accessibilityAddTraits(.isButton)
+        .accessibilityAddTraits(isSelectable ? .isButton : [])
     }
     
     func color(of day: DailyUsageStat) -> Color {

@@ -15,7 +15,6 @@ struct MemoInput: View {
     let memo: Memo?
     @Environment(MemosViewModel.self) private var memosViewModel: MemosViewModel
     @Environment(AccountViewModel.self) var userState: AccountViewModel
-    @Environment(AccountManager.self) var accountManager: AccountManager
     @State private var viewModel = MemoInputViewModel()
 
     @State private var text = ""
@@ -95,10 +94,6 @@ struct MemoInput: View {
     private func editor() -> some View {
         ZStack(alignment: .bottom) {
             VStack(alignment: .leading) {
-                if memo != nil {
-                    privacyMenu
-                        .padding(.horizontal)
-                }
                 TextView(text: $text, selection: $selection, shouldChangeText: shouldChangeText(in:replacementText:))
                     .focused($focused)
                     .overlay(alignment: .topLeading) {
@@ -246,31 +241,6 @@ struct MemoInput: View {
             showingErrorToast = true
         }
         viewModel.saving = false
-    }
-    
-    private var privacyMenu: some View {
-      Menu {
-        Section("input.visibility") {
-        ForEach(accountManager.currentService?.memoVisibilities() ?? [.private], id: \.self) { visibility in
-            Button {
-              viewModel.visibility = visibility
-            } label: {
-              Label(visibility.title, systemImage: visibility.iconName)
-            }
-          }
-        }
-      } label: {
-        HStack {
-          Label(viewModel.visibility.title, systemImage: viewModel.visibility.iconName)
-          Image(systemName: "chevron.down")
-        }
-        .font(.footnote)
-        .padding(4)
-        .overlay(
-          RoundedRectangle(cornerRadius: 8)
-            .stroke(.green, lineWidth: 1)
-        )
-      }
     }
     
     private func insert(tag: Tag?) {

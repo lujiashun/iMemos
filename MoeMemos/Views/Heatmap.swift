@@ -10,18 +10,22 @@ import Foundation
 
 fileprivate let gridSpacing: CGFloat = 3
 fileprivate let heatmapDaysInWeek: Int = 7
-fileprivate let defaultRows = [GridItem](repeating: GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: gridSpacing), count: heatmapDaysInWeek)
 
 struct Heatmap: View {
-    let rows = defaultRows
     let matrix: [DailyUsageStat]
     let alignment: HorizontalAlignment
+    var columns: Int = 12
     var onSelectDay: ((DailyUsageStat) -> Void)? = nil
     
     var body: some View {
         GeometryReader { geometry in
+            let size = geometry.size
+            let cellSize = heatmapCellSize(in: size)
+            let rows = [GridItem](repeating: GridItem(.fixed(cellSize), spacing: gridSpacing), count: heatmapDaysInWeek)
+            let visibleCount = min(matrix.count, heatmapDaysInWeek * max(columns, 1))
+
             LazyHGrid(rows: rows, alignment: .top, spacing: gridSpacing) {
-                ForEach(matrix.suffix(count(in: geometry.frame(in: .local).size))) { day in
+                ForEach(matrix.suffix(visibleCount)) { day in
                     HeatmapStat(day: day, onTap: onSelectDay)
                 }
             }
@@ -38,22 +42,14 @@ struct Heatmap: View {
         }
     }
         
-    private func count(in size: CGSize) -> Int {
-        let cellHeight = (size.height + gridSpacing) / CGFloat(heatmapDaysInWeek)
-        if cellHeight <= 0 {
-            return 0
-        }
-        let cellWidth = cellHeight
-        let columns = Int(floor((size.width + gridSpacing) / cellWidth))
-        let fullCells = Int(columns) * heatmapDaysInWeek
-        
-        let today = Calendar.current.startOfDay(for: .now)
-        let weekday = Calendar.current.dateComponents([.weekday], from: today).weekday!
-        let lastColumn = (weekday + 1) - Calendar.current.firstWeekday
-        if lastColumn % heatmapDaysInWeek == 0 {
-            return fullCells
-        }
-        return fullCells - heatmapDaysInWeek + lastColumn
+    private func heatmapCellSize(in size: CGSize) -> CGFloat {
+        let width = size.width
+        let height = size.height
+        let cols = max(columns, 1)
+
+        let cellByHeight = (height - gridSpacing * CGFloat(heatmapDaysInWeek - 1)) / CGFloat(heatmapDaysInWeek)
+        let cellByWidth = (width - gridSpacing * CGFloat(cols - 1)) / CGFloat(cols)
+        return max(0, min(cellByHeight, cellByWidth))
     }
 }
 

@@ -109,6 +109,7 @@ extension Route {
                 .withTopToolbar()
         case .tag(let tag):
             MemosList(tag: tag)
+                .withTopToolbar()
         case .settings:
             Settings()
                 .withBackButton()

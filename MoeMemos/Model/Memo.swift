@@ -43,15 +43,15 @@ extension MemoVisibility {
 
 extension Memo {
     func renderTime() -> String {
-        if Calendar.current.dateComponents([.day], from: createdAt, to: .now).day! > 7 {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .long
-            formatter.timeStyle = .short
-            return formatter.string(from: createdAt)
-        }
-        
-        let formatter = RelativeDateTimeFormatter()
-        formatter.dateTimeStyle = .named
-        return formatter.localizedString(for: createdAt, relativeTo: .now)
+        return Self.absoluteTimeFormatter.string(from: createdAt)
     }
+
+    private static let absoluteTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter
+    }()
 }
