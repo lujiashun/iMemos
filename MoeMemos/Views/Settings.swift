@@ -46,6 +46,18 @@ struct Settings: View {
 
                 Section {
                     Button(role: .destructive) {
+                    }
+                    Link(destination: URL(string: "https://github.com/mudkipme/MoeMemos/issues")!) {
+                        Label("settings.report", systemImage: "smallcircle.filled.circle")
+                    }
+                } header: {
+                    Text("settings.about")
+                } footer: {
+                    Text(appInfo.registration)
+                }
+
+                Section {
+                    Button(role: .destructive) {
                         showingSignOutConfirm = true
                     } label: {
                         Label("settings.sign-out", systemImage: "rectangle.portrait.and.arrow.right")
@@ -66,19 +78,6 @@ struct Settings: View {
                         } label: {
                             Text("settings.sign-out")
                         }
-                        } message: {
-                            Text("settings.sign-out.confirm")
-                    }
-                }
-                Link(destination: URL(string: "https://github.com/mudkipme/MoeMemos/issues")!) {
-                    Label("settings.report", systemImage: "smallcircle.filled.circle")
-                }
-            } header: {
-                Text("settings.about")
-            } footer: {
-                Text(appInfo.registration)
-            }
-        }
-        .navigationTitle("settings")
-    }
-}
+                    } message: {
+                        Text("settings.sign-out.confirm")
+                        showingSignOutConfirm = true

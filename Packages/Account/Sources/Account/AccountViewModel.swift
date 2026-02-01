@@ -84,7 +84,7 @@ enum AccountCredentialError: LocalizedError {
     }
     
     @MainActor
-    func logout(account: Account) async throws {
+    public func logout(account: Account) async throws {
         print("AccountViewModel: logout started for account \(account.key)")
         do {
             let wasCurrentAccount = accountManager.currentAccount?.key == account.key
