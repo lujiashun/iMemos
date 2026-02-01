@@ -71,5 +71,5 @@
 "account.accounts" = "Accounts";
 "account.add-memos-account" = "Add a Memos Account";
 "account.memos-account-description" = "Sync with Your Memos Server";
-"account.account-detail" = "Account Detail";
+"account.account-detail" = "帳號詳情";
 "account.switch-account" = "Switch Account";
