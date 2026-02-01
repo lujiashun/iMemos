@@ -10,6 +10,7 @@ import Models
 import Account
 import Env
 
+
 struct Settings: View {
     @Environment(AppInfo.self) var appInfo: AppInfo
     @Environment(AccountViewModel.self) var accountViewModel
@@ -18,7 +19,6 @@ struct Settings: View {
     @State private var showingSignOutConfirm = false
 
     var body: some View {
-        @Bindable var accountViewModel = accountViewModel
         List {
             Section {
                 if let key = accountManager.currentAccount?.key {
@@ -44,19 +44,18 @@ struct Settings: View {
                 Link(destination: URL(string: "https://memos.littledaemon.dev/ios-acknowledgements")!) {
                     Label("settings.acknowledgements", systemImage: "info.bubble")
 
-                Section {
-                    Button(role: .destructive) {
-                    }
-                    Link(destination: URL(string: "https://github.com/mudkipme/MoeMemos/issues")!) {
-                        Label("settings.report", systemImage: "smallcircle.filled.circle")
-                    }
-                } header: {
-                    Text("settings.about")
-                } footer: {
-                    Text(appInfo.registration)
                 }
 
-                Section {
+                Link(destination: URL(string: "https://github.com/mudkipme/MoeMemos/issues")!) {
+                    Label("settings.report", systemImage: "smallcircle.filled.circle")
+                }
+            } header: {
+                Text("settings.about")
+            } footer: {
+                Text(appInfo.registration)
+            }
+
+            Section {
                     Button(role: .destructive) {
                         showingSignOutConfirm = true
                     } label: {
@@ -80,4 +79,7 @@ struct Settings: View {
                         }
                     } message: {
                         Text("settings.sign-out.confirm")
-                        showingSignOutConfirm = true
+                    }
+            }
+        }
+        .navigationTitle("settings")
