@@ -12,6 +12,20 @@ import Factory
 import MemosV1Service
 import MemosV0Service
 
+enum AccountCredentialError: LocalizedError {
+    case unsupported
+    case oldPasswordMismatch
+
+    var errorDescription: String? {
+        switch self {
+        case .unsupported:
+            return NSLocalizedString("account.password.unsupported", comment: "")
+        case .oldPasswordMismatch:
+            return NSLocalizedString("account.password.old.wrong", comment: "")
+        }
+    }
+}
+
 @Observable public final class AccountViewModel: @unchecked Sendable {
     @ObservationIgnored private var currentContext: ModelContext
     private var accountManager: AccountManager
@@ -125,5 +139,48 @@ import MemosV0Service
 public extension Container {
     var accountViewModel: Factory<AccountViewModel> {
         self { AccountViewModel(currentContext: self.appInfo().modelContext, accountManager: self.accountManager()) }.shared
+    }
+}
+
+public extension AccountViewModel {
+    @MainActor
+    func updateNickname(to nickname: String) async throws {
+        let trimmed = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw MoeMemosError.invalidParams }
+
+        guard let currentAccount = accountManager.currentAccount else { throw MoeMemosError.notLogin }
+        switch currentAccount {
+        case .local:
+            if let user = currentUser {
+                user.nickname = trimmed
+                try currentContext.save()
+            }
+        case .memosV1:
+            guard let v1 = accountManager.currentService as? MemosV1Service else { throw MoeMemosError.notLogin }
+            _ = try await v1.updateDisplayName(trimmed)
+        case .memosV0:
+            throw MoeMemosError.unsupportedVersion
+        }
+        try await reloadUsers()
+    }
+
+    @MainActor
+    func changePassword(oldPassword: String, newPassword: String) async throws {
+        guard let currentAccount = accountManager.currentAccount else { throw MoeMemosError.notLogin }
+        guard let v1 = accountManager.currentService as? MemosV1Service else { throw AccountCredentialError.unsupported }
+
+        guard case let .memosV1(host: host, id: id, username: username, password: storedPassword) = currentAccount else {
+            throw AccountCredentialError.unsupported
+        }
+
+        guard storedPassword == oldPassword else { throw AccountCredentialError.oldPasswordMismatch }
+        let trimmed = newPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw MoeMemosError.invalidParams }
+
+        try await v1.updatePassword(trimmed)
+
+        let updatedAccount = Account.memosV1(host: host, id: id, username: username, password: trimmed)
+        try accountManager.update(account: updatedAccount)
+        try await reloadUsers()
     }
 }

@@ -299,6 +299,43 @@ public final class MemosV1Service: RemoteService {
         let resp = try await client.InstanceService_GetInstanceProfile()
         return try resp.ok.body.json
     }
+
+    public func updateDisplayName(_ displayName: String) async throws -> User {
+        try await signInIfNeeded()
+        guard let userId = userId else { throw MoeMemosError.notLogin }
+
+        let getResp = try await client.UserService_GetUser(path: .init(user: userId))
+        var current = try getResp.ok.body.json
+        current.displayName = displayName
+
+        let updateResp = try await client.UserService_UpdateUser(
+            path: .init(user: userId),
+            query: .init(updateMask: "display_name"),
+            body: .json(current)
+        )
+        let updated = try updateResp.ok.body.json
+
+        let name = updated.name ?? "users/\(userId)"
+        let userSettingResp = try await client.UserService_GetUserSetting(path: .init(user: getId(remoteId: name), setting: "GENERAL"))
+        let setting = try userSettingResp.ok.body.json
+        return await toUser(updated, setting: setting)
+    }
+
+    public func updatePassword(_ newPassword: String) async throws {
+        try await signInIfNeeded()
+        guard let userId = userId else { throw MoeMemosError.notLogin }
+
+        let getResp = try await client.UserService_GetUser(path: .init(user: userId))
+        var current = try getResp.ok.body.json
+        current.password = newPassword
+
+        let updateResp = try await client.UserService_UpdateUser(
+            path: .init(user: userId),
+            query: .init(updateMask: "password", allowMissing: true),
+            body: .json(current)
+        )
+        _ = try updateResp.ok
+    }
     
     public func download(url: URL, mimeType: String? = nil) async throws -> URL {
         return try await ServiceUtils.download(urlSession: urlSession, url: url, mimeType: mimeType, middleware: rawBasicAuthMiddlware(hostURL: hostURL, username: username, password: password))

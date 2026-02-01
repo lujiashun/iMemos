@@ -62,3 +62,13 @@ public extension Container {
         self { AccountManager() }.shared
     }
 }
+
+extension AccountManager {
+    internal func update(account: Account) throws {
+        try account.save()
+        accounts = Account.retriveAll()
+        if currentAccount?.key == account.key {
+            currentAccount = account
+        }
+    }
+}

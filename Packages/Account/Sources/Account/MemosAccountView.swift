@@ -14,12 +14,39 @@ public struct MemosAccountView: View {
     @State var user: User? = nil
     @State var version: MemosVersion? = nil
     @State private var isLoggingOut = false
+    @State private var imageStorageUsedBytes: Int? = nil
     private let accountKey: String
     @Environment(AccountManager.self) private var accountManager
     @Environment(AccountViewModel.self) private var accountViewModel
     @Environment(AppPath.self) private var appPath
+    @Environment(AppInfo.self) private var appInfo
     private var account: Account? { resolveAccount(from: accountKey) }
     @Environment(\.dismiss) private var dismiss
+
+    private var isCurrentAccount: Bool {
+        accountKey == accountManager.currentAccount?.key
+    }
+
+    private var accountUsername: String? {
+        guard let account else { return nil }
+        switch account {
+        case .memosV0(host: _, id: _, username: let username, password: _):
+            return username
+        case .memosV1(host: _, id: _, username: let username, password: _):
+            return username
+        case .local:
+            return nil
+        }
+    }
+
+    private var imageStorageText: String {
+        guard let used = imageStorageUsedBytes else { return "—" }
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        let usedText = formatter.string(fromByteCount: Int64(used))
+        let maxText = "—"
+        return "\(usedText) / \(maxText)"
+    }
     
     public init(accountKey: String) {
         self.accountKey = accountKey
@@ -87,36 +114,49 @@ public struct MemosAccountView: View {
     
     public var body: some View {
         List {
-            if let user = user {
-                VStack(alignment: .leading) {
-                    if let avatarData = user.avatarData, let uiImage = UIImage(data: avatarData) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .frame(width: 50, height: 50)
-                            .clipShape(Circle())
+            Section("account.section.basic-info") {
+                if let user {
+                    NavigationLink {
+                        EditNicknameView(currentNickname: user.nickname)
+                    } label: {
+                        HStack {
+                            Text("account.nickname")
+                            Spacer()
+                            Text(user.nickname)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
                     }
-                    Text(user.nickname)
-                        .font(.title3)
-                    if let email = user.email, email != user.nickname && !email.isEmpty {
-                        Text(email)
-                            .font(.subheadline)
+                    .disabled(!isCurrentAccount)
+                }
+
+                HStack {
+                    Text("account.storage")
+                    Spacer()
+                    Text(imageStorageText)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Section("account.section.account-settings") {
+                if let username = accountUsername {
+                    HStack {
+                        Text("account.username")
+                        Spacer()
+                        Text(username)
                             .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
                 }
-                .padding([.top, .bottom], 10)
-            }
-            
-            if let version = version?.version {
-                Label(title: { Text("memos v\(version)").foregroundStyle(.secondary) }) {
-                    Image(.memos)
-                        .resizable()
-                        .scaledToFit()
-                        .clipShape(Circle())
+
+                NavigationLink {
+                    ChangePasswordView()
+                } label: {
+                    Text("account.change-password")
                 }
-            }
-            
-            if accountKey != accountManager.currentAccount?.key {
-                Section {
+                .disabled(!isCurrentAccount || accountUsername == nil)
+
+                if !isCurrentAccount {
                     Button {
                         Task {
                             do {
@@ -127,16 +167,28 @@ public struct MemosAccountView: View {
                             }
                         }
                     } label: {
-                        HStack {
-                            Spacer()
-                            Text("account.switch-account")
-                            Spacer()
-                        }
+                        Text("account.switch-account")
+                            .frame(maxWidth: .infinity, alignment: .center)
                     }
                 }
             }
-            
-            Section {
+
+            Section("account.section.service-info") {
+                if let version = version?.version {
+                    HStack {
+                        Text("memos")
+                        Spacer()
+                        Text("v\(version)")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Link(destination: appInfo.privacy) {
+                    Text("settings.privacy")
+                }
+            }
+
+            Section("account.section.sign-out") {
                 Button(role: .destructive) {
                     Task { @MainActor in
                         print("MemosAccountView: Sign out button tapped")
@@ -175,6 +227,22 @@ public struct MemosAccountView: View {
         .task {
             guard let account = account else { return }
             user = try? await account.remoteService()?.getCurrentUser()
+        }
+        .task {
+            guard let account = account else { return }
+            if case .local = account {
+                imageStorageUsedBytes = 0
+                return
+            }
+            do {
+                let resources = try await account.remoteService()?.listResources()
+                let imageBytes = (resources ?? [])
+                    .filter { $0.mimeType.hasPrefix("image/") }
+                    .reduce(0) { $0 + $1.size }
+                imageStorageUsedBytes = imageBytes
+            } catch {
+                imageStorageUsedBytes = nil
+            }
         }
         .task {
             guard let account = account else { return }

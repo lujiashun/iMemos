@@ -73,3 +73,19 @@
 "account.memos-account-description" = "Sync with Your Memos Server";
 "account.account-detail" = "Account Detail";
 "account.switch-account" = "Switch Account";
+"account.nickname" = "Nickname";
+"account.save" = "Save";
+"account.storage" = "Image Storage";
+"account.username" = "Username";
+"account.change-password" = "Change Password";
+"account.password.old" = "Old Password";
+"account.password.new" = "New Password";
+"account.password.confirm" = "Confirm New Password";
+"account.password.mismatch" = "New passwords do not match.";
+"account.password.old.wrong" = "Old password is incorrect.";
+"account.password.unsupported" = "Password change is not supported for this account.";
+
+"account.section.basic-info" = "Basic Info";
+"account.section.account-settings" = "Account Settings";
+"account.section.service-info" = "Service Info";
+"account.section.sign-out" = "Deactivate Account";

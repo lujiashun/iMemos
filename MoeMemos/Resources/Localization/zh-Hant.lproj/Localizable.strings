@@ -73,3 +73,19 @@
 "account.memos-account-description" = "Sync with Your Memos Server";
 "account.account-detail" = "帳號詳情";
 "account.switch-account" = "Switch Account";
+"account.nickname" = "暱稱";
+"account.save" = "儲存";
+"account.storage" = "圖片儲存空間";
+"account.username" = "帳號名";
+"account.change-password" = "修改密碼";
+"account.password.old" = "舊密碼";
+"account.password.new" = "新密碼";
+"account.password.confirm" = "確認新密碼";
+"account.password.mismatch" = "兩次輸入的新密碼不一致。";
+"account.password.old.wrong" = "舊密碼不正確。";
+"account.password.unsupported" = "目前帳號不支援修改密碼。";
+
+"account.section.basic-info" = "基本資訊";
+"account.section.account-settings" = "帳號設定";
+"account.section.service-info" = "服務資訊";
+"account.section.sign-out" = "註銷帳號";
