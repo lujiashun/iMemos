@@ -83,3 +83,6 @@ struct Settings: View {
             }
         }
         .navigationTitle("settings")
+
+    }
+}
