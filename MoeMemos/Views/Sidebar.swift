@@ -71,6 +71,11 @@ struct Sidebar: View {
         .safeAreaInset(edge: .top) {
             if !isPadOrVision {
                 HStack {
+                    Text(userState.currentUser?.nickname ?? NSLocalizedString("moe-memos", comment: ""))
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .padding(.leading, 20)
                     Spacer()
                     Button(action: {
                         selection = .settings
