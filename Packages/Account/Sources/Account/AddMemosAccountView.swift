@@ -18,19 +18,43 @@ public struct AddMemosAccountView: View {
     @State private var password = ""
     @State private var showingRegister = false
         @Environment(\.dismiss) private var dismiss
+    @Environment(AppInfo.self) private var appInfo: AppInfo
     @Environment(AccountViewModel.self) private var accountViewModel
     @State private var loginError: Error?
     @State private var showingErrorToast = false
     @State private var showLoadingToast = false
+    @State private var agreedToTerms = false
     public init() {}
     
     public var body: some View {
         VStack {
-            Text("login.hint")
-                .multilineTextAlignment(.center)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .padding(.bottom, 20)
+            VStack(alignment: .leading, spacing: 0) {
+                (
+                    Text("login.hint.line1.part1")
+                        .fontWeight(.bold)
+                        .foregroundStyle(.primary)
+                    + Text("login.hint.line1.part2")
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.green)
+                )
+                .font(.headline)
+                .scaleEffect(2, anchor: .leading)
+                .padding(.bottom, 40)
+
+                Text("login.hint.line2")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .scaleEffect(1.3, anchor: .leading)
+                    .padding(.bottom, 8)
+                Text("login.hint.line3")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .scaleEffect(1.3, anchor: .leading)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .multilineTextAlignment(.leading)
+            .padding(.bottom, 20)
+            .offset(y: -120)
             
             // Host is fixed to demo.usememos.com
             
@@ -38,9 +62,6 @@ public struct AddMemosAccountView: View {
                 .textFieldStyle(.roundedBorder)
             SecureField("login.passwd", text: $password)
                 .textFieldStyle(.roundedBorder)
-            Text("login.user-password.hint")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
             
             Button {
                 Task {
@@ -67,6 +88,28 @@ public struct AddMemosAccountView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .padding(.top, 20)
+            .disabled(!agreedToTerms)
+
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Button {
+                    agreedToTerms.toggle()
+                } label: {
+                    Image(systemName: agreedToTerms ? "checkmark.square.fill" : "square")
+                        .foregroundStyle(agreedToTerms ? Color.accentColor : Color.secondary)
+                }
+                .buttonStyle(.plain)
+
+                Group {
+                    Text("login.agree.prefix")
+                    Link("login.agree.terms", destination: appInfo.terms)
+                    Text("login.agree.conjunction")
+                    Link("login.agree.privacy", destination: appInfo.privacy)
+                }
+            }
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 10)
 
             Button {
                 showingRegister = true

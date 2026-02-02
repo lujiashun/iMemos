@@ -30,6 +30,7 @@ import Factory
 //    @ObservationIgnored public lazy var privacy = region == "CHN" ? URL(string: "https://memos.vintage-wiki.com/privacy")! : URL(string: "https://memos.littledaemon.dev/privacy")!
 //    @ObservationIgnored public lazy var registration = region == "CHN" ? "" : ""
     @ObservationIgnored public lazy var website = URL(string: "https://memos.littledaemon.dev")!
+    @ObservationIgnored public lazy var terms = URL(string: "https://memos.littledaemon.dev/terms")!
     @ObservationIgnored public lazy var privacy = URL(string: "https://memos.littledaemon.dev/privacy")!
     @ObservationIgnored public lazy var registration = ""
 }

@@ -43,6 +43,15 @@
 "login.access-token" = "Токен доступа";
 "login.access-token.hint" = "Создайте токен доступа в Настройках ✍️memos.";
 "login.hint" = "Пожалуйста, введите данные для входа в ваш\n[✍️memos](https://github.com/usememos/memos) сервер.";
+"login.hint.line1" = "Hi, welcome back";
+"login.hint.line1.part1" = "Hi, ";
+"login.hint.line1.part2" = "welcome back";
+"login.hint.line2" = "We’re not just taking notes";
+"login.hint.line3" = "We’re supporting our future selves";
+"login.agree.prefix" = "I have read and agree to the ";
+"login.agree.terms" = "Terms of Service";
+"login.agree.conjunction" = " and ";
+"login.agree.privacy" = "Privacy Policy";
 "login.sign-in" = "Войти";
 "login.user" = "Пользователь";
 "login.passwd" = "Пароль";

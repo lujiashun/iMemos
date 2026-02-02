@@ -43,6 +43,15 @@
 "login.access-token" = "アクセストークン";
 "login.access-token.hint" = "✍️memosの設定からアクセストークンを作成します。";
 "login.hint" = "\n[✍️memos](https://github.com/usememos/memos) サーバーのログイン情報を入力してください。";
+"login.hint.line1" = "Hi, welcome back";
+"login.hint.line1.part1" = "Hi, ";
+"login.hint.line1.part2" = "welcome back";
+"login.hint.line2" = "We’re not just taking notes";
+"login.hint.line3" = "We’re supporting our future selves";
+"login.agree.prefix" = "I have read and agree to the ";
+"login.agree.terms" = "Terms of Service";
+"login.agree.conjunction" = " and ";
+"login.agree.privacy" = "Privacy Policy";
 "login.sign-in" = "サインイン";
 "login.user" = "ユーザー名";
 "login.passwd" = "パスワード";

@@ -43,6 +43,15 @@
 "login.access-token" = "Access Token";
 "login.access-token.hint" = "从 ✍️memos 设置中创建 Access Token。";
 "login.hint" = "请输入您的 [✍️memos](https://github.com/usememos/memos) 服务器的登录信息。";
+"login.hint.line1" = "嗨，好久不见";
+"login.hint.line1.part1" = "嗨，";
+"login.hint.line1.part2" = "好久不见";
+"login.hint.line2" = "我们不仅在写笔记";
+"login.hint.line3" = "还是在增援未来的自己";
+"login.agree.prefix" = "阅读并同意";
+"login.agree.terms" = "用户协议";
+"login.agree.conjunction" = "和";
+"login.agree.privacy" = "隐私政策";
 "login.sign-in" = "登录";
 "login.passwd" = "密码";
 "login.user" = "用户名";
