@@ -46,10 +46,12 @@ public struct RegisterMemosAccountView: View {
                 }
             } label: {
                 Text("注册")
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .padding(.top, 20)
+            .frame(maxWidth: .infinity)
         }
         .padding()
         .toast(isPresenting: $showingErrorToast, alertType: .systemImage("xmark.circle", registerError?.localizedDescription))

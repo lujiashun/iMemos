@@ -60,8 +60,10 @@ public struct AddMemosAccountView: View {
             
             TextField("login.user", text: $username)
                 .textFieldStyle(.roundedBorder)
+                .frame(maxWidth: .infinity, alignment: .leading)
             SecureField("login.passwd", text: $password)
                 .textFieldStyle(.roundedBorder)
+                .frame(maxWidth: .infinity, alignment: .leading)
             
             Button {
                 Task {
@@ -84,10 +86,12 @@ public struct AddMemosAccountView: View {
                 }
             } label: {
                 Text("login.sign-in")
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .padding(.top, 20)
+            .frame(maxWidth: .infinity)
             .disabled(!agreedToTerms)
 
             HStack(alignment: .firstTextBaseline, spacing: 8) {
