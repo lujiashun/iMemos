@@ -1054,6 +1054,56 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/v1/memos:daily_review:
+        post:
+            tags:
+                - MemoService
+            description: GetDailyReview generates a daily review for the requested date.
+            operationId: MemoService_GetDailyReview
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GetDailyReviewRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetDailyReviewResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/v1/memos:insight:
+        post:
+            tags:
+                - MemoService
+            description: GetMemoInsight generates a insight for the requested memos.
+            operationId: MemoService_GetMemoInsight
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GetMemoInsightRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMemoInsightResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/v1/users:
         get:
             tags:
@@ -2087,6 +2137,36 @@ components:
                     allOf:
                         - $ref: '#/components/schemas/User'
                     description: The authenticated user's information.
+        GetDailyReviewRequest:
+            type: object
+            properties:
+                date:
+                    type: string
+                    description: date is the date string in "YYYY-MM-DD" format.
+                timezone:
+                    type: string
+                    description: timezone is the timezone name (e.g. "Asia/Shanghai").
+        GetDailyReviewResponse:
+            type: object
+            properties:
+                content:
+                    type: string
+        GetMemoInsightRequest:
+            type: object
+            properties:
+                filter:
+                    type: string
+                    description: |-
+                        Optional. Filter to apply to the list results.
+                         Filter is a CEL expression to filter memos.
+                prompt:
+                    type: string
+                    description: Optional. The prompt to use for the insight generation.
+        GetMemoInsightResponse:
+            type: object
+            properties:
+                content:
+                    type: string
         GoogleProtobufAny:
             type: object
             properties:
@@ -2132,20 +2212,21 @@ components:
         InstanceProfile:
             type: object
             properties:
-                owner:
-                    type: string
-                    description: |-
-                        The name of instance owner.
-                         Format: users/{user}
                 version:
                     type: string
                     description: Version is the current version of instance.
-                mode:
-                    type: string
-                    description: Mode is the instance mode (e.g. "prod", "dev" or "demo").
+                demo:
+                    type: boolean
+                    description: Demo indicates if the instance is in demo mode.
                 instanceUrl:
                     type: string
                     description: Instance URL is the URL of the instance.
+                admin:
+                    allOf:
+                        - $ref: '#/components/schemas/User'
+                    description: |-
+                        The first administrator who set up this instance.
+                         When null, instance requires initial setup (creating the first admin account).
             description: Instance profile message containing basic instance information.
         InstanceSetting:
             type: object
@@ -2161,6 +2242,8 @@ components:
                     $ref: '#/components/schemas/InstanceSetting_StorageSetting'
                 memoRelatedSetting:
                     $ref: '#/components/schemas/InstanceSetting_MemoRelatedSetting'
+                openaiSetting:
+                    $ref: '#/components/schemas/InstanceSetting_OpenAISetting'
             description: An instance setting resource.
         InstanceSetting_GeneralSetting:
             type: object
@@ -2217,6 +2300,16 @@ components:
                         type: string
                     description: reactions is the list of reactions.
             description: Memo-related instance settings and policies.
+        InstanceSetting_OpenAISetting:
+            type: object
+            properties:
+                apiKey:
+                    type: string
+                baseUrl:
+                    type: string
+                model:
+                    type: string
+            description: OpenAI related instance settings.
         InstanceSetting_StorageSetting:
             type: object
             properties:
@@ -2470,14 +2563,16 @@ components:
                         The name of the creator.
                          Format: users/{user}
                 createTime:
-                    readOnly: true
                     type: string
-                    description: Output only. The creation timestamp.
+                    description: |-
+                        The creation timestamp.
+                         If not set on creation, the server will set it to the current time.
                     format: date-time
                 updateTime:
-                    readOnly: true
                     type: string
-                    description: Output only. The last update timestamp.
+                    description: |-
+                        The last update timestamp.
+                         If not set on creation, the server will set it to the current time.
                     format: date-time
                 displayTime:
                     type: string
@@ -2857,7 +2952,6 @@ components:
                 role:
                     enum:
                         - ROLE_UNSPECIFIED
-                        - HOST
                         - ADMIN
                         - USER
                     type: string
@@ -2969,6 +3063,9 @@ components:
                         The preferred theme of the user.
                          This references a CSS file in the web/public/themes/ directory.
                          If not set, the default theme will be used.
+                memoInsightPrompt:
+                    type: string
+                    description: The default prompt for memo insights.
             description: General user settings configuration.
         UserSetting_WebhooksSetting:
             type: object
