@@ -5,7 +5,7 @@
   Created by Mudkip on 2023/2/11.
 */
 
-"moe-memos" = "Moe Memos";
+"moe-memos" = "iMemos";
 
 "memo.archive" = "アーカイブ";
 "memo.archived" = "アーカイブ済み";
@@ -26,6 +26,7 @@
 
 "settings" = "設定";
 "settings.about" = "Moe Memos について";
+"settings.check-update" = "アップデートを確認";
 "settings.privacy" = "プライバシー ポリシー";
 "settings.report" = "問題の報告";
 "settings.sign-out" = "サインアウト";

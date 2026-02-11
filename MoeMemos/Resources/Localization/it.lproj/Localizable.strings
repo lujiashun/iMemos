@@ -5,7 +5,7 @@
   Created by Tombat on 2023/12/14.
 */
  
-"moe-memos" = "Moe Memos";
+"moe-memos" = "iMemos";
  
 "memo.archive" = "Archivia";
 "memo.archived" = "Archiviate";
@@ -26,6 +26,7 @@
  
 "settings" = "Impostazioni";
 "settings.about" = "A proposito di Moe Memos";
+"settings.check-update" = "Check for Updates";
 "settings.privacy" = "Politiche di Privacy";
 "settings.report" = "Segnala un problema";
 "settings.sign-out" = "Disconnetti";

@@ -5,7 +5,7 @@
   Created by Mudkip on 2023/2/11.
 */
 
-"moe-memos" = "Moe Memos";
+"moe-memos" = "iMemos";
 
 "memo.archive" = "归档";
 "memo.archived" = "归档";
@@ -26,6 +26,7 @@
 
 "settings" = "设置";
 "settings.about" = "关于 Moe Memos";
+"settings.check-update" = "检查更新";
 "settings.privacy" = "隐私政策";
 "settings.report" = "反馈 Bug";
 "settings.sign-out" = "退出登录";

@@ -5,7 +5,7 @@
   Created by Ghost108 on 2023/8/7.
 */
 
-"moe-memos" = "Moe Memos";
+"moe-memos" = "iMemos";
 
 "memo.archive" = "Archiv";
 "memo.archived" = "Archiviert";
@@ -26,6 +26,7 @@
 
 "settings" = "Einstellungen";
 "settings.about" = "Über Moe Memos";
+"settings.check-update" = "Check for Updates";
 "settings.privacy" = "Datenschutzbestimmungen";
 "settings.report" = "Ein Problem melden";
 "settings.sign-out" = "Abmelden";

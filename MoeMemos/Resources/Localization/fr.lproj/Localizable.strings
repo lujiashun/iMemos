@@ -5,7 +5,7 @@
   Created by Ezmana on 2023/12/06.
 */
 
-"moe-memos" = "Moe Memos";
+"moe-memos" = "iMemos";
 
 "memo.archive" = "Archiver";
 "memo.archived" = "Archivés";
@@ -26,6 +26,7 @@
 
 "settings" = "Paramètres";
 "settings.about" = "À propos de Moe Memos";
+"settings.check-update" = "Check for Updates";
 "settings.privacy" = "Politique de confidentialité";
 "settings.report" = "Signaler un problème";
 "settings.sign-out" = "Se déconnecter";
