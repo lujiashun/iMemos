@@ -24,6 +24,7 @@ struct MemoCardImageView: View {
     @State private var imagePreviewURL: URL?
     @Environment(AccountManager.self) private var memosManager: AccountManager
     @State private var downloads = [URL: URL]()
+    @State private var failures = Set<URL>()
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     @ViewBuilder
@@ -38,6 +39,13 @@ struct MemoCardImageView: View {
             } placeholder: {
                 ProgressView()
             }
+        } else if failures.contains(url) {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.secondary.opacity(0.15))
+                .overlay {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(.secondary)
+                }
         } else {
             ProgressView()
                 .task {
@@ -45,7 +53,9 @@ struct MemoCardImageView: View {
                         if downloads[url] == nil, let memos = memosManager.currentService {
                             downloads[url] = try await memos.download(url: url, mimeType: mimeType)
                         }
-                    } catch {}
+                    } catch {
+                        failures.insert(url)
+                    }
                 }
         }
     }

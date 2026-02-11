@@ -23,6 +23,8 @@ struct ResourceCard: View {
     @Environment(AccountManager.self) private var memosManager: AccountManager
     @State private var imagePreviewURL: URL?
     @State private var downloadedURL: URL?
+    @State private var isDownloading = false
+    @State private var downloadFailed = false
     
     var body: some View {
         Color.clear
@@ -39,6 +41,17 @@ struct ResourceCard: View {
                     .onTapGesture {
                         imagePreviewURL = downloadedURL
                     }
+                } else if isDownloading {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.secondary.opacity(0.15))
+                        .overlay { ProgressView() }
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.secondary.opacity(0.15))
+                        .overlay {
+                            Image(systemName: downloadFailed ? "exclamationmark.triangle" : "photo")
+                                .foregroundStyle(.secondary)
+                        }
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -48,9 +61,14 @@ struct ResourceCard: View {
             .task {
                 do {
                     if downloadedURL == nil, let memos = memosManager.currentService {
+                        isDownloading = true
+                        downloadFailed = false
                         downloadedURL = try await memos.download(url: resource.url, mimeType: resource.mimeType)
                     }
-                } catch {}
+                } catch {
+                    downloadFailed = true
+                }
+                isDownloading = false
             }
             .fullScreenCover(item: $imagePreviewURL) { url in
                 QuickLookPreview(selectedURL: url, urls: [url])
