@@ -14,6 +14,7 @@ struct MemosList: View {
     let tag: Tag?
 
     @State private var searchString = ""
+    @State private var isSearchPresented = false
     @Environment(AppPath.self) private var appPath
     @Environment(AccountManager.self) private var accountManager: AccountManager
     @Environment(AccountViewModel.self) var userState: AccountViewModel
@@ -25,7 +26,7 @@ struct MemosList: View {
         let defaultMemoVisibility = userState.currentUser?.defaultVisibility ?? .private
         let selectedDay = appPath.selectedMemoDay
         
-        ZStack(alignment: .bottomTrailing) {
+        ZStack(alignment: .bottom) {
             List(filteredMemoList, id: \.remoteId) { memo in
                 Section {
                     MemoCard(memo, defaultMemoVisibility: defaultMemoVisibility)
@@ -46,24 +47,18 @@ struct MemosList: View {
                     .shadow(radius: 1)
                     .frame(width: 60, height: 60)
                 }
-                .padding(20)
+                .padding(.bottom, 20)
             }
         }
         .toolbar {
-            if #available(iOS 26.0, *) {
-                DefaultToolbarItem(kind: .search, placement: .bottomBar)
-                ToolbarSpacer(.flexible, placement: .bottomBar)
-                ToolbarItem(placement: .bottomBar) {
-                    Button {
-                        appPath.presentedSheet = .newMemo
-                    } label: {
-                        Label("input.save", systemImage: "plus")
-                    }
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Button {
+                    isSearchPresented = true
+                } label: {
+                    Image(systemName: "magnifyingglass")
                 }
-            }
 
-            if selectedDay != nil {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                if selectedDay != nil {
                     Button {
                         appPath.selectedMemoDay = nil
                     } label: {
@@ -72,13 +67,25 @@ struct MemosList: View {
                     .accessibilityLabel(Text("Clear date filter"))
                 }
             }
+
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.flexible, placement: .bottomBar)
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        appPath.presentedSheet = .newMemo
+                    } label: {
+                        Label("input.save", systemImage: "plus")
+                    }
+                }
+                ToolbarSpacer(.flexible, placement: .bottomBar)
+            }
         }
         .overlay(content: {
             if memosViewModel.loading && !memosViewModel.inited {
                 ProgressView()
             }
         })
-        .searchable(text: $searchString)
+        .searchable(text: $searchString, isPresented: $isSearchPresented, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("搜索"))
         .navigationTitle(tag?.name ?? NSLocalizedString("memo.memos", comment: "Memos"))
         .onAppear {
             filteredMemoList = filterMemoList(memosViewModel.memoList, tag: tag, searchString: searchString, day: selectedDay)
