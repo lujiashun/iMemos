@@ -13,6 +13,7 @@ import Env
 public struct MemosAccountView: View {
     @State var user: User? = nil
     @State var version: MemosVersion? = nil
+    @State private var didLoadUser = false
     @State private var isLoggingOut = false
     @State private var imageStorageUsedBytes: Int? = nil
     @State private var showingDeleteConfirm = false
@@ -47,6 +48,13 @@ public struct MemosAccountView: View {
         let usedText = formatter.string(fromByteCount: Int64(used))
         let maxText = "—"
         return "\(usedText) / \(maxText)"
+    }
+
+    private var displayNickname: String? {
+        if isCurrentAccount {
+            return accountViewModel.currentUser?.nickname
+        }
+        return user?.nickname
     }
     
     public init(accountKey: String) {
@@ -116,20 +124,27 @@ public struct MemosAccountView: View {
     public var body: some View {
         List {
             Section("account.section.basic-info") {
-                if let user {
-                    NavigationLink {
-                        EditNicknameView(currentNickname: user.nickname)
-                    } label: {
-                        HStack {
-                            Text("account.nickname")
-                            Spacer()
-                            Text(user.nickname)
+                NavigationLink {
+                    EditNicknameView(currentNickname: displayNickname ?? "")
+                } label: {
+                    HStack {
+                        Text("account.nickname")
+                        Spacer()
+                        if let nickname = displayNickname {
+                            Text(nickname)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
+                        } else {
+                            if !didLoadUser && !isCurrentAccount {
+                                ProgressView()
+                            } else {
+                                Text("—")
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
-                    .disabled(!isCurrentAccount)
                 }
+                .disabled(!isCurrentAccount)
 
                 HStack {
                     Text("account.storage")
@@ -189,7 +204,7 @@ public struct MemosAccountView: View {
                 }
             }
 
-            Section("account.section.delete-account") {
+            Section("account.section.sign-out") {
                 Button(role: .destructive) {
                     showingDeleteConfirm = true
                 } label: {
@@ -229,8 +244,12 @@ public struct MemosAccountView: View {
         }
         .navigationTitle("account.account-detail")
         .task {
-            guard let account = account else { return }
+            guard let account = account else {
+                didLoadUser = true
+                return
+            }
             user = try? await account.remoteService()?.getCurrentUser()
+            didLoadUser = true
         }
         .task {
             guard let account = account else { return }
