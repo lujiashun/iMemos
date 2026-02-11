@@ -23,6 +23,9 @@ struct TextView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UITextView, context: Context) {
+        context.coordinator.isUpdatingView = true
+        defer { context.coordinator.isUpdatingView = false }
+
         if text != uiView.text {
             uiView.text = text
         }
@@ -42,17 +45,20 @@ struct TextView: UIViewRepresentable {
     @MainActor
     class Coordinator: NSObject, UITextViewDelegate {
         let parent: TextView
+        var isUpdatingView = false
         
         init(_ parent: TextView) {
             self.parent = parent
         }
         
         func textViewDidChange(_ textView: UITextView) {
+            guard !isUpdatingView else { return }
             parent._text.wrappedValue = textView.text
             parent._selection.wrappedValue = Range(textView.selectedRange, in: textView.text)
         }
         
         func textViewDidChangeSelection(_ textView: UITextView) {
+            guard !isUpdatingView else { return }
             parent._text.wrappedValue = textView.text
             parent._selection.wrappedValue = Range(textView.selectedRange, in: textView.text)
         }

@@ -83,8 +83,14 @@ struct Stats: View {
     }
     
     func days() -> Int {
-        guard let user = userState.currentUser else { return 0 }
-        return Calendar.current.dateComponents([.day], from: user.creationDate, to: .now).day!
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+
+        let activeDays = Set(memosViewModel.memoList.map { memo in
+            calendar.startOfDay(for: memo.createdAt)
+        })
+
+        return activeDays.count
     }
 }
 
