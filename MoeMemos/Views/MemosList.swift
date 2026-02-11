@@ -9,6 +9,21 @@ import SwiftUI
 import Account
 import Models
 import Env
+import DesignSystem
+import ServiceUtils
+
+#if DEBUG
+import OSLog
+
+fileprivate let audioMemoLogger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? "MoeMemos",
+    category: "AudioMemo"
+)
+#endif
+
+#if canImport(AVFoundation)
+import AVFoundation
+#endif
 
 struct MemosList: View {
     let tag: Tag?
@@ -20,6 +35,12 @@ struct MemosList: View {
     @Environment(AccountViewModel.self) var userState: AccountViewModel
     @Environment(MemosViewModel.self) private var memosViewModel: MemosViewModel
     @State private var filteredMemoList: [Memo] = []
+
+    @State private var audioRecorder = AudioMemoRecorder()
+    @State private var isRecordingAudio = false
+    @State private var isProcessingAudio = false
+    @State private var audioActionError: Error?
+    @State private var showingAudioErrorToast = false
     
     var body: some View {
         @Bindable var appPath = appPath
@@ -35,19 +56,16 @@ struct MemosList: View {
             .listStyle(InsetGroupedListStyle())
             
             if #unavailable(iOS 26.0) {
-                Button {
-                    appPath.presentedSheet = .newMemo
-                } label: {
-                    Circle().overlay {
-                        Image(systemName: "plus")
-                            .resizable()
-                            .frame(width: 25, height: 25)
-                            .foregroundColor(.white)
-                    }
-                    .shadow(radius: 1)
-                    .frame(width: 60, height: 60)
-                }
+                addMemoButton(style: .floatingCircle)
                 .padding(.bottom, 20)
+            }
+
+            if isRecordingAudio {
+                recordingHUD
+                    .padding(.bottom, 100)
+            } else if isProcessingAudio {
+                processingHUD
+                    .padding(.bottom, 100)
             }
         }
         .toolbar {
@@ -71,11 +89,7 @@ struct MemosList: View {
             if #available(iOS 26.0, *) {
                 ToolbarSpacer(.flexible, placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {
-                    Button {
-                        appPath.presentedSheet = .newMemo
-                    } label: {
-                        Label("input.save", systemImage: "plus")
-                    }
+                    addMemoButton(style: .bottomBar)
                 }
                 ToolbarSpacer(.flexible, placement: .bottomBar)
             }
@@ -116,6 +130,191 @@ struct MemosList: View {
                 }
             }
         }
+        .toast(isPresenting: $showingAudioErrorToast, duration: 2, alertType: .systemImage("xmark.circle", audioActionError.map(userFacingErrorMessage)))
+    }
+
+    private enum AddMemoButtonStyle {
+        case floatingCircle
+        case bottomBar
+    }
+
+    @ViewBuilder
+    private func addMemoButton(style: AddMemoButtonStyle) -> some View {
+        let tapAction = {
+            appPath.newMemoPrefillContent = nil
+            appPath.newMemoPrefillResources = []
+            appPath.presentedSheet = .newMemo
+        }
+
+        let longPress = LongPressGesture(minimumDuration: 0.35, maximumDistance: 12)
+            .onEnded { _ in
+                startAudioRecording()
+            }
+
+        let releaseDetector = DragGesture(minimumDistance: 0)
+            .onEnded { _ in
+                if isRecordingAudio {
+                    stopAudioRecordingAndPrepareMemo()
+                }
+            }
+
+        Group {
+            switch style {
+            case .floatingCircle:
+                ZStack {
+                    Circle()
+                        .shadow(radius: 1)
+
+                    Image(systemName: "plus")
+                        .resizable()
+                        .frame(width: 25, height: 25)
+                        .foregroundColor(.white)
+                }
+                .frame(width: 60, height: 60)
+            case .bottomBar:
+                Label("input.save", systemImage: "plus")
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard !isRecordingAudio && !isProcessingAudio else { return }
+            tapAction()
+        }
+        .highPriorityGesture(longPress)
+        .simultaneousGesture(releaseDetector)
+        .accessibilityAddTraits(.isButton)
+    }
+
+    @ViewBuilder
+    private var recordingHUD: some View {
+        HStack(spacing: 10) {
+            Circle()
+                .fill(Color.red)
+                .frame(width: 10, height: 10)
+            Text("录音中…松开结束")
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+        .clipShape(Capsule())
+    }
+
+    @ViewBuilder
+    private var processingHUD: some View {
+        HStack(spacing: 10) {
+            ProgressView()
+            Text("正在处理音频…")
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+        .clipShape(Capsule())
+    }
+
+    private func startAudioRecording() {
+        guard !isRecordingAudio && !isProcessingAudio else { return }
+
+        Task { @MainActor in
+            do {
+                try await audioRecorder.start()
+                isRecordingAudio = true
+                audioActionError = nil
+            } catch {
+                audioActionError = error
+                showingAudioErrorToast = true
+            }
+        }
+    }
+
+    private func stopAudioRecordingAndPrepareMemo() {
+        guard isRecordingAudio && !isProcessingAudio else { return }
+
+        isRecordingAudio = false
+        isProcessingAudio = true
+
+    #if DEBUG
+        let processingStartedAt = CFAbsoluteTimeGetCurrent()
+    #endif
+
+        // Capture actor-isolated values up-front on the MainActor.
+        let fileURL: URL
+        let service: RemoteService
+        do {
+            fileURL = try audioRecorder.stop()
+            service = try accountManager.mustCurrentService
+        } catch {
+#if DEBUG
+            let elapsedMs = (CFAbsoluteTimeGetCurrent() - processingStartedAt) * 1000
+            audioMemoLogger.error("Audio memo: failed before background work (\(elapsedMs, privacy: .public)ms): \(String(describing: error), privacy: .public)")
+#endif
+            audioActionError = error
+            showingAudioErrorToast = true
+            isProcessingAudio = false
+            return
+        }
+
+        Task.detached(priority: .userInitiated) {
+            do {
+#if DEBUG
+                let ioStartedAt = CFAbsoluteTimeGetCurrent()
+#endif
+                // Synchronous file IO can be expensive; keep it off the main thread.
+                let audioData = try Data(contentsOf: fileURL, options: [.mappedIfSafe])
+
+#if DEBUG
+                let ioMs = (CFAbsoluteTimeGetCurrent() - ioStartedAt) * 1000
+                audioMemoLogger.debug("Audio memo: read \(audioData.count, privacy: .public) bytes in \(ioMs, privacy: .public)ms")
+#endif
+
+                async let createdResource: Resource = service.createResource(
+                    filename: fileURL.lastPathComponent,
+                    data: audioData,
+                    type: "audio/mp4",
+                    memoRemoteId: nil
+                )
+
+                async let transcript: String? = {
+                    do {
+                        return try await SpeechTranscriber.transcribeAudioFile(at: fileURL)
+                    } catch {
+                        return nil
+                    }
+                }()
+
+                let resource = try await createdResource
+                let text = await transcript
+
+                await MainActor.run {
+                    if let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        let existing = appPath.newMemoPrefillContent ?? ""
+                        appPath.newMemoPrefillContent = existing.isEmpty ? text : (existing + "\n" + text)
+                    }
+
+                    appPath.newMemoPrefillResources.append(resource)
+                    appPath.presentedSheet = .newMemo
+                    isProcessingAudio = false
+
+#if DEBUG
+                    let totalMs = (CFAbsoluteTimeGetCurrent() - processingStartedAt) * 1000
+                    audioMemoLogger.debug("Audio memo: succeeded in \(totalMs, privacy: .public)ms")
+#endif
+                }
+            } catch {
+                await MainActor.run {
+#if DEBUG
+                    let totalMs = (CFAbsoluteTimeGetCurrent() - processingStartedAt) * 1000
+                    audioMemoLogger.error("Audio memo: failed in \(totalMs, privacy: .public)ms: \(String(describing: error), privacy: .public)")
+#endif
+                    audioActionError = error
+                    showingAudioErrorToast = true
+                    isProcessingAudio = false
+                }
+            }
+        }
     }
     
     private func filterMemoList(_ memoList: [Memo], tag: Tag?, searchString: String, day: Date?) -> [Memo] {
@@ -142,5 +341,130 @@ struct MemosList: View {
         }
         
         return fullList
+    }
+}
+
+// MARK: - Audio record + speech transcription
+
+@MainActor
+fileprivate final class AudioMemoRecorder {
+    enum RecorderError: LocalizedError {
+        case unsupportedPlatform
+        case microphonePermissionDenied
+        case recorderNotPrepared
+        case failedToStartRecording
+
+        var errorDescription: String? {
+            switch self {
+            case .unsupportedPlatform:
+                return "当前平台不支持录音。"
+            case .microphonePermissionDenied:
+                return "未获得麦克风权限，无法录音。"
+            case .recorderNotPrepared:
+                return "录音器未就绪。"
+            case .failedToStartRecording:
+                return "开始录音失败。"
+            }
+        }
+    }
+
+#if os(iOS) || targetEnvironment(macCatalyst)
+    private var recorder: AVAudioRecorder?
+#endif
+    private(set) var currentFileURL: URL?
+
+    var isRecording: Bool {
+#if os(iOS) || targetEnvironment(macCatalyst)
+        recorder?.isRecording == true
+#else
+        false
+#endif
+    }
+
+    func start() async throws {
+#if os(iOS) || targetEnvironment(macCatalyst)
+        let allowed = await requestMicrophonePermission()
+        guard allowed else { throw RecorderError.microphonePermissionDenied }
+
+        try configureAudioSession()
+        let fileURL = try makeRecordingFileURL()
+
+        let settings: [String: Any] = [
+            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+            AVSampleRateKey: 44_100,
+            AVNumberOfChannelsKey: 1,
+            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+        ]
+
+        let recorder = try AVAudioRecorder(url: fileURL, settings: settings)
+        recorder.isMeteringEnabled = true
+        recorder.prepareToRecord()
+
+        self.recorder = recorder
+        self.currentFileURL = fileURL
+
+        guard recorder.record() else {
+            self.recorder = nil
+            self.currentFileURL = nil
+            throw RecorderError.failedToStartRecording
+        }
+#else
+        throw RecorderError.unsupportedPlatform
+#endif
+    }
+
+    func stop() throws -> URL {
+#if os(iOS) || targetEnvironment(macCatalyst)
+        guard let recorder, let url = currentFileURL else {
+            throw RecorderError.recorderNotPrepared
+        }
+
+        recorder.stop()
+        self.recorder = nil
+        self.currentFileURL = nil
+
+        return url
+#else
+        throw RecorderError.unsupportedPlatform
+#endif
+    }
+
+#if os(iOS) || targetEnvironment(macCatalyst)
+    private func requestMicrophonePermission() async -> Bool {
+        await withCheckedContinuation { continuation in
+            if #available(iOS 17.0, *) {
+                AVAudioApplication.requestRecordPermission(completionHandler: { allowed in
+                    continuation.resume(returning: allowed)
+                })
+            } else {
+                AVAudioSession.sharedInstance().requestRecordPermission { allowed in
+                    continuation.resume(returning: allowed)
+                }
+            }
+        }
+    }
+
+    private func configureAudioSession() throws {
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker, .allowBluetoothHFP])
+        try session.setActive(true, options: [])
+    }
+#endif
+
+    private func makeRecordingFileURL() throws -> URL {
+        let fm = FileManager.default
+        let docs = try fm.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        let dir = docs.appendingPathComponent("Recordings", isDirectory: true)
+        if !fm.fileExists(atPath: dir.path) {
+            try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        let name = "memo-audio-\(formatter.string(from: .now)).m4a"
+
+        return dir.appendingPathComponent(name)
     }
 }

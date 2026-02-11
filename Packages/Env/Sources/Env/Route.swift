@@ -41,6 +41,14 @@ public enum SheetDestination: Identifiable, Hashable {
     @MainActor
     public var presentedSheet: SheetDestination?
 
+    // Prefill content/resources for the next new memo sheet.
+    // This is consumed by `MemoInput` when `memo == nil`.
+    @MainActor
+    public var newMemoPrefillContent: String?
+
+    @MainActor
+    public var newMemoPrefillResources: [Resource] = []
+
     // When set, the memos list should filter to this day.
     @MainActor
     public var selectedMemoDay: Date?

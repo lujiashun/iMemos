@@ -9,12 +9,14 @@ import SwiftUI
 import PhotosUI
 import Models
 import Account
+import Env
 
 @MainActor
 struct MemoInput: View {
     let memo: Memo?
     @Environment(MemosViewModel.self) private var memosViewModel: MemosViewModel
     @Environment(AccountViewModel.self) var userState: AccountViewModel
+    @Environment(AppPath.self) private var appPath
     @State private var viewModel = MemoInputViewModel()
 
     @State private var text = ""
@@ -115,11 +117,20 @@ struct MemoInput: View {
                 text = memo.content
                 viewModel.visibility = memo.visibility
             } else {
-                text = draft
+                if let prefill = appPath.newMemoPrefillContent {
+                    text = prefill
+                    draft = ""
+                    appPath.newMemoPrefillContent = nil
+                } else {
+                    text = draft
+                }
                 viewModel.visibility = userState.currentUser?.defaultVisibility ?? .private
             }
             if let resourceList = memo?.resources {
                 viewModel.resourceList = resourceList
+            } else if !appPath.newMemoPrefillResources.isEmpty {
+                viewModel.resourceList = appPath.newMemoPrefillResources
+                appPath.newMemoPrefillResources = []
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
                 focused = true
