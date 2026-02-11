@@ -22,19 +22,41 @@ import ServiceUtils
 public final class MemosV1Service: RemoteService {
     private let hostURL: URL
     private let urlSession: URLSession
+    private let urlSessionDelegate: (any URLSessionDelegate)?
     private var client: Client
     private let username: String?
     private let password: String?
     private let userId: String?
     private let grpcSetCookieMiddleware = GRPCSetCookieMiddleware()
     private var accessToken: String?
+
+    private func cookieHeaderValue(from setCookieHeaderValue: String) -> String {
+        // Request header expects: "name=value" (not the full Set-Cookie attributes).
+        return setCookieHeaderValue.split(separator: ";", maxSplits: 1, omittingEmptySubsequences: true).first.map(String.init) ?? setCookieHeaderValue
+    }
     
-    public nonisolated init(hostURL: URL, username: String?, password: String?, userId: String?) {
+    public nonisolated init(hostURL: URL, username: String?, password: String?, userId: String?, allowInsecureTLS: Bool = false) {
         self.hostURL = hostURL
         self.username = username
         self.password = password
         self.userId = userId
+
+#if DEBUG
+        let wantsInsecureTLS = allowInsecureTLS || UserDefaults.standard.bool(forKey: "allowInsecureTLS")
+        if wantsInsecureTLS, let host = hostURL.host {
+            let delegate = InsecureTLSURLSessionDelegate(allowedHosts: [host])
+            urlSessionDelegate = delegate
+            urlSession = URLSession(configuration: URLSessionConfiguration.default, delegate: delegate, delegateQueue: nil)
+            print("[MemosV1Service] insecure TLS enabled for host:\(host)")
+        } else {
+            urlSessionDelegate = nil
+            urlSession = URLSession(configuration: URLSessionConfiguration.default)
+        }
+#else
+        urlSessionDelegate = nil
         urlSession = URLSession(configuration: URLSessionConfiguration.default)
+#endif
+
         client = Client(
             serverURL: hostURL,
             transport: URLSessionTransport(configuration: .init(session: urlSession)),
@@ -338,11 +360,50 @@ public final class MemosV1Service: RemoteService {
     }
     
     public func download(url: URL, mimeType: String? = nil) async throws -> URL {
-        return try await ServiceUtils.download(urlSession: urlSession, url: url, mimeType: mimeType, middleware: rawBasicAuthMiddlware(hostURL: hostURL, username: username, password: password))
+        try await signInIfNeeded()
+        let token = accessToken
+        let setCookieHeaderValue = await grpcSetCookieMiddleware.setCookieHeaderValue
+        let cookie = setCookieHeaderValue.map(cookieHeaderValue(from:))
+        return try await ServiceUtils.download(
+            urlSession: urlSession,
+            url: url,
+            mimeType: mimeType,
+            middleware: { request in
+                var request = request
+                if request.url?.host == self.hostURL.host {
+                    if let token, !token.isEmpty {
+                        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    }
+                    if let cookie, !cookie.isEmpty {
+                        request.setValue(cookie, forHTTPHeaderField: "Cookie")
+                    }
+                }
+                return request
+            }
+        )
     }
     
     func downloadData(url: URL) async throws -> Data {
-        return try await ServiceUtils.downloadData(urlSession: urlSession, url: url, middleware: rawBasicAuthMiddlware(hostURL: hostURL, username: username, password: password))
+        try await signInIfNeeded()
+        let token = accessToken
+        let setCookieHeaderValue = await grpcSetCookieMiddleware.setCookieHeaderValue
+        let cookie = setCookieHeaderValue.map(cookieHeaderValue(from:))
+        return try await ServiceUtils.downloadData(
+            urlSession: urlSession,
+            url: url,
+            middleware: { request in
+                var request = request
+                if request.url?.host == self.hostURL.host {
+                    if let token, !token.isEmpty {
+                        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    }
+                    if let cookie, !cookie.isEmpty {
+                        request.setValue(cookie, forHTTPHeaderField: "Cookie")
+                    }
+                }
+                return request
+            }
+        )
     }
     
     private func getName(remoteId: String) -> String {

@@ -9,11 +9,12 @@ import SwiftUI
 // ...existing code...
 import Models
 import MemosV0Service
+import ServiceUtils
 import DesignSystem
 
 @MainActor
 public struct AddMemosAccountView: View {
-    @State private var host = "demo.usememos.com"
+    @State private var host = "memos.yingshun.xin"
     @State private var username = ""
     @State private var password = ""
     @State private var showingRegister = false
@@ -24,6 +25,10 @@ public struct AddMemosAccountView: View {
     @State private var showingErrorToast = false
     @State private var showLoadingToast = false
     @State private var agreedToTerms = false
+
+#if DEBUG
+    @AppStorage("allowInsecureTLS") private var allowInsecureTLS = false
+#endif
     public init() {}
     
     public var body: some View {
@@ -56,7 +61,7 @@ public struct AddMemosAccountView: View {
             .padding(.bottom, 20)
             .offset(y: -120)
             
-            // Host is fixed to demo.usememos.com
+            // Host is fixed to yingshun.xin for now, as memo v1 registration is only supported on yingshun.xin
             
             TextField("login.user", text: $username)
                 .textFieldStyle(.roundedBorder)
@@ -64,6 +69,13 @@ public struct AddMemosAccountView: View {
             SecureField("login.passwd", text: $password)
                 .textFieldStyle(.roundedBorder)
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+#if DEBUG
+            Toggle("允许不安全证书（仅调试）", isOn: $allowInsecureTLS)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .padding(.top, 8)
+#endif
             
             Button {
                 Task {
@@ -130,7 +142,7 @@ public struct AddMemosAccountView: View {
                 RegisterMemosAccountView()
             }
         }
-        .toast(isPresenting: $showingErrorToast, duration: 1.5, alertType: .systemImage("xmark.circle", loginError?.localizedDescription))
+        .toast(isPresenting: $showingErrorToast, duration: 1.5, alertType: .systemImage("xmark.circle", loginError.map(userFacingErrorMessage)))
         .toast(isPresenting: $showLoadingToast, alertType: .loading)
         .navigationTitle("account.add-memos-account")
         .navigationBarTitleDisplayMode(.inline)
