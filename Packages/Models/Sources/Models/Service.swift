@@ -11,8 +11,11 @@ import Foundation
 public protocol RemoteService: Sendable {
     func memoVisibilities() -> [MemoVisibility]
     func listMemos() async throws -> [Memo]
+    func listMemos(filter: String?, orderBy: String?) async throws -> [Memo]
     func listArchivedMemos() async throws -> [Memo]
     func listWorkspaceMemos(pageSize: Int, pageToken: String?) async throws -> (list: [Memo], nextPageToken: String?)
+    func getDailyReview(date: Date, timezone: TimeZone) async throws -> String
+    func getMemoInsight(filter: String?, prompt: String?) async throws -> String
     func createMemo(content: String, visibility: MemoVisibility?, resources: [Resource], tags: [String]?) async throws -> Memo
     func updateMemo(remoteId: String, content: String?, resources: [Resource]?, visibility: MemoVisibility?, tags: [String]?, pinned: Bool?) async throws -> Memo
     func deleteMemo(remoteId: String) async throws
@@ -24,4 +27,10 @@ public protocol RemoteService: Sendable {
     func deleteResource(remoteId: String) async throws
     func getCurrentUser() async throws -> User
     func download(url: URL, mimeType: String?) async throws -> URL
+}
+
+public extension RemoteService {
+    func listMemos(filter: String? = nil, orderBy: String? = nil) async throws -> [Memo] {
+        try await listMemos()
+    }
 }

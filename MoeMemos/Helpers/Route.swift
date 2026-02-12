@@ -101,6 +101,12 @@ extension Route {
         case .memos:
             MemosList(tag: nil)
                 .withTopToolbar()
+        case .dailyReview:
+            DailyReview()
+                .withTopToolbar()
+        case .memoInsight:
+            MemoInsight()
+                .withTopToolbar()
         case .resources:
             Resources()
                 .withTopToolbar()

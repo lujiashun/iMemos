@@ -43,6 +43,11 @@ public final class MemosV0Service: RemoteService {
         let memos = try resp.ok.body.json
         return memos.map { $0.toMemo(host: hostURL) }
     }
+
+    public func listMemos(filter: String?, orderBy: String?) async throws -> [Memo] {
+        // v0 API does not support v1 CEL filters/orderBy. Fallback to full list.
+        return try await listMemos()
+    }
     
     public func listArchivedMemos() async throws -> [Memo] {
         let resp = try await client.listMemos(query: .init(rowStatus: .ARCHIVED))
@@ -58,6 +63,14 @@ public final class MemosV0Service: RemoteService {
         let resp = try await client.listPublicMemos(query: .init(limit: pageSize, offset: offset))
         let memos = try resp.ok.body.json
         return (memos.map { $0.toMemo(host: hostURL) }, String(offset + pageSize))
+    }
+
+    public func getDailyReview(date: Date, timezone: TimeZone) async throws -> String {
+        throw MoeMemosError.unsupportedVersion
+    }
+
+    public func getMemoInsight(filter: String?, prompt: String?) async throws -> String {
+        throw MoeMemosError.unsupportedVersion
     }
     
     public func createMemo(content: String, visibility: MemoVisibility?, resources: [Resource], tags: [String]?) async throws -> Memo {

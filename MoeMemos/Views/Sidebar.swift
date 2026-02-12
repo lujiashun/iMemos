@@ -48,6 +48,12 @@ struct Sidebar: View {
                 SidebarLink(value: Route.memos) {
                     Label("memo.memos", systemImage: "rectangle.grid.1x2")
                 }
+                SidebarLink(value: Route.dailyReview) {
+                    Label("memo.daily-review", systemImage: "calendar")
+                }
+                SidebarLink(value: Route.memoInsight) {
+                    Label("memo.deep-insight", systemImage: "lightbulb")
+                }
                 SidebarLink(value: Route.resources) {
                     Label("resources", systemImage: "photo.on.rectangle")
                 }

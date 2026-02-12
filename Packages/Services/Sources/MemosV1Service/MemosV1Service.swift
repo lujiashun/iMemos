@@ -162,6 +162,37 @@ public final class MemosV1Service: RemoteService {
         
         return memos
     }
+
+    public func listMemos(filter: String?, orderBy: String?) async throws -> [Memo] {
+        try await signInIfNeeded()
+        guard let userId = userId else { throw MoeMemosError.notLogin }
+
+        var memos = [Memo]()
+        var nextPageToken: String? = nil
+
+        let baseFilter = "creator_id == \(userId)"
+        let fullFilter: String
+        if let filter, !filter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            fullFilter = "\(baseFilter) && (\(filter))"
+        } else {
+            fullFilter = baseFilter
+        }
+
+        repeat {
+            let resp = try await client.MemoService_ListMemos(query: .init(
+                pageSize: 200,
+                pageToken: nextPageToken,
+                state: .NORMAL,
+                orderBy: orderBy,
+                filter: fullFilter
+            ))
+            let data = try resp.ok.body.json
+            memos += data.memos?.map { $0.toMemo(host: hostURL) } ?? []
+            nextPageToken = data.nextPageToken
+        } while (nextPageToken?.isEmpty == false)
+
+        return memos
+    }
     
     public func listArchivedMemos() async throws -> [Memo] {
         try await signInIfNeeded()
@@ -184,6 +215,67 @@ public final class MemosV1Service: RemoteService {
         let resp = try await client.MemoService_ListMemos(query: .init(pageSize: 200, pageToken: pageToken))
         let data = try resp.ok.body.json
         return (data.memos?.map { $0.toMemo(host: hostURL) } ?? [], data.nextPageToken)
+    }
+
+    public func getDailyReview(date: Date, timezone: TimeZone) async throws -> String {
+        try await signInIfNeeded()
+
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = timezone
+        formatter.dateFormat = "yyyy-MM-dd"
+
+        let req = Components.Schemas.GetDailyReviewRequest(
+            date: formatter.string(from: date),
+            timezone: timezone.identifier
+        )
+        let resp = try await client.MemoService_GetDailyReview(body: .json(req))
+        switch resp {
+        case .ok(let okResponse):
+            let data = try okResponse.body.json
+            return data.content ?? ""
+        case .default(let statusCode, let defaultResponse):
+            switch defaultResponse.body {
+            case .json(let status):
+                throw MoeMemosError.invalidStatusCode(statusCode, Self.formatStatusMessage(status, statusCode: statusCode))
+            }
+        }
+    }
+
+    public func getMemoInsight(filter: String?, prompt: String?) async throws -> String {
+        try await signInIfNeeded()
+
+        let req = Components.Schemas.GetMemoInsightRequest(
+            filter: filter,
+            prompt: prompt
+        )
+        let resp = try await client.MemoService_GetMemoInsight(body: .json(req))
+        switch resp {
+        case .ok(let okResponse):
+            let data = try okResponse.body.json
+            return data.content ?? ""
+        case .default(let statusCode, let defaultResponse):
+            switch defaultResponse.body {
+            case .json(let status):
+                throw MoeMemosError.invalidStatusCode(statusCode, Self.formatStatusMessage(status, statusCode: statusCode))
+            }
+        }
+    }
+
+    private static func formatStatusMessage(_ status: Components.Schemas.Status, statusCode: Int) -> String? {
+        var pieces: [String] = []
+        if let message = status.message?.trimmingCharacters(in: .whitespacesAndNewlines), !message.isEmpty {
+            pieces.append(message)
+        }
+        if let code = status.code {
+            pieces.append("code: \(code)")
+        }
+
+        if pieces.isEmpty {
+            return "Request failed (HTTP \(statusCode))."
+        }
+        return "\(pieces.joined(separator: " - ")) (HTTP \(statusCode))"
     }
     
     public func createMemo(content: String, visibility: MemoVisibility?, resources: [Resource], tags: [String]?) async throws -> Memo {

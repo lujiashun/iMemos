@@ -98,6 +98,8 @@
 		19F31BF728C3E26D000C5207 /* MemosList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19F31BF628C3E26D000C5207 /* MemosList.swift */; };
 		19F31BFB28C3E9B2000C5207 /* Memo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19F31BFA28C3E9B2000C5207 /* Memo.swift */; };
 		19F31BFD28C3ED11000C5207 /* MemoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19F31BFC28C3ED11000C5207 /* MemoCard.swift */; };
+		1A8F3F5E30A1B2C300D4E5F6 /* DailyReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A8F3F5D30A1B2C300D4E5F6 /* DailyReview.swift */; };
+		1AD6B0E631E0BEEF00C0FF01 /* MemoInsight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD6B0E531E0BEEF00C0FF01 /* MemoInsight.swift */; };
 		19F81CDE2CEDA6DB00728439 /* AppOpenIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19F81CDD2CEDA6D500728439 /* AppOpenIntent.swift */; };
 		19F81CE02CEDAE2800728439 /* QuickMemoWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19F81CDF2CEDAE2300728439 /* QuickMemoWidget.swift */; };
 		19F81CE12CEDAF2400728439 /* AppOpenIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19F81CDD2CEDA6D500728439 /* AppOpenIntent.swift */; };
@@ -222,6 +224,8 @@
 		19E29A772938FCE000BE9C32 /* MoeMemosShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoeMemosShareView.swift; sourceTree = "<group>"; };
 		19E6EF1E29113EC900C998F5 /* MemoInputViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoInputViewModel.swift; sourceTree = "<group>"; };
 		19F31BF628C3E26D000C5207 /* MemosList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemosList.swift; sourceTree = "<group>"; };
+		1A8F3F5D30A1B2C300D4E5F6 /* DailyReview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyReview.swift; sourceTree = "<group>"; };
+		1AD6B0E531E0BEEF00C0FF01 /* MemoInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoInsight.swift; sourceTree = "<group>"; };
 		19F31BFA28C3E9B2000C5207 /* Memo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Memo.swift; sourceTree = "<group>"; };
 		19F31BFC28C3ED11000C5207 /* MemoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoCard.swift; sourceTree = "<group>"; };
 		19F81CDD2CEDA6D500728439 /* AppOpenIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppOpenIntent.swift; sourceTree = "<group>"; };
@@ -440,6 +444,8 @@
 				192DF0F228C78BAD0077E785 /* ArchivedMemosList.swift */,
 				1934C77B2921670600A169EC /* Attachment.swift */,
 				194B273228C3973400A48675 /* ContentView.swift */,
+				1A8F3F5D30A1B2C300D4E5F6 /* DailyReview.swift */,
+				1AD6B0E531E0BEEF00C0FF01 /* MemoInsight.swift */,
 				1919FBE829CF78BE00FEF570 /* Explore.swift */,
 				1919FBE629CF77C900FEF570 /* ExploreMemoCard.swift */,
 				1995E9CD28C46DC9004F2EDB /* Heatmap.swift */,
@@ -670,6 +676,8 @@
 				31EE785629B83D1B005F62D0 /* LazyImageProvider.swift in Sources */,
 				19C569AC29125C0700745F9D /* ResourceListViewModel.swift in Sources */,
 				19F31BF728C3E26D000C5207 /* MemosList.swift in Sources */,
+				1A8F3F5E30A1B2C300D4E5F6 /* DailyReview.swift in Sources */,
+				1AD6B0E631E0BEEF00C0FF01 /* MemoInsight.swift in Sources */,
 				19C997622CF35D49009763C5 /* MemoryUpdatePeriodAppEnum.swift in Sources */,
 				19C997632CF35D49009763C5 /* MemoryWidgetConfiguration.swift in Sources */,
 				19C997642CF35D49009763C5 /* MemosGraphWidgetConfiguration.swift in Sources */,

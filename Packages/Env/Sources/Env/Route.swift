@@ -12,6 +12,8 @@ import Factory
 
 public enum Route: Hashable {
     case memos
+    case dailyReview
+    case memoInsight
     case resources
     case archived
     case tag(Tag)
