@@ -20,7 +20,7 @@
 "memo.daily-review.empty" = "No content.";
 "memo.deep-insight" = "Deep Insight";
 "memo.deep-insight.generate" = "Generate";
-"memo.deep-insight.range" = "Range";
+"memo.deep-insight.range" = "Insight Range";
 "memo.deep-insight.range.from" = "From";
 "memo.deep-insight.range.to" = "To";
 "memo.deep-insight.range.preset" = "Preset";

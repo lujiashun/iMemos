@@ -200,12 +200,83 @@ struct MemoInsight: View {
     @State private var promptExpanded = false
 
     @State private var showingError = false
+    @State private var showingDateRangeSheet = false
+    @State private var showingResultSheet = false
+    
+    // For MultiDatePicker range logic
+    @State private var dateSelection: Set<DateComponents> = []
+    @State private var rangeAnchor: Date? = nil
+    @State private var isProgrammaticUpdate = false
 
     var body: some View {
-        let content = viewModel.content
+        mainList
+            .sheet(isPresented: $showingDateRangeSheet) {
+                dateRangeSheet
+                    .environment(\.locale, locale)
+            }
+            .sheet(isPresented: $showingResultSheet) {
+                resultSheet
+            }
+            .onAppear {
+                loadPromptForCurrentLocale()
+                applyPreset(rangePreset)
+                Task { try? await memosViewModel.loadTags() }
+            }
+            .onChange(of: rangePreset) { _, newValue in
+                applyPreset(newValue)
+                if newValue == .custom {
+                    showingDateRangeSheet = true
+                }
+            }
+            .onChange(of: showingDateRangeSheet) { _, isShowing in
+                if isShowing {
+                    synchronizeSelectionFromRange()
+                }
+            }
+            .onChange(of: dateSelection) { oldValue, newValue in
+                handleDateSelectionChange(oldValue, newValue)
+            }
+            .onChange(of: locale.identifier) { _, _ in
+                loadPromptForCurrentLocale()
+            }
+            .onChange(of: viewModel.errorMessage) { _, newValue in
+                showingError = (newValue != nil)
+            }
+            .alert("Error", isPresented: $showingError) {
+                Button("OK", role: .cancel) {
+                    viewModel.clearError()
+                }
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
+    }
 
+    private var mainList: some View {
         List {
             Section {
+                if promptExpanded {
+                    VStack(alignment: .leading, spacing: 10) {
+                        TextEditor(text: $prompt)
+                            .font(.footnote)
+                            .frame(minHeight: 140)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.secondary.opacity(0.25))
+                            )
+
+                        HStack {
+                            Spacer()
+                            Button {
+                                savePrompt(prompt)
+                            } label: {
+                                Text("memo.deep-insight.prompt.save")
+                            }
+                            .disabled(prompt == savedPrompt)
+                        }
+                    }
+                    .padding(.top, 6)
+                }
+
                 Picker("memo.deep-insight.range.preset", selection: $rangePreset) {
                     Text("memo.deep-insight.range.preset.today").tag(DateRangePreset.today)
                     Text("memo.deep-insight.range.preset.last7days").tag(DateRangePreset.last7Days)
@@ -214,23 +285,20 @@ struct MemoInsight: View {
                 }
                 .pickerStyle(.segmented)
 
-                HStack {
-                    DatePicker(
-                        "memo.deep-insight.range.from",
-                        selection: $startDay,
-                        displayedComponents: [.date]
-                    )
-                    .datePickerStyle(.compact)
-
-                    Spacer(minLength: 12)
-
-                    DatePicker(
-                        "memo.deep-insight.range.to",
-                        selection: $endDay,
-                        displayedComponents: [.date]
-                    )
-                    .datePickerStyle(.compact)
+                Button {
+                    showingDateRangeSheet = true
+                } label: {
+                    HStack {
+                        Spacer()
+                        if Calendar.current.isDate(startDay, inSameDayAs: endDay) {
+                            Text(startDay, style: .date)
+                        } else {
+                            Text("\(startDay, style: .date) - \(endDay, style: .date)")
+                        }
+                        Spacer()
+                    }
                 }
+                .foregroundStyle(.primary)
 
                 Picker("memo.deep-insight.tag", selection: $selectedTag) {
                     Text("memo.deep-insight.tag.all").tag(String?.none)
@@ -240,104 +308,131 @@ struct MemoInsight: View {
                 }
                 .pickerStyle(.menu)
             } header: {
-                Text("memo.deep-insight.range")
+                HStack {
+                    Text("memo.deep-insight.range")
+                    Spacer()
+                    Button {
+                        withAnimation {
+                            promptExpanded.toggle()
+                        }
+                    } label: {
+                        Text("memo.deep-insight.prompt")
+                            .font(.caption)
+                    }
+                }
             }
 
             Section {
-                DisclosureGroup(
-                    isExpanded: $promptExpanded,
-                    content: {
-                        VStack(alignment: .leading, spacing: 10) {
-                            TextEditor(text: $prompt)
-                                .font(.body)
-                                .frame(minHeight: 140)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.secondary.opacity(0.25))
-                                )
-
-                            HStack {
-                                Spacer()
-                                Button {
-                                    savePrompt(prompt)
-                                } label: {
-                                    Text("memo.deep-insight.prompt.save")
-                                }
-                                .disabled(prompt == savedPrompt)
-                            }
-                        }
-                        .padding(.top, 6)
-                    },
-                    label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("memo.deep-insight.prompt")
-                            if !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                Text(prompt)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(2)
-                            }
+                Button {
+                    Task {
+                        await viewModel.generate(startDay: startDay, endDay: endDay, tag: selectedTag, prompt: prompt)
+                        if viewModel.errorMessage == nil {
+                            showingResultSheet = true
                         }
                     }
-                )
-            }
-
-            Section {
-                if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text("memo.deep-insight.empty")
-                        .foregroundStyle(.secondary)
-                } else {
-                    MarkdownView(content)
+                } label: {
+                    HStack {
+                        Spacer()
+                        if viewModel.loading {
+                            ProgressView()
+                        } else {
+                            Text("memo.deep-insight.generate")
+                                .bold()
+                        }
+                        Spacer()
+                    }
                 }
-            } header: {
-                Text("memo.deep-insight.result")
+                .disabled(viewModel.loading)
             }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("memo.deep-insight")
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    Task { await viewModel.generate(startDay: startDay, endDay: endDay, tag: selectedTag, prompt: prompt) }
-                } label: {
-                    Text("memo.deep-insight.generate")
-                }
-                .disabled(viewModel.loading)
-            }
-
             ToolbarItem(placement: .topBarTrailing) {
                 if viewModel.loading {
                     ProgressView()
                 }
             }
         }
-        .onAppear {
-            loadPromptForCurrentLocale()
-            applyPreset(rangePreset)
-            Task { try? await memosViewModel.loadTags() }
-        }
-        .onChange(of: rangePreset) { _, newValue in
-            applyPreset(newValue)
-        }
-        .onChange(of: startDay) { _, _ in
-            normalizeDateRange(userInitiated: true)
-        }
-        .onChange(of: endDay) { _, _ in
-            normalizeDateRange(userInitiated: true)
-        }
-        .onChange(of: locale.identifier) { _, _ in
-            loadPromptForCurrentLocale()
-        }
-        .onChange(of: viewModel.errorMessage) { _, newValue in
-            showingError = (newValue != nil)
-        }
-        .alert("Error", isPresented: $showingError) {
-            Button("OK", role: .cancel) {
-                viewModel.clearError()
+    }
+
+    private var resultSheet: some View {
+        NavigationStack {
+            ScrollView {
+                if viewModel.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text("memo.deep-insight.empty")
+                        .foregroundStyle(.secondary)
+                        .padding()
+                } else {
+                    MarkdownView(viewModel.content)
+                        .padding()
+                }
             }
-        } message: {
-            Text(viewModel.errorMessage ?? "")
+            .navigationTitle("memo.deep-insight.result")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showingResultSheet = false
+                    } label: {
+                        Image(systemName: "chevron.down")
+                    }
+                }
+            }
         }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var dateRangeSheet: some View {
+        NavigationStack {
+            VStack {
+                if let anchor = rangeAnchor {
+                    Text(localizedAnchorPrompt(anchor: anchor))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.top)
+                } else {
+                    Text(localizedSelectPrompt())
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.top)
+                }
+                
+                MultiDatePicker("Range", selection: $dateSelection)
+                    .datePickerStyle(.graphical)
+                    .padding()
+                
+                Spacer()
+            }
+            .navigationTitle("memo.deep-insight.range")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("memo.action.ok") { showingDateRangeSheet = false }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+    
+    // Helpers for manual localization logic, similar to prompt text.
+    private func localizedSelectPrompt() -> String {
+        let lang = Defaults.promptLanguageID(for: locale)
+        if lang == "zh-Hans" { return "选择开始日期或日期范围" }
+        if lang == "zh-Hant" { return "選擇開始日期或日期範圍" }
+        if lang == "ja" { return "開始日または期間を選択してください" }
+        return "Select start date or range"
+    }
+
+    private func localizedAnchorPrompt(anchor: Date) -> String {
+        let lang = Defaults.promptLanguageID(for: locale)
+        let dateStr = anchor.formatted(date: .abbreviated, time: .omitted)
+        
+        if lang == "zh-Hans" { return "已选择 \(dateStr)，请选择结束日期" }
+        if lang == "zh-Hant" { return "已選擇 \(dateStr)，請選擇結束日期" }
+        if lang == "ja" { return "\(dateStr) からの終了日を選択してください" }
+        
+        return "Select ending date starting from \(dateStr)"
     }
 
     private func loadPromptForCurrentLocale() {
@@ -386,10 +481,10 @@ struct MemoInsight: View {
             break
         }
 
-        normalizeDateRange(userInitiated: false)
+        normalizeDates()
     }
 
-    private func normalizeDateRange(userInitiated: Bool) {
+    private func normalizeDates() {
         let calendar = Calendar.current
         let normalizedStart = calendar.startOfDay(for: startDay)
         let normalizedEnd = calendar.startOfDay(for: endDay)
@@ -400,9 +495,109 @@ struct MemoInsight: View {
         if endDay < startDay {
             endDay = startDay
         }
+    }
 
-        if userInitiated {
+    
+    private func synchronizeSelectionFromRange() {
+        var dates: Set<DateComponents> = []
+        let calendar = Calendar.current
+        
+        let start = calendar.startOfDay(for: startDay)
+        let end = calendar.startOfDay(for: endDay)
+        
+        // Safety check: Don't enumerate if range is absurdly large (e.g. 10 years).
+        // Cap at 365 days for UI performance if needed, but here simple loop is fine for reasonable usage.
+        var date = start
+        while date <= end {
+            let components = calendar.dateComponents([.calendar, .era, .year, .month, .day], from: date)
+            dates.insert(components)
+            guard let next = calendar.date(byAdding: .day, value: 1, to: date) else { break }
+            date = next
+            
+            // Limit loop
+            if dates.count > 1000 { break }
+        }
+        
+        if dateSelection != dates {
+            isProgrammaticUpdate = true
+            dateSelection = dates
+        }
+        rangeAnchor = nil
+    }
+
+    private func handleDateSelectionChange(_ oldValue: Set<DateComponents>, _ newValue: Set<DateComponents>) {
+        if isProgrammaticUpdate {
+            isProgrammaticUpdate = false
+            return
+        }
+        // Did we just synchronize? If so, newValue should match start/end derived set.
+        // We can check if the change implies a user tap.
+        // Usually, user tap adds or removes ONE day.
+        
+        // 1. Calculate diff
+        let inserted = newValue.subtracting(oldValue)
+        let removed = oldValue.subtracting(newValue)
+        
+        let calendar = Calendar.current
+        
+        // Identify the "Intent Date"
+        // If user tapped a selected date -> it's in `removed`.
+        // If user tapped an unselected date -> it's in `inserted`.
+        
+        var tappedComponents: DateComponents?
+        if let first = inserted.first {
+            tappedComponents = first
+        } else if let first = removed.first {
+            tappedComponents = first
+        }
+        
+        guard let tapped = tappedComponents, let tappedDate = calendar.date(from: tapped) else {
+            // No single identifiable tap, maybe bulk update or sync?
+            // If dateSelection is empty, we probably shouldn't set date to weird value,
+            // but empty selection in MultiDatePicker allows "0 items".
+            if newValue.isEmpty && !oldValue.isEmpty {
+                // User deselected the last item. Reset to today? Or keep last valid?
+                // Let's keep last valid logic or do nothing.
+            }
+            return
+        }
+        
+        // 2. Logic
+        if let anchor = rangeAnchor {
+            // We have an anchor. User is selecting the second date (End of range).
+            // Range is anchor...tappedDate
+            let start = min(anchor, tappedDate)
+            let end = max(anchor, tappedDate)
+            
+            startDay = start
+            endDay = end
+            
+            normalizeDates()
             rangePreset = .custom
+            
+            // Clear anchor to reset state
+            rangeAnchor = nil
+            
+            // We need to fill the selection visually
+            synchronizeSelectionFromRange()
+            
+        } else {
+            // No anchor. This is the "First click" of a new range selection.
+            // Reset everything to just this date.
+            startDay = tappedDate
+            endDay = tappedDate
+            
+            normalizeDates()
+            rangePreset = .custom
+            
+            rangeAnchor = tappedDate
+            
+            // Update visual selection to just this one date
+            let newSet = Set([tapped])
+            if dateSelection != newSet {
+                isProgrammaticUpdate = true
+                dateSelection = newSet
+            }
         }
     }
 }

@@ -20,7 +20,7 @@
 "memo.daily-review.empty" = "暂无内容";
 "memo.deep-insight" = "深度洞察";
 "memo.deep-insight.generate" = "生成";
-"memo.deep-insight.range" = "范围";
+"memo.deep-insight.range" = "洞察范围";
 "memo.deep-insight.range.from" = "开始";
 "memo.deep-insight.range.to" = "结束";
 "memo.deep-insight.range.preset" = "快捷";
