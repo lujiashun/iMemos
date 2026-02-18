@@ -12,16 +12,13 @@ import SwiftData
 import Factory
 
 @Observable public class AppInfo {
-    public static let groupContainerIdentifier = "group.me.mudkip.MoeMemos"
-    public static let keychainAccessGroupName = "AHAQ4D2466.me.mudkip.MoeMemos"
+    public static let groupContainerIdentifier = ""
+    public static let keychainAccessGroupName = ""
     
     @ObservationIgnored public let modelContext: ModelContext
     
     public init() {
-        let container = try! ModelContainer(
-            for: User.self,
-            configurations: .init(groupContainer: .identifier(AppInfo.groupContainerIdentifier))
-        )
+        let container = try! ModelContainer(for: User.self)
         modelContext = ModelContext(container)
     }
     

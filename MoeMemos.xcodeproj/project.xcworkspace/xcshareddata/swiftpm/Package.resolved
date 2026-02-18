@@ -1,4 +1,5 @@
 {
+  "originHash" : "502640b074a8fcbe1ebf08d408a2788e82e61133b127fa917d98d1d708ed6903",
   "pins" : [
     {
       "identity" : "data-uri",
@@ -93,7 +94,7 @@
     {
       "identity" : "swift-markdown",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mudkipme/swift-markdown.git",
+      "location" : "https://github.com/mudkipme/swift-markdown",
       "state" : {
         "branch" : "main",
         "revision" : "2e0ffeea72a69c36eed2966528df30e75f3c2cf3"
@@ -154,5 +155,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

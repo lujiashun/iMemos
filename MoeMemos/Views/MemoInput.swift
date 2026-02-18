@@ -10,6 +10,7 @@ import PhotosUI
 import Models
 import Account
 import Env
+ 
 
 @MainActor
 struct MemoInput: View {
@@ -28,6 +29,13 @@ struct MemoInput: View {
     
     @State private var showingPhotoPicker = false
     @State private var showingImagePicker = false
+
+    // Voice input state
+    @State private var isRecordingAudio = false
+    @State private var isProcessingAudio = false
+    @State private var audioActionError: Error?
+    @State private var showingAudioErrorToast = false
+    @State private var audioRecorder = AudioMemoRecorder()
     @State private var submitError: Error?
     @State private var showingErrorToast = false
     
@@ -45,8 +53,6 @@ struct MemoInput: View {
                                 }
                             }
                         } label: {
-                            // On iOS 16, the position of menu label is unstable after keyboard change,
-                            // So we use a transparent menu label here
                             Color.clear.frame(width: 15)
                         }
                         Button {
@@ -56,7 +62,6 @@ struct MemoInput: View {
                         }
                         .allowsHitTesting(false)
                     }
-                    
                 } else {
                     Button {
                         insert(tag: nil)
@@ -64,31 +69,87 @@ struct MemoInput: View {
                         Image(systemName: "number")
                     }
                 }
-                
                 Button {
                     toggleTodoItem()
                 } label: {
                     Image(systemName: "checkmark.square")
                 }
-                
                 Button {
                     showingPhotoPicker = true
                 } label: {
                     Image(systemName: "photo.on.rectangle")
                 }
-                
                 Button {
                     showingImagePicker = true
                 } label: {
                     Image(systemName: "camera")
                 }
-                
+                // --- Voice button ---
+                Button {
+                    if isRecordingAudio {
+                        stopAudioRecordingAndProcess()
+                    } else {
+                        startAudioRecording()
+                    }
+                } label: {
+                    Image(systemName: isRecordingAudio ? "stop.circle.fill" : "mic.circle")
+                        .foregroundColor(isRecordingAudio ? .red : .accentColor)
+                }
+                .accessibilityLabel(isRecordingAudio ? "Stop Recording" : "Start Voice Input")
                 Spacer()
             }
             .frame(height: 20)
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
             .background(.ultraThinMaterial)
+        }
+    }
+
+    private func startAudioRecording() {
+        guard !isRecordingAudio && !isProcessingAudio else { return }
+        Task { @MainActor in
+            do {
+                try await audioRecorder.start()
+                isRecordingAudio = true
+                audioActionError = nil
+            } catch {
+                audioActionError = error
+                showingAudioErrorToast = true
+            }
+        }
+    }
+
+    private func stopAudioRecordingAndProcess() {
+        guard isRecordingAudio && !isProcessingAudio else { return }
+        isRecordingAudio = false
+        isProcessingAudio = true
+        let fileURL: URL
+        do {
+            fileURL = try audioRecorder.stop()
+        } catch {
+            audioActionError = error
+            showingAudioErrorToast = true
+            isProcessingAudio = false
+            return
+        }
+        Task { @MainActor in
+            defer { isProcessingAudio = false }
+            do {
+                // 1. Transcribe
+                let transcript = try await SpeechTranscriber.transcribeAudioFile(at: fileURL)
+                // 2. Call MemoService_GetMemoInsight
+                let prompt = "把下面这段语音转写的文字整理通顺：\n修正错别字、口误、重复内容\n自动加上正确标点\n语句通顺、逻辑清晰\n适当分段，方便阅读\n保留原意不删减关键信息\n待整理内容：\n" + transcript
+                let insight = try await viewModel.service.getMemoInsight(filter: nil, prompt: prompt)
+                // 3. Insert into editor
+                if text.isEmpty {
+                    text = insight
+                } else {
+                    text += "\n\n" + insight
+                }
+            } catch {
+                audioActionError = error
+                showingAudioErrorToast = true
+            }
         }
     }
     
@@ -154,6 +215,7 @@ struct MemoInput: View {
             }
         }
         .toast(isPresenting: $showingErrorToast, alertType: .systemImage("xmark.circle", submitError?.localizedDescription))
+        .toast(isPresenting: $showingAudioErrorToast, alertType: .systemImage("xmark.circle", audioActionError?.localizedDescription))
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(memo == nil ? NSLocalizedString("input.compose", comment: "Compose") : NSLocalizedString("input.edit", comment: "Edit"))
         .toolbar {
@@ -173,7 +235,22 @@ struct MemoInput: View {
                 } label: {
                     Label("input.save", systemImage: "paperplane")
                 }
-                .disabled((text.isEmpty && viewModel.resourceList.isEmpty) || viewModel.imageUploading || viewModel.saving)
+                .disabled((text.isEmpty && viewModel.resourceList.isEmpty) || viewModel.imageUploading || viewModel.saving || isProcessingAudio)
+            }
+        }
+        .overlay(alignment: .center) {
+            if isProcessingAudio {
+                VStack(spacing: 8) {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle())
+                        .scaleEffect(1.2)
+                    Text("Processing audio…")
+                        .font(.caption)
+                }
+                .padding(12)
+                .background(.ultraThinMaterial)
+                .cornerRadius(10)
+                .shadow(radius: 6)
             }
         }
         .fullScreenCover(isPresented: $showingImagePicker, content: {

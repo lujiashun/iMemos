@@ -33,19 +33,25 @@ public func downloadData(urlSession: URLSession, url: URL, middleware: (@Sendabl
 }
 
 public func download(urlSession: URLSession, url: URL, mimeType: String? = nil, middleware: (@Sendable (URLRequest) async throws -> URLRequest)? = nil) async throws -> URL {
-    guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppInfo.groupContainerIdentifier) else { throw MoeMemosError.unknown }
-    
     let hash = SHA256.hash(data: url.absoluteString.data(using: .utf8)!)
     let hex = hash.map { String(format: "%02X", $0) }[0...10].joined()
-    
+
     var pathExtension = url.pathExtension
     if pathExtension.isEmpty, let mimeType = mimeType, let utType = UTType(mimeType: mimeType), let ext = utType.preferredFilenameExtension {
         pathExtension = ext
     }
-    
-    let downloadDestination = containerURL.appendingPathComponent("Library/Caches")
-        .appendingPathComponent(hex).appendingPathExtension(pathExtension)
-    
+
+    let baseCachesURL: URL
+    if !AppInfo.groupContainerIdentifier.isEmpty, let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppInfo.groupContainerIdentifier) {
+        baseCachesURL = containerURL.appendingPathComponent("Library/Caches")
+    } else if let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
+        baseCachesURL = caches
+    } else {
+        throw MoeMemosError.unknown
+    }
+
+    let downloadDestination = baseCachesURL.appendingPathComponent(hex).appendingPathExtension(pathExtension)
+
     try FileManager.default.createDirectory(at: downloadDestination.deletingLastPathComponent(), withIntermediateDirectories: true)
 
     do {

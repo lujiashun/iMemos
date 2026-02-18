@@ -14,7 +14,9 @@ import MemosV1Service
 public extension Account {
     private static var keychain: KeychainSwift {
         let keychain = KeychainSwift()
-        keychain.accessGroup = AppInfo.keychainAccessGroupName
+        if !AppInfo.keychainAccessGroupName.isEmpty {
+            keychain.accessGroup = AppInfo.keychainAccessGroupName
+        }
         return keychain
     }
     

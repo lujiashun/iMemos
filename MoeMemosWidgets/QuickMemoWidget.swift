@@ -11,7 +11,7 @@ import SwiftUI
 @available(iOS 18.0, *)
 struct QuickMemoWidget: ControlWidget {
     var body: some ControlWidgetConfiguration {
-        StaticControlConfiguration(kind: "me.mudkip.MoeMemos.QuickMemoWidget") {
+        StaticControlConfiguration(kind: "me.lujs.IMemos.QuickMemoWidget") {
             ControlWidgetButton(action: AppOpenIntent()) {
                 Label("Quick Memo", systemImage: "note.text.badge.plus")
             }

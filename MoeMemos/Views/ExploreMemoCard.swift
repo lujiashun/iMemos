@@ -26,7 +26,7 @@ struct ExploreMemoCard: View {
             }
             .padding(.vertical, 5)
             
-            MemoCardContent(memo: memo, toggleTaskItem: nil)
+            MemoCardContent(memo: memo, toggleTaskItem: nil, isExplore: true)
         }
         .padding([.top, .bottom], 5)
     }

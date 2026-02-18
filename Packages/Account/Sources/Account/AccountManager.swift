@@ -11,8 +11,17 @@ import Models
 import Factory
 
 @Observable public final class AccountManager: @unchecked Sendable {
-    @ObservationIgnored @AppStorage("currentAccountKey", store: UserDefaults(suiteName: AppInfo.groupContainerIdentifier))
-    private var currentAccountKey: String = ""
+    @ObservationIgnored private var currentAccountKeyStore: UserDefaults = {
+        if !AppInfo.groupContainerIdentifier.isEmpty, let ud = UserDefaults(suiteName: AppInfo.groupContainerIdentifier) {
+            return ud
+        }
+        return UserDefaults.standard
+    }()
+
+    @ObservationIgnored private var currentAccountKey: String {
+        get { currentAccountKeyStore.string(forKey: "currentAccountKey") ?? "" }
+        set { currentAccountKeyStore.set(newValue, forKey: "currentAccountKey") }
+    }
     @ObservationIgnored public private(set) var currentService: RemoteService?
     
     public var mustCurrentService: RemoteService {

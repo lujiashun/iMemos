@@ -23,5 +23,9 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.share-services</string>
 	</dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Record audio to attach to a shared memo or note.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Convert recorded audio into text when sharing memos.</string>
 </dict>
 </plist>

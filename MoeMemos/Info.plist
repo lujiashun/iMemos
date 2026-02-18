@@ -8,7 +8,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>CFBundleURLName</key>
-			<string>me.mudkip.MoeMemos</string>
+			<string>me.lujs.IMemos</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>moememos</string>
@@ -19,25 +19,19 @@
 	<array>
 		<string>AppOpenIntent</string>
 	</array>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
-	<key>NSCameraUsageDescription</key>
-	<string>Capture photos and attach to memos</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Record audio and attach to memos</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Transcribe recorded audio into memo text</string>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>MemoryWidgetConfigurationIntent</string>
 		<string>MemosGraphWidgetConfigurationIntent</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Record audio memos for transcription and attachments.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Transcribe recorded audio into text for memos.</string>
 </dict>
 </plist>

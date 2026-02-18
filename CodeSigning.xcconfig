@@ -1,0 +1,5 @@
+// Configuration settings for conditional code signing
+// This allows building for simulator without provisioning profile errors
+
+CODE_SIGN_IDENTITY[sdk=iphoneos*] = iPhone Developer
+CODE_SIGN_IDENTITY[sdk=iphonesimulator*] =

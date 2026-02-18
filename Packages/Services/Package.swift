@@ -50,9 +50,9 @@ let package = Package(
             swiftSettings: [
               .enableExperimentalFeature("StrictConcurrency"),
             ],
-            plugins: [
-                .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator")
-            ]
+            // plugins: [
+            //     .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator")
+            // ],
         ),
         .target(
             name: "MemosV1Service",
@@ -65,9 +65,9 @@ let package = Package(
             swiftSettings: [
               .enableExperimentalFeature("StrictConcurrency"),
             ],
-            plugins: [
-                .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator")
-            ]
+            // plugins: [
+            //     .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator")
+            // ],
         ),
     ]
 )

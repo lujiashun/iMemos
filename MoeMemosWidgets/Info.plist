@@ -7,5 +7,9 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.widgetkit-extension</string>
 	</dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Allow the widget to record quick audio memos for shortcuts.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Transcribe short recordings created from the widget into text.</string>
 </dict>
 </plist>
