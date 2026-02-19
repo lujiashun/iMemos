@@ -193,6 +193,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/v1/memos:insight`.
     /// - Remark: Generated from `#/paths//api/v1/memos:insight/post(MemoService_GetMemoInsight)`.
     func MemoService_GetMemoInsight(_ input: Operations.MemoService_GetMemoInsight.Input) async throws -> Operations.MemoService_GetMemoInsight.Output
+    /// TextRefine refines input text with a prompt.
+    ///
+    /// - Remark: HTTP `POST /api/v1/text_refine`.
+    /// - Remark: Generated from `#/paths//api/v1/text_refine/post(MemoService_TextRefine)`.
+    func MemoService_TextRefine(_ input: Operations.MemoService_TextRefine.Input) async throws -> Operations.MemoService_TextRefine.Output
     /// ListUsers returns a list of users.
     ///
     /// - Remark: HTTP `GET /api/v1/users`.
@@ -803,6 +808,19 @@ extension APIProtocol {
         body: Operations.MemoService_GetMemoInsight.Input.Body
     ) async throws -> Operations.MemoService_GetMemoInsight.Output {
         try await MemoService_GetMemoInsight(Operations.MemoService_GetMemoInsight.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// TextRefine refines input text with a prompt.
+    ///
+    /// - Remark: HTTP `POST /api/v1/text_refine`.
+    /// - Remark: Generated from `#/paths//api/v1/text_refine/post(MemoService_TextRefine)`.
+    public func MemoService_TextRefine(
+        headers: Operations.MemoService_TextRefine.Input.Headers = .init(),
+        body: Operations.MemoService_TextRefine.Input.Body
+    ) async throws -> Operations.MemoService_TextRefine.Output {
+        try await MemoService_TextRefine(Operations.MemoService_TextRefine.Input(
             headers: headers,
             body: body
         ))
@@ -3578,6 +3596,54 @@ public enum Components {
                 case region
                 case bucket
                 case usePathStyle
+            }
+        }
+        /// Request for text refinement.
+        ///
+        /// - Remark: Generated from `#/components/schemas/TextRefineRequest`.
+        public struct TextRefineRequest: Codable, Hashable, Sendable {
+            /// The input text to be refined.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TextRefineRequest/text`.
+            public var text: Swift.String?
+            /// The prompt or instruction for refinement.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TextRefineRequest/prompt`.
+            public var prompt: Swift.String?
+            /// Creates a new `TextRefineRequest`.
+            ///
+            /// - Parameters:
+            ///   - text: The input text to be refined.
+            ///   - prompt: The prompt or instruction for refinement.
+            public init(
+                text: Swift.String? = nil,
+                prompt: Swift.String? = nil
+            ) {
+                self.text = text
+                self.prompt = prompt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case text
+                case prompt
+            }
+        }
+        /// Response for text refinement.
+        ///
+        /// - Remark: Generated from `#/components/schemas/TextRefineResponse`.
+        public struct TextRefineResponse: Codable, Hashable, Sendable {
+            /// The refined/optimized text.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TextRefineResponse/content`.
+            public var content: Swift.String?
+            /// Creates a new `TextRefineResponse`.
+            ///
+            /// - Parameters:
+            ///   - content: The refined/optimized text.
+            public init(content: Swift.String? = nil) {
+                self.content = content
+            }
+            public enum CodingKeys: String, CodingKey {
+                case content
             }
         }
         /// - Remark: Generated from `#/components/schemas/UpsertMemoReactionRequest`.
@@ -10495,6 +10561,174 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.`default``.
             /// - SeeAlso: `.`default``.
             public var `default`: Operations.MemoService_GetMemoInsight.Output.Default {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// TextRefine refines input text with a prompt.
+    ///
+    /// - Remark: HTTP `POST /api/v1/text_refine`.
+    /// - Remark: Generated from `#/paths//api/v1/text_refine/post(MemoService_TextRefine)`.
+    public enum MemoService_TextRefine {
+        public static let id: Swift.String = "MemoService_TextRefine"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/api/v1/text_refine/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.MemoService_TextRefine.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.MemoService_TextRefine.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.MemoService_TextRefine.Input.Headers
+            /// - Remark: Generated from `#/paths/api/v1/text_refine/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/v1/text_refine/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.TextRefineRequest)
+            }
+            public var body: Operations.MemoService_TextRefine.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.MemoService_TextRefine.Input.Headers = .init(),
+                body: Operations.MemoService_TextRefine.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/v1/text_refine/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/v1/text_refine/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.TextRefineResponse)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.TextRefineResponse {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.MemoService_TextRefine.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.MemoService_TextRefine.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK
+            ///
+            /// - Remark: Generated from `#/paths//api/v1/text_refine/post(MemoService_TextRefine)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.MemoService_TextRefine.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.MemoService_TextRefine.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct Default: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/v1/text_refine/POST/responses/default/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/v1/text_refine/POST/responses/default/content/application\/json`.
+                    case json(Components.Schemas.Status)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Status {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.MemoService_TextRefine.Output.Default.Body
+                /// Creates a new `Default`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.MemoService_TextRefine.Output.Default.Body) {
+                    self.body = body
+                }
+            }
+            /// Default error response
+            ///
+            /// - Remark: Generated from `#/paths//api/v1/text_refine/post(MemoService_TextRefine)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Operations.MemoService_TextRefine.Output.Default)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Operations.MemoService_TextRefine.Output.Default {
                 get throws {
                     switch self {
                     case let .`default`(_, response):
