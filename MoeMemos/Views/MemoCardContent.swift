@@ -113,6 +113,9 @@ struct MemoCardContent: View {
 
 @MainActor
 struct AudioPlayerView: View {
+            @State private var currentTime: TimeInterval = 0
+            @State private var timeObserverToken: Any?
+        @State private var endObserver: NSObjectProtocol?
     let resource: Resource
     let textContent: String
     
@@ -201,13 +204,48 @@ struct AudioPlayerView: View {
             audioPlayer = nil
             isPlaying = false
             isLoading = false
+            if let endObserver = endObserver {
+                NotificationCenter.default.removeObserver(endObserver)
+                self.endObserver = nil
+            }
+            if let token = timeObserverToken, let player = audioPlayer {
+                player.removeTimeObserver(token)
+                timeObserverToken = nil
+            }
+        }
+        .onChange(of: audioPlayer) { _, newPlayer in
+            // 移除旧监听
+            if let endObserver = endObserver {
+                NotificationCenter.default.removeObserver(endObserver)
+                self.endObserver = nil
+            }
+            // 添加新监听
+            if let player = newPlayer, let item = player.currentItem {
+                self.endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { _ in
+                    isPlaying = false
+                    player.seek(to: .zero)
+                    currentTime = 0
+                }
+                // 添加播放进度监听
+                let interval = CMTime(seconds: 0.2, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+                let token = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
+                    currentTime = CMTimeGetSeconds(time)
+                }
+                timeObserverToken = token
+            }
+            // 移除旧的 timeObserver
+            if newPlayer == nil, let token = timeObserverToken, let player = audioPlayer {
+                player.removeTimeObserver(token)
+                timeObserverToken = nil
+            }
         }
     }
     
     private var formattedDuration: String {
         guard duration > 0 else { return "00:00" }
-        let minutes = Int(duration) / 60
-        let seconds = Int(duration) % 60
+        let remaining = max(duration - currentTime, 0)
+        let minutes = Int(remaining) / 60
+        let seconds = Int(remaining) % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
     
