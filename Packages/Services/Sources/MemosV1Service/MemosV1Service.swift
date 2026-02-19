@@ -263,6 +263,26 @@ public final class MemosV1Service: RemoteService {
         }
     }
 
+    public func getTextRefine(filter: String?, prompt: String?) async throws -> String {
+        try await signInIfNeeded()
+
+        let req = Components.Schemas.TextRefineRequest(
+            text: filter,
+            prompt: prompt
+        )
+        let resp = try await client.MemoService_TextRefine(body: .json(req))
+        switch resp {
+        case .ok(let okResponse):
+            let data = try okResponse.body.json
+            return data.content ?? ""
+        case .default(let statusCode, let defaultResponse):
+            switch defaultResponse.body {
+            case .json(let status):
+                throw MoeMemosError.invalidStatusCode(statusCode, Self.formatStatusMessage(status, statusCode: statusCode))
+            }
+        }
+    }
+
     private static func formatStatusMessage(_ status: Components.Schemas.Status, statusCode: Int) -> String? {
         var pieces: [String] = []
         if let message = status.message?.trimmingCharacters(in: .whitespacesAndNewlines), !message.isEmpty {

@@ -16,6 +16,7 @@ public protocol RemoteService: Sendable {
     func listWorkspaceMemos(pageSize: Int, pageToken: String?) async throws -> (list: [Memo], nextPageToken: String?)
     func getDailyReview(date: Date, timezone: TimeZone) async throws -> String
     func getMemoInsight(filter: String?, prompt: String?) async throws -> String
+    func getTextRefine(filter: String?, prompt: String?) async throws -> String
     func createMemo(content: String, visibility: MemoVisibility?, resources: [Resource], tags: [String]?) async throws -> Memo
     func updateMemo(remoteId: String, content: String?, resources: [Resource]?, visibility: MemoVisibility?, tags: [String]?, pinned: Bool?) async throws -> Memo
     func deleteMemo(remoteId: String) async throws

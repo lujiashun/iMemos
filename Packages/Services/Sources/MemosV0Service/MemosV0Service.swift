@@ -72,6 +72,10 @@ public final class MemosV0Service: RemoteService {
     public func getMemoInsight(filter: String?, prompt: String?) async throws -> String {
         throw MoeMemosError.unsupportedVersion
     }
+
+    public func getTextRefine(filter: String?, prompt: String?) async throws -> String {
+        throw MoeMemosError.unsupportedVersion
+    }
     
     public func createMemo(content: String, visibility: MemoVisibility?, resources: [Resource], tags: [String]?) async throws -> Memo {
         var memosVisibility: MemosV0Visibility? = nil

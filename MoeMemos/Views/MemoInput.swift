@@ -139,7 +139,7 @@ struct MemoInput: View {
                 let transcript = try await SpeechTranscriber.transcribeAudioFile(at: fileURL)
                 // 2. Call MemoService_GetMemoInsight
                 let prompt = "把下面这段语音转写的文字整理通顺：\n修正错别字、口误、重复内容\n自动加上正确标点\n语句通顺、逻辑清晰\n适当分段，方便阅读\n保留原意不删减关键信息\n待整理内容：\n" + transcript
-                let insight = try await viewModel.service.getMemoInsight(filter: nil, prompt: prompt)
+                let insight = try await viewModel.service.getTextRefine(filter: nil, prompt: prompt)
                 // 3. Insert into editor
                 if text.isEmpty {
                     text = insight
