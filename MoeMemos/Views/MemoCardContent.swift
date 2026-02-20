@@ -6,7 +6,9 @@
 //
 
 import SwiftUI
+#if canImport(MarkdownUI)
 @preconcurrency import MarkdownUI
+#endif
 import Models
 import AVKit
 import Account
@@ -34,6 +36,7 @@ struct MemoCardContent: View {
     let memo: Memo
     let toggleTaskItem: ((TaskListMarkerConfiguration) async -> Void)?
     var isExplore: Bool = false
+    @State private var ignoreContentTap = false
     @Environment(\.colorScheme) var colorScheme
     @Environment(AccountManager.self) private var memosManager: AccountManager
     
@@ -53,32 +56,40 @@ struct MemoCardContent: View {
         VStack(alignment: .leading) {
             if !isExplore {
                 // Standard Mode: Show content first.
+                #if canImport(MarkdownUI)
                 MarkdownView(memo.content)
                     .markdownImageProvider(.lazyImage(aspectRatio: 4 / 3))
                     .markdownCodeSyntaxHighlighter(colorScheme == .dark ? .dark() : .light())
-                    .markdownTaskListMarker(BlockStyle { configuration in
-                        Image(systemName: configuration.isCompleted ? "checkmark.square.fill" : "square")
-                            .symbolRenderingMode(.hierarchical)
-                            .imageScale(.medium)
-                            .relativeFrame(minWidth: .em(1), alignment: .leading)
-                            .onTapGesture {
-                                Task {
-                                    await toggleTaskItem?(configuration)
-                                }
-                            }
-                    })
+                    .onTapGesture {
+                        if ignoreContentTap { print("[MemoCardContent] content tap ignored (Markdown) memoRemoteId=\(memo.remoteId ?? "<nil>")"); return }
+                        print("[MemoCardContent] content tapped (Markdown) memoRemoteId=\(memo.remoteId ?? "<nil>")")
+                    }
+#else
+                Text(memo.content)
+                    .onTapGesture {
+                        if ignoreContentTap { print("[MemoCardContent] content tap ignored (Text) memoRemoteId=\(memo.remoteId ?? "<nil>")"); return }
+                        print("[MemoCardContent] content tapped (Text) memoRemoteId=\(memo.remoteId ?? "<nil>")")
+                    }
+#endif
             }
             
             ForEach(resources()) { content in
                 if case let .images(urls) = content {
                     MemoCardImageView(images: urls)
+                        .onTapGesture {
+                            print("[MemoCardContent] image tapped memoRemoteId=\(memo.remoteId ?? "<nil>")")
+                        }
                 }
                 if case let .attachment(resource) = content {
                     Attachment(resource: resource)
+                        .onTapGesture {
+                            print("[MemoCardContent] attachment tapped resource=\(resource.filename) memoRemoteId=\(memo.remoteId ?? "<nil>")")
+                        }
                 }
                 if case let .audio(resource) = content {
-                    AudioPlayerView(resource: resource, textContent: isExplore ? memo.content : "")
+                    AudioPlayerView(resource: resource, textContent: memo.content, ignoreContentTap: $ignoreContentTap, isExplore: isExplore)
                 }
+                
             }
         }
     }
@@ -118,6 +129,8 @@ struct AudioPlayerView: View {
         @State private var endObserver: NSObjectProtocol?
     let resource: Resource
     let textContent: String
+    var ignoreContentTap: Binding<Bool> = .constant(false)
+    var isExplore: Bool = false
     
     @Environment(AccountManager.self) private var accountManager
     @Environment(\.colorScheme) var colorScheme
@@ -129,55 +142,73 @@ struct AudioPlayerView: View {
     @State private var duration: TimeInterval = 0
     @State private var error: Error?
     @State private var currentTask: Task<Void, Never>?
+    @State private var handledByHighPriority = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Player Control Bar
-            HStack {
-                Button {
-                    handlePlayButton()
-                } label: {
-                    HStack(spacing: 8) {
-                        if isLoading {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else {
-                            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                                .font(.system(size: 16))
+            HStack(alignment: .center, spacing: 0) {
+                ZStack {
+                    Button(action: {
+                        if handledByHighPriority {
+                            handledByHighPriority = false
+                            return
                         }
-                        
-                        Text(formattedDuration)
-                            .font(.footnote)
-                            .monospacedDigit()
+                        performPlayTapped()
+                    }) {
+                        HStack(spacing: 8) {
+                            if isLoading {
+                                ProgressView()
+                                    .controlSize(.small)
+                            } else {
+                                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                                    .font(.system(size: 16))
+                            }
+                            Text(formattedDuration)
+                                .font(.footnote)
+                                .monospacedDigit()
+                        }
+                        .foregroundStyle(.primary)
+                        .padding(.vertical, 8)
+                        .padding(.leading, 4)
+                        .padding(.trailing, 12)
                     }
-                    .foregroundStyle(.primary)
+                    .contentShape(Rectangle()) // Explicit hit-testing area
+                    .highPriorityGesture(TapGesture().onEnded {
+                        handledByHighPriority = true
+                        performPlayTapped()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { handledByHighPriority = false }
+                    })
                 }
-                
-                Spacer()
-                
-                Button {
-                    withAnimation {
-                        isExpanded.toggle()
+                .background(Color.clear)
+                Spacer(minLength: 0)
+                ZStack {
+                    Button(action: {
+                        if handledByHighPriority {
+                            handledByHighPriority = false
+                            return
+                        }
+                        performExpandTapped()
+                    }) {
+                        HStack(spacing: 4) {
+                            Text(isExpanded ? "收起" : (isExplore ? "原文" : "原文"))
+                                .font(.subheadline)
+                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                                .font(.caption)
+                        }
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 8)
+                        .padding(.trailing, 8)
                     }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(isExpanded ? "收起" : "展开")
-                            .font(.subheadline)
-                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .font(.caption)
-                    }
-                    .foregroundStyle(.secondary)
+                    .contentShape(Rectangle()) // Explicit hit-testing area
+                    .highPriorityGesture(TapGesture().onEnded {
+                        handledByHighPriority = true
+                        performExpandTapped()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { handledByHighPriority = false }
+                    })
                 }
+                .background(Color.clear)
             }
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.secondary.opacity(0.1))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.secondary.opacity(0.2), lineWidth: 0.5)
-            )
             
             // Expanded Text Content
             if isExpanded {
@@ -188,12 +219,18 @@ struct AudioPlayerView: View {
                         .padding(.top, 8)
                         .padding(.horizontal, 4)
                 } else {
-                    MarkdownView(textContent)
-                        .markdownImageProvider(.lazyImage(aspectRatio: 4 / 3))
-                        .markdownCodeSyntaxHighlighter(colorScheme == .dark ? .dark() : .light())
-                        .padding(.top, 12)
-                        .padding(.horizontal, 4)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    Group {
+                        #if canImport(MarkdownUI)
+                        MarkdownView(textContent)
+                            .markdownImageProvider(.lazyImage(aspectRatio: 4 / 3))
+                            .markdownCodeSyntaxHighlighter(colorScheme == .dark ? .dark() : .light())
+                        #else
+                        Text(textContent)
+                        #endif
+                    }
+                    .padding(.top, 12)
+                    .padding(.horizontal, 4)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
         }
@@ -220,16 +257,20 @@ struct AudioPlayerView: View {
                 self.endObserver = nil
             }
             // 添加新监听
-            if let player = newPlayer, let item = player.currentItem {
+                if let player = newPlayer, let item = player.currentItem {
                 self.endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { _ in
-                    isPlaying = false
-                    player.seek(to: .zero)
-                    currentTime = 0
+                    DispatchQueue.main.async {
+                        isPlaying = false
+                        player.seek(to: .zero)
+                        currentTime = 0
+                    }
                 }
                 // 添加播放进度监听
                 let interval = CMTime(seconds: 0.2, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
                 let token = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
-                    currentTime = CMTimeGetSeconds(time)
+                    DispatchQueue.main.async {
+                        currentTime = CMTimeGetSeconds(time)
+                    }
                 }
                 timeObserverToken = token
             }
@@ -263,6 +304,23 @@ struct AudioPlayerView: View {
         }
     }
     
+    // Centralized handlers to avoid duplicate logic and prints
+    private func performPlayTapped() {
+        ignoreContentTap.wrappedValue = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { ignoreContentTap.wrappedValue = false }
+        print("[AudioPlayerView] play button tapped for resource=\(resource.url)")
+        handlePlayButton()
+    }
+
+    private func performExpandTapped() {
+        ignoreContentTap.wrappedValue = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { ignoreContentTap.wrappedValue = false }
+        print("[AudioPlayerView] expand button tapped for resource=\(resource.url) beforeExpanded=\(isExpanded)")
+        withAnimation {
+            isExpanded.toggle()
+        }
+    }
+
     private func loadAndPlay() {
         // Cancel any existing task
         currentTask?.cancel()
