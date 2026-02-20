@@ -143,6 +143,50 @@ struct AudioPlayerView: View {
     @State private var error: Error?
     @State private var currentTask: Task<Void, Never>?
     @State private var handledByHighPriority = false
+    // Raw/punctuated transcript states (for showing 原文)
+    @State private var rawTranscript: String?
+    @State private var punctuatedTranscript: String?
+    @State private var isPunctuating = false
+    @State private var punctuateError: Error?
+
+    // Simple in-memory cache to avoid repeated transcription for same resource
+    private static var transcriptCache: [String: String] = [:]
+    
+    // Local lightweight punctuator (kept here to avoid dependency on external helper at compile time)
+    private static func localPunctuate(_ text: String) -> String {
+        var s = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !s.isEmpty else { return s }
+
+        let punctSet = CharacterSet(charactersIn: "，。！？；,.!?；；")
+        if s.rangeOfCharacter(from: punctSet) != nil {
+            return s
+        }
+
+        s = s.replacingOccurrences(of: "\n", with: "。")
+        let comps = s.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
+        if comps.isEmpty { return s }
+        if s.count <= 12 {
+            if s.hasSuffix("。") || s.hasSuffix("?") || s.hasSuffix("!") {
+                return s
+            }
+            return s + "。"
+        }
+
+        var pieces: [String] = []
+        for (i, token) in comps.enumerated() {
+            if i == comps.count - 1 {
+                pieces.append(token)
+            } else {
+                pieces.append(token + "，")
+            }
+        }
+        var result = pieces.joined(separator: " ")
+        result = result.replacingOccurrences(of: " ，", with: "，")
+        if !result.hasSuffix("。") && !result.hasSuffix("?") && !result.hasSuffix("!") {
+            result += "。"
+        }
+        return result
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -212,7 +256,20 @@ struct AudioPlayerView: View {
             
             // Expanded Text Content
             if isExpanded {
-                if textContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                // Determine which text to show: prefer punctuated transcript, then raw transcript, then memo content
+                let displayText = punctuatedTranscript ?? rawTranscript ?? textContent
+
+                if isPunctuating {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("转写并恢复标点中…")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top, 8)
+                    .padding(.horizontal, 4)
+                } else if displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text("无文字内容")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -221,16 +278,23 @@ struct AudioPlayerView: View {
                 } else {
                     Group {
                         #if canImport(MarkdownUI)
-                        MarkdownView(textContent)
+                        MarkdownView(displayText)
                             .markdownImageProvider(.lazyImage(aspectRatio: 4 / 3))
                             .markdownCodeSyntaxHighlighter(colorScheme == .dark ? .dark() : .light())
                         #else
-                        Text(textContent)
+                        Text(displayText)
                         #endif
                     }
                     .padding(.top, 12)
                     .padding(.horizontal, 4)
                     .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
+                if let err = punctuateError {
+                    Text("（原文恢复失败，显示可用文字）")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 4)
                 }
             }
         }
@@ -318,6 +382,52 @@ struct AudioPlayerView: View {
         print("[AudioPlayerView] expand button tapped for resource=\(resource.url) beforeExpanded=\(isExpanded)")
         withAnimation {
             isExpanded.toggle()
+        }
+        if isExpanded {
+            // start async task to ensure we have a punctuated transcript
+            Task { await ensurePunctuatedTranscript() }
+        }
+    }
+
+    private func ensurePunctuatedTranscript() async {
+        // If already have punctuated transcript, nothing to do
+        if punctuatedTranscript != nil { return }
+
+        let key = resource.remoteId ?? resource.url.absoluteString
+        if let cached = Self.transcriptCache[key] {
+            DispatchQueue.main.async {
+                self.punctuatedTranscript = cached
+            }
+            return
+        }
+
+        isPunctuating = true
+        punctuateError = nil
+        do {
+            let localURL: URL
+            if let service = accountManager.currentService {
+                localURL = try await service.download(url: resource.url, mimeType: resource.mimeType)
+            } else {
+                localURL = resource.url
+            }
+
+            let transcript = try await SpeechTranscriber.transcribeAudioFile(at: localURL)
+            DispatchQueue.main.async {
+                self.rawTranscript = transcript
+            }
+
+            let punctuated = Self.localPunctuate(transcript)
+            DispatchQueue.main.async {
+                self.punctuatedTranscript = punctuated
+                Self.transcriptCache[key] = punctuated
+            }
+        } catch {
+            DispatchQueue.main.async {
+                self.punctuateError = error
+            }
+        }
+        DispatchQueue.main.async {
+            self.isPunctuating = false
         }
     }
 
