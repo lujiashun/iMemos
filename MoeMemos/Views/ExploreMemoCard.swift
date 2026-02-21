@@ -7,9 +7,11 @@
 
 import SwiftUI
 import Models
+import Account
 
 struct ExploreMemoCard: View {
     let memo: Memo
+    @Environment(AccountViewModel.self) private var userState
 
     var body: some View {
         VStack(alignment: .leading) {
@@ -26,7 +28,7 @@ struct ExploreMemoCard: View {
             }
             .padding(.vertical, 5)
             
-            MemoCardContent(memo: memo, toggleTaskItem: nil, isExplore: true)
+            MemoCard(memo, defaultMemoVisibility: userState.currentUser?.defaultVisibility ?? .private, isExplore: true)
         }
         .padding([.top, .bottom], 5)
     }

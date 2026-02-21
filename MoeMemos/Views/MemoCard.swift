@@ -15,14 +15,16 @@ import Env
 struct MemoCard: View {
     let memo: Memo
     let defaultMemoVisilibity: MemoVisibility?
+    var isExplore: Bool = false
     
     @Environment(MemosViewModel.self) private var memosViewModel: MemosViewModel
     @Environment(AppPath.self) private var appPath
     @State private var showingDeleteConfirmation = false
     
-    init(_ memo: Memo, defaultMemoVisibility: MemoVisibility) {
+    init(_ memo: Memo, defaultMemoVisibility: MemoVisibility, isExplore: Bool = false) {
         self.memo = memo
         self.defaultMemoVisilibity = defaultMemoVisibility
+        self.isExplore = isExplore
     }
     
     var body: some View {
@@ -52,7 +54,7 @@ struct MemoCard: View {
                 }
             }
             
-            MemoCardContent(memo: memo, toggleTaskItem: toggleTaskItem(_:))
+            MemoCardContent(memo: memo, toggleTaskItem: toggleTaskItem(_:), isExplore: isExplore)
         }
         .padding([.top, .bottom], 5)
         .contextMenu {

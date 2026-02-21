@@ -51,7 +51,7 @@ struct MemosList: View {
         ZStack(alignment: .bottom) {
             List(filteredMemoList, id: \.remoteId) { memo in
                 Section {
-                    MemoCard(memo, defaultMemoVisibility: defaultMemoVisibility)
+                    MemoCard(memo, defaultMemoVisibility: defaultMemoVisibility, isExplore: tag == nil)
                 }
             }
             .listStyle(InsetGroupedListStyle())
@@ -265,19 +265,16 @@ struct MemosList: View {
 #endif
                 // Synchronous file IO can be expensive; keep it off the main thread.
                 let audioData = try Data(contentsOf: fileURL, options: [.mappedIfSafe])
-
 #if DEBUG
                 let ioMs = (CFAbsoluteTimeGetCurrent() - ioStartedAt) * 1000
                 audioMemoLogger.debug("Audio memo: read \(audioData.count, privacy: .public) bytes in \(ioMs, privacy: .public)ms")
 #endif
-
                 async let createdResource: Resource = service.createResource(
                     filename: fileURL.lastPathComponent,
                     data: audioData,
                     type: "audio/mp4",
                     memoRemoteId: nil
                 )
-
                 async let transcript: String? = {
                     do {
                         return try await SpeechTranscriber.transcribeAudioFile(at: fileURL)
@@ -285,20 +282,37 @@ struct MemosList: View {
                         return nil
                     }
                 }()
-
                 let resource = try await createdResource
                 let text = await transcript
 
-                await MainActor.run {
-                    if let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        let existing = appPath.newMemoPrefillContent ?? ""
-                        appPath.newMemoPrefillContent = existing.isEmpty ? text : (existing + "\n" + text)
+                // 新增：润色逻辑
+                var finalText: String? = text
+                if let transcript = text, !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    let prompt = "把下面这段语音转写的文字整理通顺：\n修正错别字、口误、重复内容\n自动加上正确标点\n语句通顺、逻辑清晰\n适当分段，方便阅读\n保留原意不删减关键信息\n待整理内容：\n" + transcript
+                    do {
+                        let refined = try await service.getTextRefine(filter: nil, prompt: prompt)
+                        if !refined.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            finalText = refined
+                        }
+#if DEBUG
+                        audioMemoLogger.debug("Audio memo: text refinement succeeded")
+#endif
+                    } catch {
+#if DEBUG
+                        audioMemoLogger.debug("Audio memo: text refinement failed: \(String(describing: error), privacy: .public)")
+#endif
+                        // 回退用原始 transcript
                     }
+                }
 
+                await MainActor.run {
+                    if let finalText, !finalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        let existing = appPath.newMemoPrefillContent ?? ""
+                        appPath.newMemoPrefillContent = existing.isEmpty ? finalText : (existing + "\n" + finalText)
+                    }
                     appPath.newMemoPrefillResources.append(resource)
                     appPath.presentedSheet = .newMemo
                     isProcessingAudio = false
-
 #if DEBUG
                     let totalMs = (CFAbsoluteTimeGetCurrent() - processingStartedAt) * 1000
                     audioMemoLogger.debug("Audio memo: succeeded in \(totalMs, privacy: .public)ms")

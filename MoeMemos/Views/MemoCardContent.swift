@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 #if canImport(MarkdownUI)
 @preconcurrency import MarkdownUI
 #endif
@@ -45,49 +48,53 @@ struct MemoCardContent: View {
         self.toggleTaskItem = toggleTaskItem
         self.isExplore = isExplore
         
-        // 调试输出，打印资源信息
-        #if DEBUG
-        print("[调试] memo.content: \(memo.content)")
-        print("[调试] memo.resources: \(memo.resources)")
-        #endif
+        // No debug prints in production; keep init lightweight
     }
     
     var body: some View {
         VStack(alignment: .leading) {
-            if !isExplore {
-                // Standard Mode: Show content first.
-                #if canImport(MarkdownUI)
-                MarkdownView(memo.content)
-                    .markdownImageProvider(.lazyImage(aspectRatio: 4 / 3))
-                    .markdownCodeSyntaxHighlighter(colorScheme == .dark ? .dark() : .light())
-                    .onTapGesture {
-                        if ignoreContentTap { print("[MemoCardContent] content tap ignored (Markdown) memoRemoteId=\(memo.remoteId ?? "<nil>")"); return }
-                        print("[MemoCardContent] content tapped (Markdown) memoRemoteId=\(memo.remoteId ?? "<nil>")")
-                    }
-#else
-                Text(memo.content)
-                    .onTapGesture {
-                        if ignoreContentTap { print("[MemoCardContent] content tap ignored (Text) memoRemoteId=\(memo.remoteId ?? "<nil>")"); return }
-                        print("[MemoCardContent] content tapped (Text) memoRemoteId=\(memo.remoteId ?? "<nil>")")
-                    }
-#endif
-            }
+            // Always show memo content.
+            #if canImport(MarkdownUI)
+            MarkdownView(memo.content)
+                .markdownImageProvider(.lazyImage(aspectRatio: 4 / 3))
+                .markdownCodeSyntaxHighlighter(colorScheme == .dark ? .dark() : .light())
+                .onTapGesture {
+                    if ignoreContentTap { return }
+                }
+            #else
+            Text(memo.content)
+                .onTapGesture {
+                    if ignoreContentTap { return }
+                }
+            #endif
             
             ForEach(resources()) { content in
                 if case let .images(urls) = content {
                     MemoCardImageView(images: urls)
                         .onTapGesture {
-                            print("[MemoCardContent] image tapped memoRemoteId=\(memo.remoteId ?? "<nil>")")
+                            if ignoreContentTap { return }
                         }
                 }
                 if case let .attachment(resource) = content {
                     Attachment(resource: resource)
                         .onTapGesture {
-                            print("[MemoCardContent] attachment tapped resource=\(resource.filename) memoRemoteId=\(memo.remoteId ?? "<nil>")")
+                            if ignoreContentTap { return }
                         }
                 }
                 if case let .audio(resource) = content {
-                    AudioPlayerView(resource: resource, textContent: memo.content, ignoreContentTap: $ignoreContentTap, isExplore: isExplore)
+                    if isExplore {
+                        VStack(alignment: .leading, spacing: 8) {
+                            AudioPlayerView(resource: resource, textContent: memo.content, ignoreContentTap: $ignoreContentTap, isExplore: isExplore)
+                        }
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.gray.opacity(0.12))
+                        )
+                    } else {
+                        AudioPlayerView(resource: resource, textContent: memo.content, ignoreContentTap: $ignoreContentTap, isExplore: isExplore)
+                    }
                 }
                 
             }
@@ -372,14 +379,12 @@ struct AudioPlayerView: View {
     private func performPlayTapped() {
         ignoreContentTap.wrappedValue = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { ignoreContentTap.wrappedValue = false }
-        print("[AudioPlayerView] play button tapped for resource=\(resource.url)")
         handlePlayButton()
     }
 
     private func performExpandTapped() {
         ignoreContentTap.wrappedValue = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { ignoreContentTap.wrappedValue = false }
-        print("[AudioPlayerView] expand button tapped for resource=\(resource.url) beforeExpanded=\(isExpanded)")
         withAnimation {
             isExpanded.toggle()
         }
@@ -412,11 +417,13 @@ struct AudioPlayerView: View {
             }
 
             let transcript = try await SpeechTranscriber.transcribeAudioFile(at: localURL)
+            
             DispatchQueue.main.async {
                 self.rawTranscript = transcript
             }
 
             let punctuated = Self.localPunctuate(transcript)
+            
             DispatchQueue.main.async {
                 self.punctuatedTranscript = punctuated
                 Self.transcriptCache[key] = punctuated
@@ -438,7 +445,9 @@ struct AudioPlayerView: View {
         guard !isLoading else { return }
         isLoading = true
         
+        #if DEBUG
         print("AudioPlayerView: Starting to load audio for resource: \(resource.url), mimeType: \(resource.mimeType)")
+        #endif
         
         currentTask = Task {
             do {
@@ -447,13 +456,19 @@ struct AudioPlayerView: View {
                 if audioSession.category != .playback {
                     try audioSession.setCategory(.playback, mode: .default)
                     try audioSession.setActive(true)
+                    #if DEBUG
                     print("AudioPlayerView: Audio session set up")
+                    #endif
                 }
                 
                 if let service = accountManager.currentService {
+                    #if DEBUG
                     print("AudioPlayerView: Downloading audio from service")
+                    #endif
                     let url = try await service.download(url: resource.url, mimeType: resource.mimeType)
+                    #if DEBUG
                     print("AudioPlayerView: Downloaded to local URL: \(url)")
+                    #endif
                     
                     // Check if task was cancelled
                     if Task.isCancelled { return }
@@ -463,7 +478,9 @@ struct AudioPlayerView: View {
                         existingPlayer.pause()
                         // Don't replace the player if it already exists and is ready
                         if existingPlayer.currentItem?.status == .readyToPlay {
+                            #if DEBUG
                             print("AudioPlayerView: Reusing existing player")
+                            #endif
                             existingPlayer.play()
                             self.isPlaying = true
                             isLoading = false
@@ -472,7 +489,9 @@ struct AudioPlayerView: View {
                     }
                     
                     // Initialize new player
+                    #if DEBUG
                     print("AudioPlayerView: Initializing AVPlayer")
+                    #endif
                     let playerItem = AVPlayerItem(url: url)
                     let player = AVPlayer(playerItem: playerItem)
                     self.audioPlayer = player
@@ -482,25 +501,35 @@ struct AudioPlayerView: View {
                         do {
                             let duration = try await asset.load(.duration)
                             self.duration = CMTimeGetSeconds(duration)
+                            #if DEBUG
                             print("AudioPlayerView: Duration: \(self.duration)")
+                            #endif
                         } catch {
+                            #if DEBUG
                             print("AudioPlayerView: Failed to load duration: \(error)")
+                            #endif
                         }
                     }
                     
                     // Check if task was cancelled before starting playback
                     if Task.isCancelled { return }
                     
+                    #if DEBUG
                     print("AudioPlayerView: Starting playback")
+                    #endif
                     player.play()
                     self.isPlaying = true
                 } else {
+                    #if DEBUG
                     print("AudioPlayerView: No current service available")
+                    #endif
                 }
             } catch {
                 if !Task.isCancelled {
                     self.error = error
+                    #if DEBUG
                     print("AudioPlayerView: Audio playback error: \(error)")
+                    #endif
                 }
             }
             if !Task.isCancelled {
