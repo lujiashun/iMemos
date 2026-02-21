@@ -156,8 +156,15 @@ struct AudioPlayerView: View {
     @State private var isPunctuating = false
     @State private var punctuateError: Error?
 
+    // Refined transcript (server-side) shown only for Explore mode
+    @State private var refinedTranscript: String?
+    @State private var isRefining: Bool = false
+    @State private var refineError: Error?
+
     // Simple in-memory cache to avoid repeated transcription for same resource
     private static var transcriptCache: [String: String] = [:]
+    // Cache for server-refined transcripts
+    private static var refinedTranscriptCache: [String: String] = [:]
     
     // Local lightweight punctuator (kept here to avoid dependency on external helper at compile time)
     private static func localPunctuate(_ text: String) -> String {
@@ -262,15 +269,24 @@ struct AudioPlayerView: View {
             }
             
             // Expanded Text Content
+            // Precompute displayText here to avoid placing statements inside ViewBuilder.
+            let displayText = isExplore ? (refinedTranscript ?? punctuatedTranscript ?? rawTranscript ?? textContent) : (punctuatedTranscript ?? rawTranscript ?? textContent)
             if isExpanded {
-                // Determine which text to show: prefer punctuated transcript, then raw transcript, then memo content
-                let displayText = punctuatedTranscript ?? rawTranscript ?? textContent
-
                 if isPunctuating {
                     HStack(spacing: 8) {
                         ProgressView()
                             .controlSize(.small)
                         Text("转写并恢复标点中…")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top, 8)
+                    .padding(.horizontal, 4)
+                } else if isRefining {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("优化中…")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -299,6 +315,12 @@ struct AudioPlayerView: View {
 
                 if let err = punctuateError {
                     Text("（原文恢复失败，显示可用文字）")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 4)
+                }
+                if let err = refineError {
+                    Text("（优化失败，显示原文）")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 4)
@@ -427,6 +449,36 @@ struct AudioPlayerView: View {
             DispatchQueue.main.async {
                 self.punctuatedTranscript = punctuated
                 Self.transcriptCache[key] = punctuated
+            }
+            // If this view is rendered in Explore, attempt server-side refine asynchronously
+            if isExplore {
+                if let cachedRefined = Self.refinedTranscriptCache[key] {
+                    DispatchQueue.main.async {
+                        self.refinedTranscript = cachedRefined
+                    }
+                } else if let service = accountManager.currentService {
+                    DispatchQueue.main.async {
+                        self.isRefining = true
+                        self.refineError = nil
+                    }
+                    do {
+                        let prompt = "把下面这段语音转写的文字整理通顺：\n修正错别字、口误、重复内容\n自动加上正确标点\n语句通顺、逻辑清晰\n适当分段，方便阅读\n保留原意不删减关键信息\n待整理内容：\n" + punctuated
+                        let refined = try await service.getTextRefine(filter: nil, prompt: prompt)
+                        if !refined.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            DispatchQueue.main.async {
+                                self.refinedTranscript = refined
+                                Self.refinedTranscriptCache[key] = refined
+                            }
+                        }
+                    } catch {
+                        DispatchQueue.main.async {
+                            self.refineError = error
+                        }
+                    }
+                    DispatchQueue.main.async {
+                        self.isRefining = false
+                    }
+                }
             }
         } catch {
             DispatchQueue.main.async {
