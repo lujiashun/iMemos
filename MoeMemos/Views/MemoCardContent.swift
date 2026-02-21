@@ -445,9 +445,7 @@ struct AudioPlayerView: View {
         guard !isLoading else { return }
         isLoading = true
         
-        #if DEBUG
-        print("AudioPlayerView: Starting to load audio for resource: \(resource.url), mimeType: \(resource.mimeType)")
-        #endif
+        
         
         currentTask = Task {
             do {
@@ -456,19 +454,13 @@ struct AudioPlayerView: View {
                 if audioSession.category != .playback {
                     try audioSession.setCategory(.playback, mode: .default)
                     try audioSession.setActive(true)
-                    #if DEBUG
-                    print("AudioPlayerView: Audio session set up")
-                    #endif
+                    
                 }
                 
                 if let service = accountManager.currentService {
-                    #if DEBUG
-                    print("AudioPlayerView: Downloading audio from service")
-                    #endif
+                    
                     let url = try await service.download(url: resource.url, mimeType: resource.mimeType)
-                    #if DEBUG
-                    print("AudioPlayerView: Downloaded to local URL: \(url)")
-                    #endif
+                    
                     
                     // Check if task was cancelled
                     if Task.isCancelled { return }
@@ -478,9 +470,7 @@ struct AudioPlayerView: View {
                         existingPlayer.pause()
                         // Don't replace the player if it already exists and is ready
                         if existingPlayer.currentItem?.status == .readyToPlay {
-                            #if DEBUG
-                            print("AudioPlayerView: Reusing existing player")
-                            #endif
+                        
                             existingPlayer.play()
                             self.isPlaying = true
                             isLoading = false
@@ -489,9 +479,7 @@ struct AudioPlayerView: View {
                     }
                     
                     // Initialize new player
-                    #if DEBUG
-                    print("AudioPlayerView: Initializing AVPlayer")
-                    #endif
+                    
                     let playerItem = AVPlayerItem(url: url)
                     let player = AVPlayer(playerItem: playerItem)
                     self.audioPlayer = player
@@ -501,35 +489,23 @@ struct AudioPlayerView: View {
                         do {
                             let duration = try await asset.load(.duration)
                             self.duration = CMTimeGetSeconds(duration)
-                            #if DEBUG
-                            print("AudioPlayerView: Duration: \(self.duration)")
-                            #endif
+                            
                         } catch {
-                            #if DEBUG
-                            print("AudioPlayerView: Failed to load duration: \(error)")
-                            #endif
+                        
                         }
                     }
                     
                     // Check if task was cancelled before starting playback
                     if Task.isCancelled { return }
                     
-                    #if DEBUG
-                    print("AudioPlayerView: Starting playback")
-                    #endif
+                    
                     player.play()
                     self.isPlaying = true
                 } else {
-                    #if DEBUG
-                    print("AudioPlayerView: No current service available")
-                    #endif
                 }
             } catch {
                 if !Task.isCancelled {
                     self.error = error
-                    #if DEBUG
-                    print("AudioPlayerView: Audio playback error: \(error)")
-                    #endif
                 }
             }
             if !Task.isCancelled {
