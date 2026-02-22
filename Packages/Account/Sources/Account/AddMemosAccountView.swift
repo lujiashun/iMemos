@@ -142,8 +142,8 @@ public struct AddMemosAccountView: View {
                 RegisterMemosAccountView()
             }
         }
-        .toast(isPresenting: $showingErrorToast, duration: 1.5, alertType: .systemImage("xmark.circle", loginError.map(userFacingErrorMessage)))
-        .toast(isPresenting: $showLoadingToast, alertType: .loading)
+        .safeToast(isPresenting: $showingErrorToast, message: loginError.map(userFacingErrorMessage), systemImage: "xmark.circle")
+        .safeLoading(isPresenting: $showLoadingToast)
         .navigationTitle("account.add-memos-account")
         .navigationBarTitleDisplayMode(.inline)
     }

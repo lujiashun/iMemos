@@ -86,7 +86,7 @@ struct MemoCardContent: View {
                         VStack(alignment: .leading, spacing: 8) {
                             AudioPlayerView(resource: resource, textContent: memo.content, ignoreContentTap: $ignoreContentTap, isExplore: isExplore)
                         }
-                        .padding(10)
+                        .padding(EdgeInsets(top: 8, leading: 10, bottom: 10, trailing: 10))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -206,7 +206,7 @@ struct AudioPlayerView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Player Control Bar
             HStack(alignment: .center, spacing: 0) {
-                ZStack {
+                    ZStack {
                     Button(action: {
                         if handledByHighPriority {
                             handledByHighPriority = false
@@ -256,7 +256,7 @@ struct AudioPlayerView: View {
                         }
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 8)
-                        .padding(.trailing, 8)
+                        .padding(.trailing, 0)
                     }
                     .contentShape(Rectangle()) // Explicit hit-testing area
                     .highPriorityGesture(TapGesture().onEnded {
@@ -417,8 +417,38 @@ struct AudioPlayerView: View {
     }
 
     private func ensurePunctuatedTranscript() async {
-        // If already have punctuated transcript, nothing to do
-        if punctuatedTranscript != nil { return }
+        // If already have punctuated transcript, still ensure we perform server-side refine for Explore
+        if punctuatedTranscript != nil {
+            // If in Explore mode and refined not available, attempt refine (or use cache)
+            if isExplore {
+                let key = resource.remoteId ?? resource.url.absoluteString
+                if let cachedRefined = Self.refinedTranscriptCache[key] {
+                    DispatchQueue.main.async { self.refinedTranscript = cachedRefined }
+                } else {
+                    // Kick off refine in background without blocking
+                    Task { @MainActor in
+                        if refinedTranscript == nil {
+                            if let service = accountManager.currentService {
+                                self.isRefining = true
+                                self.refineError = nil
+                                do {
+                                    let prompt = "把下面这段语音转写的文字整理通顺：\n修正错别字、口误、重复内容\n自动加上正确标点\n语句通顺、逻辑清晰\n适当分段，方便阅读\n保留原意不删减关键信息\n待整理内容：\n" + (self.punctuatedTranscript ?? "")
+                                    let refined = try await service.getTextRefine(filter: nil, prompt: prompt)
+                                    if !refined.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                        self.refinedTranscript = refined
+                                        Self.refinedTranscriptCache[key] = refined
+                                    }
+                                } catch {
+                                    self.refineError = error
+                                }
+                                self.isRefining = false
+                            }
+                        }
+                    }
+                }
+            }
+            return
+        }
 
         let key = resource.remoteId ?? resource.url.absoluteString
         if let cached = Self.transcriptCache[key] {

@@ -131,7 +131,7 @@ struct MemosList: View {
                 }
             }
         }
-        .toast(isPresenting: $showingAudioErrorToast, duration: 2, alertType: .systemImage("xmark.circle", audioActionError.map(userFacingErrorMessage)))
+        .safeToast(isPresenting: $showingAudioErrorToast, message: audioActionError.map(userFacingErrorMessage), systemImage: "xmark.circle")
     }
 
     private enum AddMemoButtonStyle {

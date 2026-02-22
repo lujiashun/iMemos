@@ -176,7 +176,7 @@ struct MemoInput: View {
                         }
                     }
                     .padding(.horizontal)
-                MemoInputResourceView(viewModel: viewModel)
+                MemoInputResourceView(viewModel: viewModel, textContent: text)
             }
             .padding(.bottom, 40)
             toolbar()
@@ -223,8 +223,8 @@ struct MemoInput: View {
                 draft = text
             }
         }
-        .toast(isPresenting: $showingErrorToast, alertType: .systemImage("xmark.circle", submitError?.localizedDescription))
-        .toast(isPresenting: $showingAudioErrorToast, alertType: .systemImage("xmark.circle", audioActionError?.localizedDescription))
+        .safeToast(isPresenting: $showingErrorToast, message: submitError?.localizedDescription, systemImage: "xmark.circle")
+        .safeToast(isPresenting: $showingAudioErrorToast, message: audioActionError?.localizedDescription, systemImage: "xmark.circle")
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(memo == nil ? NSLocalizedString("input.compose", comment: "Compose") : NSLocalizedString("input.edit", comment: "Edit"))
         .toolbar {

@@ -40,8 +40,8 @@ struct Attachment: View {
         }
         .buttonStyle(BorderlessButtonStyle())
         .padding([.top, .bottom], 5)
-        .toast(isPresenting: $showingErrorToast, alertType: .systemImage("xmark.circle", downloadError?.localizedDescription))
-        .toast(isPresenting: $downloading, alertType: .loading)
+        .safeToast(isPresenting: $showingErrorToast, message: downloadError?.localizedDescription, systemImage: "xmark.circle")
+        .safeLoading(isPresenting: $downloading)
         .fullScreenCover(item: $downloadedURL) { url in
             QuickLookPreview(selectedURL: url, urls: [url])
                 .edgesIgnoringSafeArea(.bottom)

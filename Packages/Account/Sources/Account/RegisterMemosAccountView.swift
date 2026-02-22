@@ -65,8 +65,29 @@ public struct RegisterMemosAccountView: View {
             .frame(maxWidth: .infinity)
         }
         .padding()
-        .toast(isPresenting: $showingErrorToast, alertType: .systemImage("xmark.circle", registerError.map(userFacingErrorMessage)))
-        .toast(isPresenting: $showLoadingToast, alertType: .loading)
+        .overlay(alignment: .top) {
+            if showingErrorToast, let err = registerError {
+                Text(userFacingErrorMessage(err))
+                    .multilineTextAlignment(.center)
+                    .padding()
+                    .background(.regularMaterial)
+                    .cornerRadius(10)
+                    .padding(.horizontal)
+                    .onTapGesture { showingErrorToast = false }
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .overlay {
+            if showLoadingToast {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .padding(16)
+                    .background(.regularMaterial)
+                    .cornerRadius(12)
+                    .shadow(radius: 6)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            }
+        }
         .navigationTitle("注册账号")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -76,6 +97,7 @@ public struct RegisterMemosAccountView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                 }
+                .frame(minWidth: 44, minHeight: 44)
             }
         }
     }

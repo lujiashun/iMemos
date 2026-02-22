@@ -16,9 +16,23 @@ struct MoeMemosShareView: View {
         self.alertType = alertType
     }
     
+    private var message: String? {
+        switch alertType {
+        case .systemImage(_, let title): return title
+        case .loading: return nil
+        }
+    }
+
+    private var systemImageName: String? {
+        switch alertType {
+        case .systemImage(let name, _): return name
+        case .loading: return nil
+        }
+    }
+
     var body: some View {
         Color.clear
-            .toast(isPresenting: $isPresenting, alertType: alertType)
+            .safeToast(isPresenting: $isPresenting, message: message, systemImage: systemImageName)
     }
 }
 

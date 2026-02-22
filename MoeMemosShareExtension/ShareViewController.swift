@@ -39,13 +39,16 @@ class ShareViewController: SLComposeServiceViewController {
         // This is called after the user selects Post. Do the upload of contentText and/or NSExtensionContext attachments.
         Task {
             do {
-                shareViewHostingController.view.translatesAutoresizingMaskIntoConstraints = false
-                self.addChild(shareViewHostingController)
-                self.view.addSubview(shareViewHostingController.view)
-                NSLayoutConstraint.activate([
-                    shareViewHostingController.view.centerXAnchor.constraint(equalTo: self.view.centerXAnchor),
-                    shareViewHostingController.view.centerYAnchor.constraint(equalTo: self.view.centerYAnchor)
-                ])
+                if shareViewHostingController.parent == nil {
+                    shareViewHostingController.view.translatesAutoresizingMaskIntoConstraints = false
+                    self.addChild(shareViewHostingController)
+                    self.view.addSubview(shareViewHostingController.view)
+                    NSLayoutConstraint.activate([
+                        shareViewHostingController.view.centerXAnchor.constraint(equalTo: self.view.centerXAnchor),
+                        shareViewHostingController.view.centerYAnchor.constraint(equalTo: self.view.centerYAnchor)
+                    ])
+                    shareViewHostingController.didMove(toParent: self)
+                }
                 try await handleShare()
                 
                 self.shareViewHostingController.rootView = MoeMemosShareView(alertType: .systemImage("checkmark.circle", NSLocalizedString("share.memo-saved", comment: "")))
