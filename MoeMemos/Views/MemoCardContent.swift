@@ -334,8 +334,10 @@ struct AudioPlayerView: View {
                     .padding(.horizontal, 4)
                 }
 
-                // Delete button: show only in editor (not Explore) under the displayed transcript
-                if !isExplore && isExpanded && !displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                // Delete button: show in editor (not Explore) under the expanded transcript.
+                // Previously the button was hidden when there was no display text; keep it visible
+                // so users can delete the audio even if the original text is empty or failed to load.
+                if !isExplore && isExpanded {
                     HStack {
                         Button(action: {
                             onDelete?()
