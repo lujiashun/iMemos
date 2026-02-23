@@ -53,6 +53,7 @@ struct MemoCard: View {
                         .padding([.leading, .top, .bottom], 10)
                 }
             }
+            .padding(.bottom, isExplore ? 10 : 8)
             
             MemoCardContent(memo: memo, toggleTaskItem: toggleTaskItem(_:), isExplore: isExplore)
         }
