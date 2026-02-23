@@ -13,18 +13,24 @@ struct MemoInputResourceView: View {
     
     var body: some View {
         if !viewModel.resourceList.isEmpty || viewModel.imageUploading {
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack {
+            ScrollView(.vertical, showsIndicators: false) {
+                LazyVStack(alignment: .leading, spacing: 12) {
                     ForEach(viewModel.resourceList, id: \.id) { resource in
                         if resource.mimeType.hasPrefix("image/") == true {
                             ResourceCard(resource: resource, resourceManager: viewModel)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         } else if resource.mimeType.hasPrefix("audio/") {
-                            // Use a compact card width in horizontal list so layout resembles Explore cards
                             VStack(alignment: .leading, spacing: 8) {
-                                AudioPlayerView(resource: resource, textContent: textContent, ignoreContentTap: .constant(false), isExplore: true)
+                                    AudioPlayerView(resource: resource, textContent: textContent, ignoreContentTap: .constant(false), isExplore: false, onDelete: {
+                                        Task {
+                                            if let remoteId = resource.remoteId {
+                                                try? await viewModel.deleteResource(remoteId: remoteId)
+                                            }
+                                        }
+                                    })
                             }
                             .padding(10)
-                            .frame(width: 340, alignment: .leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .background(
                                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                                     .fill(Color.gray.opacity(0.12))
@@ -32,15 +38,22 @@ struct MemoInputResourceView: View {
                             .padding(.vertical, 6)
                         } else {
                             Attachment(resource: resource)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
+
                     if viewModel.imageUploading {
-                        Color.clear
-                            .scaledToFill()
-                            .aspectRatio(1, contentMode: .fit)
-                            .overlay {
-                                ProgressView()
-                            }
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.gray.opacity(0.08))
+                        )
                     }
                 }
                 .padding([.leading, .trailing, .bottom])

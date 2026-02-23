@@ -149,7 +149,7 @@ struct MemoInput: View {
                         // 4. Upload audio as a resource and attach to memo
                         do {
                             let audioData = try Data(contentsOf: fileURL)
-                            let resource = try await viewModel.service.createResource(filename: fileURL.lastPathComponent, data: audioData, type: "audio/m4a", memoRemoteId: nil)
+                            let resource = try await viewModel.uploadResource(filename: fileURL.lastPathComponent, data: audioData, type: "audio/m4a", memoRemoteId: nil)
                             viewModel.resourceList.append(resource)
                         } catch {
                             audioActionError = error

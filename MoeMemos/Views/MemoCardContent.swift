@@ -138,6 +138,7 @@ struct AudioPlayerView: View {
     let textContent: String
     var ignoreContentTap: Binding<Bool> = .constant(false)
     var isExplore: Bool = false
+    var onDelete: (() -> Void)? = nil
     
     @Environment(AccountManager.self) private var accountManager
     @Environment(\.colorScheme) var colorScheme
@@ -160,6 +161,7 @@ struct AudioPlayerView: View {
     @State private var refinedTranscript: String?
     @State private var isRefining: Bool = false
     @State private var refineError: Error?
+    @State private var copied = false
 
     // Simple in-memory cache to avoid repeated transcription for same resource
     private static var transcriptCache: [String: String] = [:]
@@ -266,6 +268,7 @@ struct AudioPlayerView: View {
                     })
                 }
                 .background(Color.clear)
+                // (delete button moved below expanded transcript)
             }
             
             // Expanded Text Content
@@ -311,6 +314,41 @@ struct AudioPlayerView: View {
                     .padding(.top, 12)
                     .padding(.horizontal, 4)
                     .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
+                // Copy button: show only in Explore mode under the displayed transcript
+                if isExplore && !displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    HStack {
+                        Button(action: { copyTranscript() }) {
+                            Image(systemName: copied ? "doc.on.doc.fill" : "doc.on.doc")
+                                .font(.caption)
+                                .foregroundColor(copied ? Color.accentColor : Color.secondary)
+                                .padding(8)
+                                .background(copied ? Color.accentColor.opacity(0.12) : Color.clear)
+                                .cornerRadius(6)
+                        }
+                        .buttonStyle(.borderless)
+                        .animation(.easeInOut(duration: 0.18), value: copied)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 4)
+                }
+
+                // Delete button: show only in editor (not Explore) under the displayed transcript
+                if !isExplore && isExpanded && !displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    HStack {
+                        Button(action: {
+                            onDelete?()
+                        }) {
+                            Image(systemName: "trash")
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                                .padding(8)
+                        }
+                        .buttonStyle(.borderless)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 4)
                 }
 
                 if let err = punctuateError {
@@ -413,6 +451,23 @@ struct AudioPlayerView: View {
         if isExpanded {
             // start async task to ensure we have a punctuated transcript
             Task { await ensurePunctuatedTranscript() }
+        }
+    }
+
+    private func copyTranscript() {
+        let text = refinedTranscript ?? punctuatedTranscript ?? rawTranscript ?? textContent
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        #if canImport(UIKit)
+        UIPasteboard.general.string = trimmed
+        #elseif canImport(AppKit)
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(trimmed, forType: .string)
+        #endif
+        copied = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            copied = false
         }
     }
 
