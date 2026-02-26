@@ -37,6 +37,50 @@ private func isTransientError(_ error: Error) -> Bool {
     }
     return false
 }
+
+private func resumeDataFromDownloadError(_ error: Error) -> Data? {
+    let nsError = error as NSError
+    guard nsError.domain == NSURLErrorDomain else { return nil }
+    return nsError.userInfo[NSURLSessionDownloadTaskResumeData] as? Data
+}
+
+private func downloadTask(
+    urlSession: URLSession,
+    request: URLRequest,
+    resumeData: Data?
+) async throws -> (URL, URLResponse) {
+    try await withCheckedThrowingContinuation { continuation in
+        let task: URLSessionDownloadTask
+        if let resumeData, !resumeData.isEmpty {
+            task = urlSession.downloadTask(withResumeData: resumeData) { tmpURL, response, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                guard let tmpURL, let response else {
+                    continuation.resume(throwing: MoeMemosError.unknown)
+                    return
+                }
+                continuation.resume(returning: (tmpURL, response))
+            }
+        } else {
+            task = urlSession.downloadTask(with: request) { tmpURL, response, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                guard let tmpURL, let response else {
+                    continuation.resume(throwing: MoeMemosError.unknown)
+                    return
+                }
+                continuation.resume(returning: (tmpURL, response))
+            }
+        }
+
+        task.resume()
+    }
+}
+
 public func downloadData(urlSession: URLSession, url: URL, middleware: (@Sendable (URLRequest) async throws -> URLRequest)? = nil) async throws -> Data {
     if url.scheme == "data" {
         let (data, _) = try url.absoluteString.dataURIDecoded()
@@ -114,6 +158,7 @@ public func download(urlSession: URLSession, url: URL, mimeType: String? = nil, 
     let maxAttempts = 4
     var attempt = 0
     var baseDelay: TimeInterval = 1
+    var pendingResumeData: Data?
 
     while true {
         attempt += 1
@@ -123,7 +168,11 @@ public func download(urlSession: URLSession, url: URL, mimeType: String? = nil, 
                 request = try await middleware(request)
             }
 
-            let (tmpURL, response) = try await urlSession.download(for: request)
+            let (tmpURL, response) = try await downloadTask(
+                urlSession: urlSession,
+                request: request,
+                resumeData: pendingResumeData
+            )
             guard let response = response as? HTTPURLResponse else {
                 throw MoeMemosError.unknown
             }
@@ -158,7 +207,16 @@ public func download(urlSession: URLSession, url: URL, mimeType: String? = nil, 
 
             return downloadDestination
         } catch {
+            if let resumeData = resumeDataFromDownloadError(error), isTransientError(error), attempt < maxAttempts {
+                pendingResumeData = resumeData
+                let jitter = Double.random(in: 0.5...1.5)
+                try await Task.sleep(nanoseconds: UInt64(baseDelay * jitter * 1_000_000_000))
+                baseDelay *= 2
+                continue
+            }
+
             if isTransientError(error) && attempt < maxAttempts {
+                pendingResumeData = nil
                 let jitter = Double.random(in: 0.5...1.5)
                 try await Task.sleep(nanoseconds: UInt64(baseDelay * jitter * 1_000_000_000))
                 baseDelay *= 2

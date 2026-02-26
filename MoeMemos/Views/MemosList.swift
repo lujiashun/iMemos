@@ -312,7 +312,7 @@ struct MemosList: View {
                 async let createdResource: Resource = service.createResource(
                     filename: fileURL.lastPathComponent,
                     data: audioData,
-                    type: "audio/mp4",
+                    type: "audio/m4a",
                     memoRemoteId: nil
                 )
                 async let transcript: String? = {
