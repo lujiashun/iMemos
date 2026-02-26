@@ -92,6 +92,52 @@ final class AudioMemoRecorder {
 #endif
     }
 
+        func pause() throws {
+    #if os(iOS) || targetEnvironment(macCatalyst)
+        guard let recorder else {
+            throw RecorderError.recorderNotPrepared
+        }
+        recorder.pause()
+    #else
+        throw RecorderError.unsupportedPlatform
+    #endif
+        }
+
+        func resume() throws {
+    #if os(iOS) || targetEnvironment(macCatalyst)
+        guard let recorder else {
+            throw RecorderError.recorderNotPrepared
+        }
+        guard recorder.record() else {
+            throw RecorderError.failedToStartRecording
+        }
+    #else
+        throw RecorderError.unsupportedPlatform
+    #endif
+        }
+
+        func currentTime() -> TimeInterval {
+    #if os(iOS) || targetEnvironment(macCatalyst)
+        return recorder?.currentTime ?? 0
+    #else
+        return 0
+    #endif
+        }
+
+        func currentPowerLevel() -> Float {
+    #if os(iOS) || targetEnvironment(macCatalyst)
+        guard let recorder else { return 0 }
+        recorder.updateMeters()
+        let power = recorder.averagePower(forChannel: 0)
+        let minDb: Float = -60
+        if power < minDb { return 0 }
+        if power >= 0 { return 1 }
+        return (power - minDb) / -minDb
+    #else
+        return 0
+    #endif
+        }
+
 #if os(iOS) || targetEnvironment(macCatalyst)
     private func requestMicrophonePermission() async -> Bool {
         await withCheckedContinuation { continuation in

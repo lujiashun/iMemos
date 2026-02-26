@@ -109,6 +109,7 @@
 		31EE785F29B9E6F4005F62D0 /* Highlightr in Frameworks */ = {isa = PBXBuildFile; productRef = 31EE785E29B9E6F4005F62D0 /* Highlightr */; };
 		31EE786129B9F3A2005F62D0 /* Highlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31EE786029B9F3A2005F62D0 /* Highlighter.swift */; };
 		5F7A1A842345678900ABCDEF /* AudioMemoRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F7A1A832345678900ABCDEF /* AudioMemoRecorder.swift */; };
+		5F7A1A872345678900ABCDEF /* AudioRecordingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F7A1A862345678900ABCDEF /* AudioRecordingPanel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -238,6 +239,7 @@
 		EE17AC762D8E12E500C01504 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/MainInterface.strings; sourceTree = "<group>"; };
 		EE17AC772D8E12E500C01504 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
 		5F7A1A832345678900ABCDEF /* AudioMemoRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMemoRecorder.swift; sourceTree = "<group>"; };
+		5F7A1A862345678900ABCDEF /* AudioRecordingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecordingPanel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -447,6 +449,7 @@
 				192DF0F228C78BAD0077E785 /* ArchivedMemosList.swift */,
 				1934C77B2921670600A169EC /* Attachment.swift */,
 				194B273228C3973400A48675 /* ContentView.swift */,
+				5F7A1A862345678900ABCDEF /* AudioRecordingPanel.swift */,
 				1A8F3F5D30A1B2C300D4E5F6 /* DailyReview.swift */,
 				1AD6B0E531E0BEEF00C0FF01 /* MemoInsight.swift */,
 				1919FBE829CF78BE00FEF570 /* Explore.swift */,
@@ -679,6 +682,7 @@
 				31EE785629B83D1B005F62D0 /* LazyImageProvider.swift in Sources */,
 				19C569AC29125C0700745F9D /* ResourceListViewModel.swift in Sources */,
 				19F31BF728C3E26D000C5207 /* MemosList.swift in Sources */,
+				5F7A1A872345678900ABCDEF /* AudioRecordingPanel.swift in Sources */,
 				1A8F3F5E30A1B2C300D4E5F6 /* DailyReview.swift in Sources */,
 				1AD6B0E631E0BEEF00C0FF01 /* MemoInsight.swift in Sources */,
 				19C997622CF35D49009763C5 /* MemoryUpdatePeriodAppEnum.swift in Sources */,

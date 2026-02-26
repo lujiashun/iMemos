@@ -80,3 +80,4 @@ struct TextView_Previews: PreviewProvider {
         TextView(text: $text, selection: $selection, shouldChangeText: nil)
     }
 }
+
