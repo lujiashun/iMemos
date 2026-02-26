@@ -279,7 +279,7 @@ struct AudioPlayerView: View {
                     HStack(spacing: 8) {
                         ProgressView()
                             .controlSize(.small)
-                        Text("转写并恢复标点中…")
+                        Text("AI转写中…")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -489,7 +489,7 @@ struct AudioPlayerView: View {
                                 self.isRefining = true
                                 self.refineError = nil
                                 do {
-                                    let prompt = "把下面这段语音转写的文字整理通顺：\n修正错别字、口误、重复内容\n自动加上正确标点\n语句通顺、逻辑清晰\n适当分段，方便阅读\n保留原意不删减关键信息\n待整理内容：\n" + (self.punctuatedTranscript ?? "")
+                                    let prompt = makeAudioTranscriptRefinePrompt(self.punctuatedTranscript ?? "")
                                     let refined = try await service.getTextRefine(filter: nil, prompt: prompt)
                                     if !refined.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                                         self.refinedTranscript = refined
@@ -549,7 +549,7 @@ struct AudioPlayerView: View {
                         self.refineError = nil
                     }
                     do {
-                        let prompt = "把下面这段语音转写的文字整理通顺：\n修正错别字、口误、重复内容\n自动加上正确标点\n语句通顺、逻辑清晰\n适当分段，方便阅读\n保留原意不删减关键信息\n待整理内容：\n" + punctuated
+                        let prompt = makeAudioTranscriptRefinePrompt(punctuated)
                         let refined = try await service.getTextRefine(filter: nil, prompt: prompt)
                         if !refined.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             DispatchQueue.main.async {

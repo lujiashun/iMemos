@@ -33,11 +33,18 @@ struct MemoInput: View {
     // Voice input state
     @State private var isRecordingAudio = false
     @State private var isProcessingAudio = false
+    @State private var isRecordingPanelPresented = false
+    @State private var isRecordingPaused = false
+    @State private var recordingElapsed: TimeInterval = 0
+    @State private var waveformSamples: [CGFloat] = Array(repeating: 0.12, count: 24)
     @State private var audioActionError: Error?
     @State private var showingAudioErrorToast = false
     @State private var audioRecorder = AudioMemoRecorder()
     @State private var submitError: Error?
     @State private var showingErrorToast = false
+
+    private let maxRecordingDuration: TimeInterval = 180
+    private let meterTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
     
     @ViewBuilder
     private func toolbar() -> some View {
@@ -86,16 +93,12 @@ struct MemoInput: View {
                 }
                 // --- Voice button ---
                 Button {
-                    if isRecordingAudio {
-                        stopAudioRecordingAndProcess()
-                    } else {
-                        startAudioRecording()
-                    }
+                    startAudioRecording()
                 } label: {
-                    Image(systemName: isRecordingAudio ? "stop.circle.fill" : "mic.circle")
+                    Image(systemName: "mic.circle")
                         .foregroundColor(isRecordingAudio ? .red : .accentColor)
                 }
-                .accessibilityLabel(isRecordingAudio ? "Stop Recording" : "Start Voice Input")
+                .accessibilityLabel("Start Voice Input")
                 Spacer()
             }
             .frame(height: 20)
@@ -111,6 +114,10 @@ struct MemoInput: View {
             do {
                 try await audioRecorder.start()
                 isRecordingAudio = true
+                isRecordingPaused = false
+                isRecordingPanelPresented = true
+                recordingElapsed = 0
+                waveformSamples = Array(repeating: 0.12, count: waveformSamples.count)
                 audioActionError = nil
             } catch {
                 audioActionError = error
@@ -119,9 +126,44 @@ struct MemoInput: View {
         }
     }
 
+    private func togglePauseResume() {
+        guard isRecordingAudio && !isProcessingAudio else { return }
+
+        do {
+            if isRecordingPaused {
+                try audioRecorder.resume()
+                isRecordingPaused = false
+            } else {
+                try audioRecorder.pause()
+                isRecordingPaused = true
+            }
+        } catch {
+            audioActionError = error
+            showingAudioErrorToast = true
+        }
+    }
+
+    private func updateRecordingMeters() {
+        guard isRecordingAudio else { return }
+        let elapsed = audioRecorder.currentTime()
+        if !isRecordingPaused {
+            let level = audioRecorder.currentPowerLevel()
+            waveformSamples.append(max(0.05, CGFloat(level)))
+            if waveformSamples.count > 24 {
+                waveformSamples.removeFirst(waveformSamples.count - 24)
+            }
+        }
+        recordingElapsed = elapsed
+        if recordingElapsed >= maxRecordingDuration {
+            stopAudioRecordingAndProcess()
+        }
+    }
+
     private func stopAudioRecordingAndProcess() {
         guard isRecordingAudio && !isProcessingAudio else { return }
         isRecordingAudio = false
+        isRecordingPaused = false
+        isRecordingPanelPresented = false
         isProcessingAudio = true
         let fileURL: URL
         do {
@@ -138,7 +180,7 @@ struct MemoInput: View {
                 // 1. Transcribe
                 let transcript = try await SpeechTranscriber.transcribeAudioFile(at: fileURL)
                 // 2. Call MemoService_GetMemoInsight
-                let prompt = "把下面这段语音转写的文字整理通顺：\n修正错别字、口误、重复内容\n自动加上正确标点\n语句通顺、逻辑清晰\n适当分段，方便阅读\n保留原意不删减关键信息\n待整理内容：\n" + transcript
+                let prompt = makeAudioTranscriptRefinePrompt(transcript)
                 let insight = try await viewModel.service.getTextRefine(filter: nil, prompt: prompt)
                 // 3. Insert into editor
                 if text.isEmpty {
@@ -180,6 +222,26 @@ struct MemoInput: View {
             }
             .padding(.bottom, 40)
             toolbar()
+
+            if isRecordingPanelPresented {
+                GeometryReader { proxy in
+                    VStack {
+                        Spacer()
+                        AudioRecordingPanel(
+                            isPaused: isRecordingPaused,
+                            duration: recordingElapsed,
+                            maxDuration: maxRecordingDuration,
+                            samples: waveformSamples,
+                            onPauseResume: togglePauseResume,
+                            onStop: stopAudioRecordingAndProcess
+                        )
+                        .frame(height: max(1, proxy.size.height / 3))
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
+                    }
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         
         .onAppear {
@@ -222,6 +284,9 @@ struct MemoInput: View {
             if memo == nil {
                 draft = text
             }
+        }
+        .onReceive(meterTimer) { _ in
+            updateRecordingMeters()
         }
         .safeToast(isPresenting: $showingErrorToast, message: submitError?.localizedDescription, systemImage: "xmark.circle")
         .safeToast(isPresenting: $showingAudioErrorToast, message: audioActionError?.localizedDescription, systemImage: "xmark.circle")

@@ -40,8 +40,15 @@ struct MemosList: View {
     @State private var audioRecorder = AudioMemoRecorder()
     @State private var isRecordingAudio = false
     @State private var isProcessingAudio = false
+    @State private var isRecordingPanelPresented = false
+    @State private var isRecordingPaused = false
+    @State private var recordingElapsed: TimeInterval = 0
+    @State private var waveformSamples: [CGFloat] = Array(repeating: 0.12, count: 24)
     @State private var audioActionError: Error?
     @State private var showingAudioErrorToast = false
+
+    private let maxRecordingDuration: TimeInterval = 180
+    private let meterTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
     
     var body: some View {
         @Bindable var appPath = appPath
@@ -61,9 +68,24 @@ struct MemosList: View {
                 .padding(.bottom, 20)
             }
 
-            if isRecordingAudio {
-                recordingHUD
-                    .padding(.bottom, 100)
+            if isRecordingPanelPresented {
+                GeometryReader { proxy in
+                    VStack {
+                        Spacer()
+                        AudioRecordingPanel(
+                            isPaused: isRecordingPaused,
+                            duration: recordingElapsed,
+                            maxDuration: maxRecordingDuration,
+                            samples: waveformSamples,
+                            onPauseResume: togglePauseResume,
+                            onStop: stopAudioRecordingAndPrepareMemo
+                        )
+                        .frame(height: max(1, proxy.size.height / 3))
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
+                    }
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             } else if isProcessingAudio {
                 processingHUD
                     .padding(.bottom, 100)
@@ -131,6 +153,9 @@ struct MemosList: View {
                 }
             }
         }
+        .onReceive(meterTimer) { _ in
+            updateRecordingMeters()
+        }
         .safeToast(isPresenting: $showingAudioErrorToast, message: audioActionError.map(userFacingErrorMessage), systemImage: "xmark.circle")
     }
 
@@ -150,13 +175,6 @@ struct MemosList: View {
         let longPress = LongPressGesture(minimumDuration: 0.35, maximumDistance: 12)
             .onEnded { _ in
                 startAudioRecording()
-            }
-
-        let releaseDetector = DragGesture(minimumDistance: 0)
-            .onEnded { _ in
-                if isRecordingAudio {
-                    stopAudioRecordingAndPrepareMemo()
-                }
             }
 
         Group {
@@ -182,24 +200,7 @@ struct MemosList: View {
             tapAction()
         }
         .highPriorityGesture(longPress)
-        .simultaneousGesture(releaseDetector)
         .accessibilityAddTraits(.isButton)
-    }
-
-    @ViewBuilder
-    private var recordingHUD: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(Color.red)
-                .frame(width: 10, height: 10)
-            Text("录音中…松开结束")
-                .font(.subheadline)
-                .foregroundStyle(.primary)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial)
-        .clipShape(Capsule())
     }
 
     @ViewBuilder
@@ -223,6 +224,10 @@ struct MemosList: View {
             do {
                 try await audioRecorder.start()
                 isRecordingAudio = true
+                isRecordingPaused = false
+                isRecordingPanelPresented = true
+                recordingElapsed = 0
+                waveformSamples = Array(repeating: 0.12, count: waveformSamples.count)
                 audioActionError = nil
             } catch {
                 audioActionError = error
@@ -231,10 +236,45 @@ struct MemosList: View {
         }
     }
 
+    private func togglePauseResume() {
+        guard isRecordingAudio && !isProcessingAudio else { return }
+
+        do {
+            if isRecordingPaused {
+                try audioRecorder.resume()
+                isRecordingPaused = false
+            } else {
+                try audioRecorder.pause()
+                isRecordingPaused = true
+            }
+        } catch {
+            audioActionError = error
+            showingAudioErrorToast = true
+        }
+    }
+
+    private func updateRecordingMeters() {
+        guard isRecordingAudio else { return }
+        let elapsed = audioRecorder.currentTime()
+        if !isRecordingPaused {
+            let level = audioRecorder.currentPowerLevel()
+            waveformSamples.append(max(0.05, CGFloat(level)))
+            if waveformSamples.count > 24 {
+                waveformSamples.removeFirst(waveformSamples.count - 24)
+            }
+        }
+        recordingElapsed = elapsed
+        if recordingElapsed >= maxRecordingDuration {
+            stopAudioRecordingAndPrepareMemo()
+        }
+    }
+
     private func stopAudioRecordingAndPrepareMemo() {
         guard isRecordingAudio && !isProcessingAudio else { return }
 
         isRecordingAudio = false
+        isRecordingPaused = false
+        isRecordingPanelPresented = false
         isProcessingAudio = true
 
     #if DEBUG
@@ -288,7 +328,7 @@ struct MemosList: View {
                 // 新增：润色逻辑
                 var finalText: String? = text
                 if let transcript = text, !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    let prompt = "把下面这段语音转写的文字整理通顺：\n修正错别字、口误、重复内容\n自动加上正确标点\n语句通顺、逻辑清晰\n适当分段，方便阅读\n保留原意不删减关键信息\n待整理内容：\n" + transcript
+                    let prompt = makeAudioTranscriptRefinePrompt(transcript)
                     do {
                         let refined = try await service.getTextRefine(filter: nil, prompt: prompt)
                         if !refined.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
