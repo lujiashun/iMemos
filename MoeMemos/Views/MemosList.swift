@@ -78,7 +78,7 @@ struct MemosList: View {
                             maxDuration: maxRecordingDuration,
                             samples: waveformSamples,
                             onPauseResume: togglePauseResume,
-                            onStop: stopAudioRecordingAndPrepareMemo
+                            onStop: stopAudioRecordingAndCreateMemo
                         )
                         .frame(height: max(1, proxy.size.height / 3))
                         .padding(.horizontal, 16)
@@ -265,11 +265,11 @@ struct MemosList: View {
         }
         recordingElapsed = elapsed
         if recordingElapsed >= maxRecordingDuration {
-            stopAudioRecordingAndPrepareMemo()
+            stopAudioRecordingAndCreateMemo()
         }
     }
 
-    private func stopAudioRecordingAndPrepareMemo() {
+    private func stopAudioRecordingAndCreateMemo() {
         guard isRecordingAudio && !isProcessingAudio else { return }
 
         isRecordingAudio = false
@@ -284,6 +284,7 @@ struct MemosList: View {
         // Capture actor-isolated values up-front on the MainActor.
         let fileURL: URL
         let service: RemoteService
+        let memoVisibility = userState.currentUser?.defaultVisibility ?? .private
         do {
             fileURL = try audioRecorder.stop()
             service = try accountManager.mustCurrentService
@@ -345,19 +346,15 @@ struct MemosList: View {
                     }
                 }
 
-                await MainActor.run {
-                    if let finalText, !finalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        let existing = appPath.newMemoPrefillContent ?? ""
-                        appPath.newMemoPrefillContent = existing.isEmpty ? finalText : (existing + "\n" + finalText)
-                    }
-                    appPath.newMemoPrefillResources.append(resource)
-                    appPath.presentedSheet = .newMemo
-                    isProcessingAudio = false
+                try await createMemoFromAudioResult(
+                    finalText: finalText,
+                    resource: resource,
+                    visibility: memoVisibility
+                )
 #if DEBUG
-                    let totalMs = (CFAbsoluteTimeGetCurrent() - processingStartedAt) * 1000
-                    audioMemoLogger.debug("Audio memo: succeeded in \(totalMs, privacy: .public)ms")
+                let totalMs = (CFAbsoluteTimeGetCurrent() - processingStartedAt) * 1000
+                audioMemoLogger.debug("Audio memo: succeeded in \(totalMs, privacy: .public)ms")
 #endif
-                }
             } catch {
                 await MainActor.run {
 #if DEBUG
@@ -370,6 +367,18 @@ struct MemosList: View {
                 }
             }
         }
+    }
+
+    @MainActor
+    private func createMemoFromAudioResult(finalText: String?, resource: Resource, visibility: MemoVisibility) async throws {
+        let trimmedContent = finalText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        try await memosViewModel.createMemo(
+            content: trimmedContent,
+            visibility: visibility,
+            resources: [resource],
+            tags: nil
+        )
+        isProcessingAudio = false
     }
     
     private func filterMemoList(_ memoList: [Memo], tag: Tag?, searchString: String, day: Date?) -> [Memo] {
