@@ -45,6 +45,30 @@ struct MemoInput: View {
 
     private let maxRecordingDuration: TimeInterval = 180
     private let meterTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
+
+    private var hasImageResource: Bool {
+        viewModel.resourceList.contains(where: { $0.mimeType.hasPrefix("image/") })
+    }
+
+    private var hasAudioResource: Bool {
+        viewModel.resourceList.contains(where: isAudioResource)
+    }
+
+    private var shouldShowImageActions: Bool {
+        !hasAudioResource
+    }
+
+    private var shouldShowAudioAction: Bool {
+        !hasAudioResource && !hasImageResource
+    }
+
+    private func isAudioResource(_ resource: Resource) -> Bool {
+        if resource.mimeType.hasPrefix("audio/") {
+            return true
+        }
+        let ext = resource.url.pathExtension.lowercased()
+        return ["m4a", "mp3", "wav", "aac", "ogg", "flac"].contains(ext)
+    }
     
     @ViewBuilder
     private func toolbar() -> some View {
@@ -81,24 +105,28 @@ struct MemoInput: View {
                 } label: {
                     Image(systemName: "checkmark.square")
                 }
-                Button {
-                    showingPhotoPicker = true
-                } label: {
-                    Image(systemName: "photo.on.rectangle")
+                if shouldShowImageActions {
+                    Button {
+                        showingPhotoPicker = true
+                    } label: {
+                        Image(systemName: "photo.on.rectangle")
+                    }
+                    Button {
+                        showingImagePicker = true
+                    } label: {
+                        Image(systemName: "camera")
+                    }
                 }
-                Button {
-                    showingImagePicker = true
-                } label: {
-                    Image(systemName: "camera")
+                if shouldShowAudioAction {
+                    // --- Voice button ---
+                    Button {
+                        startAudioRecording()
+                    } label: {
+                        Image(systemName: "mic.circle")
+                            .foregroundColor(isRecordingAudio ? .red : .accentColor)
+                    }
+                    .accessibilityLabel("Start Voice Input")
                 }
-                // --- Voice button ---
-                Button {
-                    startAudioRecording()
-                } label: {
-                    Image(systemName: "mic.circle")
-                        .foregroundColor(isRecordingAudio ? .red : .accentColor)
-                }
-                .accessibilityLabel("Start Voice Input")
                 Spacer()
             }
             .frame(height: 20)
