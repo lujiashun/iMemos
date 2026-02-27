@@ -489,9 +489,14 @@ struct AudioPlayerView: View {
                                 self.isRefining = true
                                 self.refineError = nil
                                 do {
-                                    let prompt = makeAudioTranscriptRefinePrompt(self.punctuatedTranscript ?? "")
+                                    let sourceText = self.punctuatedTranscript ?? ""
+                                    if shouldSkipAudioTranscriptRefine(sourceText) {
+                                        self.isRefining = false
+                                        return
+                                    }
+                                    let prompt = makeAudioTranscriptRefinePrompt(sourceText)
                                     let refined = try await service.getTextRefine(filter: nil, prompt: prompt)
-                                    if !refined.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                    if shouldUseRefinedAudioTranscript(original: sourceText, refined: refined) {
                                         self.refinedTranscript = refined
                                         Self.refinedTranscriptCache[key] = refined
                                     }
@@ -549,12 +554,18 @@ struct AudioPlayerView: View {
                         self.refineError = nil
                     }
                     do {
-                        let prompt = makeAudioTranscriptRefinePrompt(punctuated)
-                        let refined = try await service.getTextRefine(filter: nil, prompt: prompt)
-                        if !refined.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        if shouldSkipAudioTranscriptRefine(punctuated) {
                             DispatchQueue.main.async {
-                                self.refinedTranscript = refined
-                                Self.refinedTranscriptCache[key] = refined
+                                self.isRefining = false
+                            }
+                        } else {
+                            let prompt = makeAudioTranscriptRefinePrompt(punctuated)
+                            let refined = try await service.getTextRefine(filter: nil, prompt: prompt)
+                            if shouldUseRefinedAudioTranscript(original: punctuated, refined: refined) {
+                                DispatchQueue.main.async {
+                                    self.refinedTranscript = refined
+                                    Self.refinedTranscriptCache[key] = refined
+                                }
                             }
                         }
                     } catch {

@@ -10,18 +10,53 @@ import Foundation
 let listItemSymbolList = ["- [ ] ", "- [x] ", "- [X] ", "* ", "- "]
 
 let audioTranscriptRefinePromptPrefix = """
-请将以下语音转写文本进行专业级文本整理，严格遵守以下所有规则:
+你是“语音转写文本整理器”，只能做最小必要编辑，禁止创作。
 
-1. 仅输出整理后的最终文本，禁止添加任何解释性文字、标题、注释、说明、前缀或后缀,包括但不限于：“改写说明”、“优化后：”、“以下是结果：”等。
-2. 修正所有错别字、口误、重复语句、语义冗余内容，但不得删减任何关键信息或语义单元。
-3. 自动补全缺失的标点符号（句号、逗号、问号、引号、顿号等），确保符合现代汉语书面语规范。
-4. 重组语序，使语句通顺、逻辑清晰、层次分明，符合自然语言表达习惯。
-5. 根据语义自然分段，每段不超过5行，提升可读性，便于阅读与后续处理。
-6. 保留原始说话人的语气、风格与情感倾向（如口语化、情绪化表达），仅做语法与结构优化，不进行主观改写或扩写。
-7. 输出格式要求：纯文本，无Markdown，无HTML，无编号，无项目符号，无空行分隔段落（段落间仅用一个换行符分隔）。
-待整理内容：
+【硬性规则（必须全部满足）】
+1. 仅输出整理后的文本，不得输出任何说明。
+2. 只允许：纠错别字、去口误重复、补标点、轻微语序调整。
+3. 严禁新增任何原文未明确出现的信息、事实、人物、地点、事件、观点、例子。
+4. 严禁扩写、联想续写、举例、解释、发挥。
+5. 若原文过短、语义不完整或无法确定（如少于8个汉字），必须原样返回。
+6. 输出长度不得超过原文的1.2倍；若原文少于20字，最多仅可比原文多8个字。
+7. 保留原始语气，不改变核心语义。
+
+【输入文本开始】
 """
 
 func makeAudioTranscriptRefinePrompt(_ transcript: String) -> String {
-	audioTranscriptRefinePromptPrefix + transcript
+	audioTranscriptRefinePromptPrefix + transcript + "\n【输入文本结束】"
+}
+
+private let minAudioTranscriptCharsForRefine = 8
+private let audioRefineMaxExpansionRatio = 1.2
+private let audioRefineMaxExpansionForShortText = 8
+
+private func normalizedAudioTranscriptCharCount(_ text: String) -> Int {
+	text
+		.replacingOccurrences(of: "\\s+", with: "", options: .regularExpression)
+		.count
+}
+
+func shouldSkipAudioTranscriptRefine(_ transcript: String) -> Bool {
+	normalizedAudioTranscriptCharCount(transcript) < minAudioTranscriptCharsForRefine
+}
+
+func shouldUseRefinedAudioTranscript(original: String, refined: String) -> Bool {
+	let originalTrimmed = original.trimmingCharacters(in: .whitespacesAndNewlines)
+	let refinedTrimmed = refined.trimmingCharacters(in: .whitespacesAndNewlines)
+	guard !originalTrimmed.isEmpty, !refinedTrimmed.isEmpty else { return false }
+
+	let originalCount = normalizedAudioTranscriptCharCount(originalTrimmed)
+	let refinedCount = normalizedAudioTranscriptCharCount(refinedTrimmed)
+	guard originalCount > 0, refinedCount > 0 else { return false }
+
+	let maxAllowed: Int
+	if originalCount < 20 {
+		maxAllowed = originalCount + audioRefineMaxExpansionForShortText
+	} else {
+		maxAllowed = Int(ceil(Double(originalCount) * audioRefineMaxExpansionRatio))
+	}
+
+	return refinedCount <= maxAllowed
 }

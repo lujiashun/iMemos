@@ -329,20 +329,22 @@ struct MemosList: View {
                 // 新增：润色逻辑
                 var finalText: String? = text
                 if let transcript = text, !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    let prompt = makeAudioTranscriptRefinePrompt(transcript)
-                    do {
-                        let refined = try await service.getTextRefine(filter: nil, prompt: prompt)
-                        if !refined.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            finalText = refined
+                    if !shouldSkipAudioTranscriptRefine(transcript) {
+                        let prompt = makeAudioTranscriptRefinePrompt(transcript)
+                        do {
+                            let refined = try await service.getTextRefine(filter: nil, prompt: prompt)
+                            if shouldUseRefinedAudioTranscript(original: transcript, refined: refined) {
+                                finalText = refined
+                            }
+#if DEBUG
+                            audioMemoLogger.debug("Audio memo: text refinement succeeded")
+#endif
+                        } catch {
+#if DEBUG
+                            audioMemoLogger.debug("Audio memo: text refinement failed: \(String(describing: error), privacy: .public)")
+#endif
+                            // 回退用原始 transcript
                         }
-#if DEBUG
-                        audioMemoLogger.debug("Audio memo: text refinement succeeded")
-#endif
-                    } catch {
-#if DEBUG
-                        audioMemoLogger.debug("Audio memo: text refinement failed: \(String(describing: error), privacy: .public)")
-#endif
-                        // 回退用原始 transcript
                     }
                 }
 

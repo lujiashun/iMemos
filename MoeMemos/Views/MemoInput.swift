@@ -179,9 +179,15 @@ struct MemoInput: View {
             do {
                 // 1. Transcribe
                 let transcript = try await SpeechTranscriber.transcribeAudioFile(at: fileURL)
-                // 2. Call MemoService_GetMemoInsight
-                let prompt = makeAudioTranscriptRefinePrompt(transcript)
-                let insight = try await viewModel.service.getTextRefine(filter: nil, prompt: prompt)
+                // 2. Refine with local guardrails
+                var insight = transcript
+                if !shouldSkipAudioTranscriptRefine(transcript) {
+                    let prompt = makeAudioTranscriptRefinePrompt(transcript)
+                    let refined = try await viewModel.service.getTextRefine(filter: nil, prompt: prompt)
+                    if shouldUseRefinedAudioTranscript(original: transcript, refined: refined) {
+                        insight = refined
+                    }
+                }
                 // 3. Insert into editor
                 if text.isEmpty {
                     text = insight
