@@ -6,20 +6,56 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct MemoInputResourceView: View {
     var viewModel: MemoInputViewModel
     var textContent: String
+
+    private let maxImageCount = 9
+    private let imageGridSpacing: CGFloat = 12
+
+    private var imageItemSide: CGFloat {
+#if canImport(UIKit)
+        UIScreen.main.bounds.width / 4
+#else
+        90
+#endif
+    }
+
+    private var imageGridWidth: CGFloat {
+        imageItemSide * 3 + imageGridSpacing * 2
+    }
+
+    private var imageGridColumns: [GridItem] {
+        Array(repeating: GridItem(.fixed(imageItemSide), spacing: imageGridSpacing, alignment: .center), count: 3)
+    }
     
     var body: some View {
         if !viewModel.resourceList.isEmpty || viewModel.imageUploading {
+            let imageResources = Array(viewModel.resourceList.filter { $0.mimeType.hasPrefix("image/") }.prefix(maxImageCount))
+            let nonImageResources = viewModel.resourceList.filter { !$0.mimeType.hasPrefix("image/") }
+
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(alignment: .leading, spacing: 12) {
-                    ForEach(viewModel.resourceList, id: \.id) { resource in
-                        if resource.mimeType.hasPrefix("image/") == true {
-                            ResourceCard(resource: resource, resourceManager: viewModel)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        } else if resource.mimeType.hasPrefix("audio/") {
+                    if !imageResources.isEmpty {
+                        HStack {
+                            Spacer()
+                            LazyVGrid(columns: imageGridColumns, alignment: .center, spacing: imageGridSpacing) {
+                                ForEach(imageResources, id: \.id) { resource in
+                                    ResourceCard(resource: resource, resourceManager: viewModel, showDeleteButton: true)
+                                        .frame(width: imageItemSide, height: imageItemSide)
+                                }
+                            }
+                            .frame(width: imageGridWidth, alignment: .center)
+                            Spacer()
+                        }
+                    }
+
+                    ForEach(nonImageResources, id: \.id) { resource in
+                        if resource.mimeType.hasPrefix("audio/") {
                             VStack(alignment: .leading, spacing: 8) {
                                     AudioPlayerView(resource: resource, textContent: textContent, ignoreContentTap: .constant(false), isExplore: false, onDelete: {
                                         Task {

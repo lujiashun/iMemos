@@ -13,10 +13,12 @@ import Account
 struct ResourceCard: View {
     let resource: Resource
     let resourceManager: ResourceManager
+    let showDeleteButton: Bool
     
-    init(resource: Resource, resourceManager: ResourceManager) {
+    init(resource: Resource, resourceManager: ResourceManager, showDeleteButton: Bool = false) {
         self.resource = resource
         self.resourceManager = resourceManager
+        self.showDeleteButton = showDeleteButton
     }
     
     @Environment(MemosViewModel.self) private var memosViewModel: MemosViewModel
@@ -55,8 +57,22 @@ struct ResourceCard: View {
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(alignment: .topTrailing) {
+                if showDeleteButton {
+                    Button(role: .destructive) {
+                        Task { await deleteCurrentResource() }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(.white, .black.opacity(0.75))
+                            .padding(6)
+                    }
+                }
+            }
             .contextMenu {
-                menu(for: resource)
+                if !showDeleteButton {
+                    menu(for: resource)
+                }
             }
             .task {
                 do {
@@ -80,12 +96,14 @@ struct ResourceCard: View {
     @ViewBuilder
     func menu(for resource: Resource) -> some View {
         Button(role: .destructive, action: {
-            Task {
-                guard let remoteId = resource.remoteId else { return }
-                try await resourceManager.deleteResource(remoteId: remoteId)
-            }
+            Task { await deleteCurrentResource() }
         }, label: {
             Label("Delete", systemImage: "trash")
         })
+    }
+
+    private func deleteCurrentResource() async {
+        guard let remoteId = resource.remoteId else { return }
+        try? await resourceManager.deleteResource(remoteId: remoteId)
     }
 }

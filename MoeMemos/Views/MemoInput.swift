@@ -45,6 +45,7 @@ struct MemoInput: View {
 
     private let maxRecordingDuration: TimeInterval = 180
     private let meterTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
+    private let maxImageCount = 9
 
     private var hasImageResource: Bool {
         viewModel.resourceList.contains(where: { $0.mimeType.hasPrefix("image/") })
@@ -68,6 +69,25 @@ struct MemoInput: View {
         }
         let ext = resource.url.pathExtension.lowercased()
         return ["m4a", "mp3", "wav", "aac", "ogg", "flac"].contains(ext)
+    }
+
+    private var currentImageCount: Int {
+        viewModel.resourceList.filter { $0.mimeType.hasPrefix("image/") }.count
+    }
+
+    private var remainingImageSlots: Int {
+        max(0, maxImageCount - currentImageCount)
+    }
+
+    private func showImageLimitToast(addedCount: Int?) {
+        let message: String
+        if let addedCount {
+            message = "最多可添加\(maxImageCount)张图片，已添加前\(addedCount)张。"
+        } else {
+            message = "最多可添加\(maxImageCount)张图片。"
+        }
+        submitError = NSError(domain: "MemoInput", code: 1001, userInfo: [NSLocalizedDescriptionKey: message])
+        showingErrorToast = true
     }
     
     @ViewBuilder
@@ -389,14 +409,25 @@ struct MemoInput: View {
     
     private func upload(images: [PhotosPickerItem]) async throws {
         do {
+            let remainingSlots = remainingImageSlots
+            guard remainingSlots > 0 else {
+                showImageLimitToast(addedCount: nil)
+                return
+            }
+
+            let acceptedItems = Array(images.prefix(remainingSlots))
             viewModel.imageUploading = true
-            for item in images {
+            for item in acceptedItems {
                 let imageData = try await item.loadTransferable(type: Data.self)
                 if let imageData = imageData, let image = UIImage(data: imageData) {
                     try await viewModel.upload(image: image)
                 }
             }
-            submitError = nil
+            if images.count > acceptedItems.count {
+                showImageLimitToast(addedCount: acceptedItems.count)
+            } else {
+                submitError = nil
+            }
         } catch {
             submitError = error
             showingErrorToast = true
@@ -406,11 +437,22 @@ struct MemoInput: View {
     
     private func upload(images: [UIImage]) async throws {
         do {
+            let remainingSlots = remainingImageSlots
+            guard remainingSlots > 0 else {
+                showImageLimitToast(addedCount: nil)
+                return
+            }
+
+            let acceptedImages = Array(images.prefix(remainingSlots))
             viewModel.imageUploading = true
-            for image in images {
+            for image in acceptedImages {
                 try await viewModel.upload(image: image)
             }
-            submitError = nil
+            if images.count > acceptedImages.count {
+                showImageLimitToast(addedCount: acceptedImages.count)
+            } else {
+                submitError = nil
+            }
         } catch {
             submitError = error
             showingErrorToast = true
