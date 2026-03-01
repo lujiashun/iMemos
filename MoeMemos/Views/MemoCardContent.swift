@@ -318,7 +318,6 @@ struct AudioPlayerView: View {
                     }
                     .padding(.top, 12)
                     .padding(.horizontal, 4)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
                 // Copy button: show only in Explore mode under the displayed transcript
@@ -453,7 +452,7 @@ struct AudioPlayerView: View {
     private func performExpandTapped() {
         ignoreContentTap.wrappedValue = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { ignoreContentTap.wrappedValue = false }
-        withAnimation {
+        withAnimation(.easeInOut(duration: 0.25)) {
             isExpanded.toggle()
         }
         if isExpanded {
