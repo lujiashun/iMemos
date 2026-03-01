@@ -60,9 +60,10 @@ struct ExpandableTextView: View {
     
     private func parseRichText(_ html: String) -> AttributedString {
         struct TagPair {
-            let openTagRange: Range<String.Index>
-            let closeTagRange: Range<String.Index>
-            let contentRange: Range<String.Index>
+            let openTagStart: Int
+            let openTagEnd: Int
+            let closeTagStart: Int
+            let closeTagEnd: Int
             let isUnderline: Bool
         }
         
@@ -85,24 +86,20 @@ struct ExpandableTextView: View {
                 continue
             }
             
-            let contentRange = openTagRange.upperBound..<closeTagRange.lowerBound
+            let openTagStart = html.distance(from: html.startIndex, to: openTagRange.lowerBound)
+            let openTagEnd = html.distance(from: html.startIndex, to: openTagRange.upperBound)
+            let closeTagStart = html.distance(from: html.startIndex, to: closeTagRange.lowerBound)
+            let closeTagEnd = html.distance(from: html.startIndex, to: closeTagRange.upperBound)
+            
             tagPairs.append(TagPair(
-                openTagRange: openTagRange,
-                closeTagRange: closeTagRange,
-                contentRange: contentRange,
+                openTagStart: openTagStart,
+                openTagEnd: openTagEnd,
+                closeTagStart: closeTagStart,
+                closeTagEnd: closeTagEnd,
                 isUnderline: isUnderline
             ))
             
             searchStart = closeTagRange.upperBound
-        }
-        
-        var resultText = html
-        var offset = 0
-        
-        for pair in tagPairs.sorted(by: { $0.openTagRange.lowerBound < $1.openTagRange.lowerBound }) {
-            let openTagLength = pair.openTagRange.upperBound - pair.openTagRange.lowerBound
-            let closeTagLength = pair.closeTagRange.upperBound - pair.closeTagRange.lowerBound
-            offset += openTagLength + closeTagLength
         }
         
         let plainText = html
@@ -114,25 +111,22 @@ struct ExpandableTextView: View {
         var result = AttributedString(plainText)
         
         for pair in tagPairs {
-            let openStart = html.distance(from: html.startIndex, to: pair.openTagRange.lowerBound)
-            let contentEnd = html.distance(from: html.startIndex, to: pair.contentRange.upperBound)
-            
-            var adjustedStart = openStart
-            var adjustedEnd = contentEnd
+            var adjustedStart = pair.openTagStart
+            var adjustedEnd = pair.closeTagStart
             
             for earlierPair in tagPairs {
-                if earlierPair.openTagRange.lowerBound < pair.openTagRange.lowerBound {
-                    let openTagLength = html.distance(from: earlierPair.openTagRange.lowerBound, to: earlierPair.openTagRange.upperBound)
-                    let closeTagLength = html.distance(from: earlierPair.closeTagRange.lowerBound, to: earlierPair.closeTagRange.upperBound)
+                if earlierPair.openTagStart < pair.openTagStart {
+                    let openTagLength = earlierPair.openTagEnd - earlierPair.openTagStart
+                    let closeTagLength = earlierPair.closeTagEnd - earlierPair.closeTagStart
                     adjustedStart -= (openTagLength + closeTagLength)
                     adjustedEnd -= (openTagLength + closeTagLength)
                 }
             }
             
+            guard adjustedStart >= 0 && adjustedEnd <= plainText.count && adjustedStart < adjustedEnd else { continue }
+            
             let startIndex = result.characters.index(result.characters.startIndex, offsetBy: adjustedStart)
             let endIndex = result.characters.index(result.characters.startIndex, offsetBy: adjustedEnd)
-            
-            guard startIndex < endIndex && endIndex <= result.characters.endIndex else { continue }
             
             if pair.isUnderline {
                 result[startIndex..<endIndex].underlineStyle = .single
