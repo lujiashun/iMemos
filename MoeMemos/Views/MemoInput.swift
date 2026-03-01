@@ -563,6 +563,39 @@ struct MemoInput: View {
             currentLine = currentText[currentText.startIndex..<nextLineBreak]
         }
         
+        // Check for ordered list (e.g., "1. ", "2. ", etc.)
+        let orderedListPattern = #"^(\s*)(\d+)\.\s"#
+        if let match = currentLine.range(of: orderedListPattern, options: .regularExpression),
+           let numberRange = currentLine.range(of: #"\d+"#, options: .regularExpression, range: match),
+           let currentNumber = Int(currentLine[numberRange]) {
+            
+            let indentPrefix = String(currentLine[currentLine.startIndex..<match.lowerBound])
+            let nextNumber = currentNumber + 1
+            let newPrefix = "\(indentPrefix)\(nextNumber). "
+            
+            // If the line only contains the list prefix (empty content), remove the prefix instead
+            let contentAfterPrefix = currentLine[match.upperBound..<currentLine.endIndex]
+            if contentAfterPrefix.trimmingCharacters(in: .whitespaces).isEmpty {
+                // Remove the current line's prefix
+                let lineStartIndex: String.Index
+                if let lastLineBreak = lastLineBreak {
+                    lineStartIndex = currentText.index(after: lastLineBreak)
+                } else {
+                    lineStartIndex = currentText.startIndex
+                }
+                let newText = String(currentText[currentText.startIndex..<lineStartIndex]) + String(currentText[nextLineBreak..<currentText.endIndex])
+                self.text = newText
+                selection = lineStartIndex..<lineStartIndex
+                return false
+            }
+            
+            let newText = String(currentText[currentText.startIndex..<range.lowerBound]) + "\n" + newPrefix + String(currentText[range.upperBound..<currentText.endIndex])
+            self.text = newText
+            let newCursorPos = newText.index(range.lowerBound, offsetBy: newPrefix.count + 1)
+            selection = newCursorPos..<newCursorPos
+            return false
+        }
+        
         for prefixStr in listItemSymbolList {
             if (!currentLine.hasPrefix(prefixStr)) {
                 continue
@@ -572,8 +605,25 @@ struct MemoInput: View {
                 break
             }
             
-            self.text = currentText[currentText.startIndex..<range.lowerBound] + "\n" + prefixStr + currentText[range.upperBound..<currentText.endIndex]
-            selection = self.text.index(range.lowerBound, offsetBy: prefixStr.count + 1)..<self.text.index(range.upperBound, offsetBy: prefixStr.count + 1)
+            // If the line only contains the list prefix (empty content), remove the prefix instead
+            let contentAfterPrefix = currentLine[currentLine.index(currentLine.startIndex, offsetBy: prefixStr.count)..<currentLine.endIndex]
+            if contentAfterPrefix.trimmingCharacters(in: .whitespaces).isEmpty {
+                let lineStartIndex: String.Index
+                if let lastLineBreak = lastLineBreak {
+                    lineStartIndex = currentText.index(after: lastLineBreak)
+                } else {
+                    lineStartIndex = currentText.startIndex
+                }
+                let newText = String(currentText[currentText.startIndex..<lineStartIndex]) + String(currentText[nextLineBreak..<currentText.endIndex])
+                self.text = newText
+                selection = lineStartIndex..<lineStartIndex
+                return false
+            }
+            
+            let newText = String(currentText[currentText.startIndex..<range.lowerBound]) + "\n" + prefixStr + String(currentText[range.upperBound..<currentText.endIndex])
+            self.text = newText
+            let newCursorPos = newText.index(range.lowerBound, offsetBy: prefixStr.count + 1)
+            selection = newCursorPos..<newCursorPos
             return false
         }
 

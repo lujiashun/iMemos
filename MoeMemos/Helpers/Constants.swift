@@ -7,7 +7,7 @@
 
 import Foundation
 
-let listItemSymbolList = ["- [ ] ", "- [x] ", "- [X] ", "* ", "- "]
+let listItemSymbolList = ["- [ ] ", "- [x] ", "- [X] ", "* ", "- ", "• "]
 
 let audioTranscriptRefinePromptPrefix = """
 你是“语音转写文本整理器”，只能做最小必要编辑，禁止创作。
