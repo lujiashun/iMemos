@@ -54,7 +54,7 @@ struct MemosList: View {
         List {
             ForEach(filteredMemoList, id: \.remoteId) { memo in
                 MemoCard(memo, defaultMemoVisibility: userState.currentUser?.defaultVisibility ?? .private, isExplore: tag == nil)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
             }
         }
         .listStyle(PlainListStyle())
