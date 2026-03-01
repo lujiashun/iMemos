@@ -59,52 +59,41 @@ struct ExpandableTextView: View {
     }
     
     private func parseRichText(_ html: String) -> AttributedString {
-        var result = AttributedString(html)
+        var currentText = html
         
-        while true {
-            let stringContent = String(result.characters)
-            
-            guard let uStart = stringContent.range(of: "<u>"),
-                  let uEnd = stringContent.range(of: "</u>", range: uStart.upperBound..<stringContent.endIndex) else {
-                break
-            }
-            
-            let contentRange = uStart.upperBound..<uEnd.lowerBound
-            let content = String(stringContent[contentRange])
-            
-            let attrStart = AttributedString.CharacterView.Index(uStart.lowerBound, within: result)!
-            let attrEnd = AttributedString.CharacterView.Index(uEnd.upperBound, within: result)!
-            result.characters.removeSubrange(attrStart..<attrEnd)
-            
-            let insertIndex = AttributedString.CharacterView.Index(uStart.lowerBound, within: result)!
-            result.insert(AttributedString(content), at: insertIndex)
-            
-            let newStart = AttributedString.CharacterView.Index(uStart.lowerBound, within: result)!
-            let newEnd = AttributedString.CharacterView.Index(uStart.lowerBound, offsetBy: content.count, within: result)!
-            result[newStart..<newEnd].underlineStyle = .single
+        var underlineRanges: [Range<String.Index>] = []
+        var highlightRanges: [Range<String.Index>] = []
+        
+        while let uStart = currentText.range(of: "<u>"),
+              let uEnd = currentText.range(of: "</u>", range: uStart.upperBound..<currentText.endIndex) {
+            let contentStart = uStart.upperBound
+            let contentEnd = uEnd.lowerBound
+            underlineRanges.append(contentStart..<contentEnd)
+            currentText.removeSubrange(uEnd.lowerBound..<uEnd.upperBound)
+            currentText.removeSubrange(uStart.lowerBound..<uStart.upperBound)
         }
         
-        while true {
-            let stringContent = String(result.characters)
-            
-            guard let markStart = stringContent.range(of: "<mark>"),
-                  let markEnd = stringContent.range(of: "</mark>", range: markStart.upperBound..<stringContent.endIndex) else {
-                break
-            }
-            
-            let contentRange = markStart.upperBound..<markEnd.lowerBound
-            let content = String(stringContent[contentRange])
-            
-            let attrStart = AttributedString.CharacterView.Index(markStart.lowerBound, within: result)!
-            let attrEnd = AttributedString.CharacterView.Index(markEnd.upperBound, within: result)!
-            result.characters.removeSubrange(attrStart..<attrEnd)
-            
-            let insertIndex = AttributedString.CharacterView.Index(markStart.lowerBound, within: result)!
-            result.insert(AttributedString(content), at: insertIndex)
-            
-            let newStart = AttributedString.CharacterView.Index(markStart.lowerBound, within: result)!
-            let newEnd = AttributedString.CharacterView.Index(markStart.lowerBound, offsetBy: content.count, within: result)!
-            result[newStart..<newEnd].backgroundColor = .yellow.opacity(0.3)
+        while let markStart = currentText.range(of: "<mark>"),
+              let markEnd = currentText.range(of: "</mark>", range: markStart.upperBound..<currentText.endIndex) {
+            let contentStart = markStart.upperBound
+            let contentEnd = markEnd.lowerBound
+            highlightRanges.append(contentStart..<contentEnd)
+            currentText.removeSubrange(markEnd.lowerBound..<markEnd.upperBound)
+            currentText.removeSubrange(markStart.lowerBound..<markStart.upperBound)
+        }
+        
+        var result = AttributedString(currentText)
+        
+        for range in underlineRanges.reversed() {
+            let startIndex = result.characters.index(result.characters.startIndex, offsetBy: currentText.distance(from: currentText.startIndex, to: range.lowerBound))
+            let endIndex = result.characters.index(result.characters.startIndex, offsetBy: currentText.distance(from: currentText.startIndex, to: range.upperBound))
+            result[startIndex..<endIndex].underlineStyle = .single
+        }
+        
+        for range in highlightRanges.reversed() {
+            let startIndex = result.characters.index(result.characters.startIndex, offsetBy: currentText.distance(from: currentText.startIndex, to: range.lowerBound))
+            let endIndex = result.characters.index(result.characters.startIndex, offsetBy: currentText.distance(from: currentText.startIndex, to: range.upperBound))
+            result[startIndex..<endIndex].backgroundColor = .yellow.opacity(0.3)
         }
         
         return result
