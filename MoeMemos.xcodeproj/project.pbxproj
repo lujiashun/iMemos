@@ -89,6 +89,7 @@
 		19E1C5BE28C4F6410072CEEF /* Stats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19E1C5BD28C4F6410072CEEF /* Stats.swift */; };
 		19E1C5C028C5191D0072CEEF /* MemoInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19E1C5BF28C5191D0072CEEF /* MemoInput.swift */; };
 		19E1C5C128C5191E0072CEEF /* FormattingMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19E1C5C228C5191E0072CEEF /* FormattingMenu.swift */; };
+		19E1C5C328C5191F0072CEEF /* ToolboxMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19E1C5C428C5191F0072CEEF /* ToolboxMenu.swift */; };
 		19E29A6B2938FBCD00BE9C32 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19E29A6A2938FBCD00BE9C32 /* ShareViewController.swift */; };
 		19E29A6E2938FBCD00BE9C32 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 19E29A6C2938FBCD00BE9C32 /* MainInterface.storyboard */; };
 		19E29A722938FBCD00BE9C32 /* MoeMemosShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 19E29A682938FBCD00BE9C32 /* MoeMemosShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -224,6 +225,7 @@
 		19E1C5BD28C4F6410072CEEF /* Stats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stats.swift; sourceTree = "<group>"; };
 		19E1C5BF28C5191D0072CEEF /* MemoInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoInput.swift; sourceTree = "<group>"; };
 		19E1C5C228C5191E0072CEEF /* FormattingMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattingMenu.swift; sourceTree = "<group>"; };
+		19E1C5C428C5191F0072CEEF /* ToolboxMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolboxMenu.swift; sourceTree = "<group>"; };
 		19E29A682938FBCD00BE9C32 /* MoeMemosShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MoeMemosShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		19E29A6A2938FBCD00BE9C32 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		19E29A6F2938FBCD00BE9C32 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -471,6 +473,7 @@
 				197A4D3229599C300027427E /* MemoCardImageView.swift */,
 				19E1C5BF28C5191D0072CEEF /* MemoInput.swift */,
 				19E1C5C228C5191E0072CEEF /* FormattingMenu.swift */,
+				19E1C5C428C5191F0072CEEF /* ToolboxMenu.swift */,
 				19709CFB297F2C1900F6A144 /* MemoInputResourceView.swift */,
 				19F31BF628C3E26D000C5207 /* MemosList.swift */,
 				19FC1C7D290DA6E90078A7F2 /* Navigation.swift */,
@@ -726,6 +729,7 @@
 				195E5D7128C70A3800784EF5 /* HeatmapStat.swift in Sources */,
 				19E1C5C028C5191D0072CEEF /* MemoInput.swift in Sources */,
 				19E1C5C128C5191E0072CEEF /* FormattingMenu.swift in Sources */,
+				19E1C5C328C5191F0072CEEF /* ToolboxMenu.swift in Sources */,
 				194B273328C3973400A48675 /* ContentView.swift in Sources */,
 				193AA8A728CD9ED700FF7EB6 /* URL.swift in Sources */,
 				19FC1C7C290DA47C0078A7F2 /* Route.swift in Sources */,

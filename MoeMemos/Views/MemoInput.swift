@@ -98,6 +98,7 @@ struct MemoInput: View {
             Divider()
             HStack(alignment: .center) {
                 FormattingMenu(text: $text, selection: $selection)
+                ToolboxMenu(text: $text, selection: $selection)
                 
                 if !memosViewModel.tags.isEmpty {
                     ZStack {
