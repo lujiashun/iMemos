@@ -319,10 +319,7 @@ struct MemoInput: View {
         
         .onAppear {
             if let memo = memo {
-                print("📝 [DEBUG] 加载 memo 原始内容: \(memo.content)")
                 let parsedAttrString = htmlToAttributedString(from: memo.content)
-                print("📝 [DEBUG] 解析后文本: \(parsedAttrString.string)")
-                print("📝 [DEBUG] attributedText 长度: \(parsedAttrString.length)")
                 text = parsedAttrString.string
                 attributedText = parsedAttrString
                 viewModel.visibility = memo.visibility
@@ -487,9 +484,6 @@ struct MemoInput: View {
     private func saveMemo() async throws {
         viewModel.saving = true
         let contentToSave = attributedTextToHTML()
-        print("📝 [DEBUG] 保存内容: \(contentToSave)")
-        print("📝 [DEBUG] 原始 text: \(text)")
-        print("📝 [DEBUG] attributedText: \(String(describing: attributedText))")
         let tags = viewModel.extractCustomTags(from: text)
         
         do {
@@ -512,7 +506,6 @@ struct MemoInput: View {
     
     private func attributedTextToHTML() -> String {
         guard let attributedText = attributedText else {
-            print("📝 [DEBUG] attributedTextToHTML: attributedText 为空，返回原始 text")
             return text
         }
         
@@ -532,7 +525,6 @@ struct MemoInput: View {
         
         mutableAttrString.enumerateAttribute(.underlineStyle, in: fullRange, options: []) { value, range, _ in
             if let style = value as? Int, style == NSUnderlineStyle.single.rawValue {
-                print("📝 [DEBUG] 找到下划线范围: \(range), 内容: \(mutableAttrString.attributedSubstring(from: range).string)")
                 for i in range.location..<range.location + range.length {
                     styleMap[i]?.hasUnderline = true
                 }
@@ -543,7 +535,6 @@ struct MemoInput: View {
             if let color = value as? UIColor {
                 var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
                 color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-                print("📝 [DEBUG] 找到背景色范围: \(range), RGB: (\(red), \(green), \(blue)), 内容: \(mutableAttrString.attributedSubstring(from: range).string)")
                 if red > 0.9 && green > 0.7 && blue < 0.3 {
                     for i in range.location..<range.location + range.length {
                         styleMap[i]?.hasHighlight = true
@@ -585,8 +576,6 @@ struct MemoInput: View {
             hasHighlight: currentHasHighlight
         ))
         
-        print("📝 [DEBUG] 分段数量: \(segments.count)")
-        
         var result = ""
         for segment in segments {
             guard segment.range.location + segment.range.length <= mutableAttrString.length else { continue }
@@ -601,12 +590,10 @@ struct MemoInput: View {
             result += content
         }
         
-        print("📝 [DEBUG] 最终保存内容: \(result)")
         return result
     }
     
     private func htmlToAttributedString(from html: String) -> NSAttributedString {
-        print("📝 [DEBUG] htmlToAttributedString 输入: \(html)")
         let mutableAttrString = NSMutableAttributedString(string: html)
         let defaultFont = UIFont.preferredFont(forTextStyle: .body)
         
@@ -630,7 +617,6 @@ struct MemoInput: View {
                let uStart = uStartRange,
                let uEnd = currentString.range(of: "</u>", range: uStart.upperBound..<currentString.endIndex) {
                 foundTag = true
-                print("📝 [DEBUG] 找到 <u> 标签，范围: \(uStart) 到 \(uEnd)")
                 
                 let contentRange = uStart.upperBound..<uEnd.lowerBound
                 let content = String(currentString[contentRange])
@@ -646,7 +632,6 @@ struct MemoInput: View {
             } else if let markStart = markStartRange,
                       let markEnd = currentString.range(of: "</mark>", range: markStart.upperBound..<currentString.endIndex) {
                 foundTag = true
-                print("📝 [DEBUG] 找到 <mark> 标签，范围: \(markStart) 到 \(markEnd)")
                 
                 let contentRange = markStart.upperBound..<markEnd.lowerBound
                 let content = String(currentString[contentRange])
@@ -669,7 +654,6 @@ struct MemoInput: View {
         let fullRange = NSRange(location: 0, length: result.length)
         result.addAttribute(.font, value: defaultFont, range: fullRange)
         
-        print("📝 [DEBUG] htmlToAttributedString 输出: \(result.string)")
         return result
     }
     
