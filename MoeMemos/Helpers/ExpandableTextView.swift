@@ -60,21 +60,17 @@ struct ExpandableTextView: View {
     
     private func parseRichText(_ html: String) -> AttributedString {
         struct TagPair {
-            let openStart: Int
-            let openEnd: Int
-            let closeStart: Int
-            let closeEnd: Int
+            let contentStart: Int
+            let contentEnd: Int
             let isUnderline: Bool
         }
         
         var tagPairs: [TagPair] = []
-        
-        var currentText = html
-        var totalRemoved = 0
+        var resultText = html
         
         while true {
-            let uRange = currentText.range(of: "<u>")
-            let markRange = currentText.range(of: "<mark>")
+            let uRange = resultText.range(of: "<u>")
+            let markRange = resultText.range(of: "<mark>")
             
             var openTagRange: Range<String.Index>?
             var isUnderline = false
@@ -98,56 +94,29 @@ struct ExpandableTextView: View {
             guard let openRange = openTagRange else { break }
             
             let closeTag = isUnderline ? "</u>" : "</mark>"
-            guard let closeRange = currentText.range(of: closeTag, range: openRange.upperBound..<currentText.endIndex) else {
-                currentText.removeSubrange(openRange.lowerBound..<openRange.upperBound)
+            guard let closeRange = resultText.range(of: closeTag, range: openRange.upperBound..<resultText.endIndex) else {
+                resultText.removeSubrange(openRange.lowerBound..<openRange.upperBound)
                 continue
             }
             
-            let openStart = currentText.distance(from: currentText.startIndex, to: openRange.lowerBound) + totalRemoved
-            let openEnd = currentText.distance(from: currentText.startIndex, to: openRange.upperBound) + totalRemoved
-            let closeStart = currentText.distance(from: currentText.startIndex, to: closeRange.lowerBound) + totalRemoved
-            let closeEnd = currentText.distance(from: currentText.startIndex, to: closeRange.upperBound) + totalRemoved
+            let contentStart = resultText.distance(from: resultText.startIndex, to: openRange.upperBound)
+            let contentEnd = resultText.distance(from: resultText.startIndex, to: closeRange.lowerBound)
             
-            tagPairs.append(TagPair(openStart: openStart, openEnd: openEnd, closeStart: closeStart, closeEnd: closeEnd, isUnderline: isUnderline))
+            tagPairs.append(TagPair(contentStart: contentStart, contentEnd: contentEnd, isUnderline: isUnderline))
             
-            let openTagLen = currentText.distance(from: openRange.lowerBound, to: openRange.upperBound)
-            let closeTagLen = currentText.distance(from: closeRange.lowerBound, to: closeRange.upperBound)
-            totalRemoved += openTagLen + closeTagLen
-            
-            currentText.removeSubrange(closeRange.lowerBound..<closeRange.upperBound)
-            currentText.removeSubrange(openRange.lowerBound..<openRange.upperBound)
+            resultText.removeSubrange(closeRange.lowerBound..<closeRange.upperBound)
+            resultText.removeSubrange(openRange.lowerBound..<openRange.upperBound)
         }
         
-        var result = AttributedString(currentText)
+        var result = AttributedString(resultText)
         
-        print("📝 [Load] 输入: \(html)")
-        print("📝 [Load] 纯文本: \(currentText)")
-        print("📝 [Load] 标签数量: \(tagPairs.count)")
-        
-        for pair in tagPairs {
-            var adjustedStart = pair.openEnd
-            var adjustedEnd = pair.closeStart
+        for tag in tagPairs {
+            guard tag.contentStart >= 0 && tag.contentEnd <= resultText.count && tag.contentStart < tag.contentEnd else { continue }
             
-            for earlier in tagPairs {
-                if earlier.openStart < pair.openStart {
-                    let openTagLen = earlier.openEnd - earlier.openStart
-                    let closeTagLen = earlier.closeEnd - earlier.closeStart
-                    adjustedStart -= (openTagLen + closeTagLen)
-                    adjustedEnd -= (openTagLen + closeTagLen)
-                }
-            }
+            let startIndex = result.characters.index(result.characters.startIndex, offsetBy: tag.contentStart)
+            let endIndex = result.characters.index(result.characters.startIndex, offsetBy: tag.contentEnd)
             
-            print("📝 [Load] 标签: \(pair.isUnderline ? "<u>" : "<mark>"), 调整后位置: \(adjustedStart)-\(adjustedEnd)")
-            
-            guard adjustedStart >= 0 && adjustedEnd <= currentText.count && adjustedStart < adjustedEnd else {
-                print("📝 [Load] 位置无效，跳过")
-                continue
-            }
-            
-            let startIndex = result.characters.index(result.characters.startIndex, offsetBy: adjustedStart)
-            let endIndex = result.characters.index(result.characters.startIndex, offsetBy: adjustedEnd)
-            
-            if pair.isUnderline {
+            if tag.isUnderline {
                 result[startIndex..<endIndex].underlineStyle = .single
             } else {
                 #if canImport(UIKit)
