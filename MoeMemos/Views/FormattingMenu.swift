@@ -211,12 +211,12 @@ struct FormattingMenu: View {
         
         if let existing = existingPrefix {
             if existing == prefix {
-                text = currentText[currentText.startIndex..<lineStartIndex] + indentPrefix + lineString.replacingOccurrences(of: "^" + existing, with: "", options: .regularExpression) + currentText[nextLineBreak..<currentText.endIndex]
+                text = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + lineString.replacingOccurrences(of: "^" + existing, with: "", options: .regularExpression) + String(currentText[nextLineBreak..<currentText.endIndex])
             } else {
-                text = currentText[currentText.startIndex..<lineStartIndex] + indentPrefix + prefix + lineString.replacingOccurrences(of: "^" + existing.replacingOccurrences(of: "([.])", with: "\\$1", options: .regularExpression), with: "", options: .regularExpression) + currentText[nextLineBreak..<currentText.endIndex]
+                text = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + prefix + lineString.replacingOccurrences(of: "^" + existing.replacingOccurrences(of: "([.])", with: "\\$1", options: .regularExpression), with: "", options: .regularExpression) + String(currentText[nextLineBreak..<currentText.endIndex])
             }
         } else {
-            text = currentText[currentText.startIndex..<lineStartIndex] + indentPrefix + prefix + lineString + currentText[nextLineBreak..<currentText.endIndex]
+            text = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + prefix + lineString + String(currentText[nextLineBreak..<currentText.endIndex])
         }
         
         let newOffset = prefix.count
@@ -258,7 +258,7 @@ struct FormattingMenu: View {
         }
         
         let indentToAdd = "  "
-        text = currentText[currentText.startIndex..<lineStartIndex] + indentToAdd + currentText[lineStartIndex..<currentText.endIndex]
+        text = String(currentText[currentText.startIndex..<lineStartIndex]) + indentToAdd + String(currentText[lineStartIndex..<currentText.endIndex])
         
         selection = text.index(currentSelection.lowerBound, offsetBy: 2)..<text.index(currentSelection.upperBound, offsetBy: 2)
     }
@@ -285,7 +285,7 @@ struct FormattingMenu: View {
         let removeCount = min(2, indentMatch.count)
         let removeEndIndex = currentText.index(lineStartIndex, offsetBy: removeCount)
         
-        text = currentText[currentText.startIndex..<lineStartIndex] + currentText[removeEndIndex..<currentText.endIndex]
+        text = String(currentText[currentText.startIndex..<lineStartIndex]) + String(currentText[removeEndIndex..<currentText.endIndex])
         
         let newLower = text.index(currentSelection.lowerBound, offsetBy: -removeCount, limitedBy: text.startIndex) ?? text.startIndex
         let newUpper = text.index(currentSelection.upperBound, offsetBy: -removeCount, limitedBy: text.startIndex) ?? text.startIndex
