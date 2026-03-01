@@ -59,18 +59,22 @@ struct ExpandableTextView: View {
     }
     
     private func parseRichText(_ html: String) -> AttributedString {
-        struct TagPair {
-            let contentStart: Int
-            let contentEnd: Int
+        struct TagInfo {
+            let openStart: Int
+            let openEnd: Int
+            let closeStart: Int
+            let closeEnd: Int
             let isUnderline: Bool
         }
         
-        var tagPairs: [TagPair] = []
-        var resultText = html
+        var tags: [TagInfo] = []
+        var searchStart = html.startIndex
         
-        while true {
-            let uRange = resultText.range(of: "<u>")
-            let markRange = resultText.range(of: "<mark>")
+        while searchStart < html.endIndex {
+            let searchRange = searchStart..<html.endIndex
+            
+            let uRange = html.range(of: "<u>", options: [], range: searchRange)
+            let markRange = html.range(of: "<mark>", options: [], range: searchRange)
             
             var openTagRange: Range<String.Index>?
             var isUnderline = false
@@ -94,27 +98,49 @@ struct ExpandableTextView: View {
             guard let openRange = openTagRange else { break }
             
             let closeTag = isUnderline ? "</u>" : "</mark>"
-            guard let closeRange = resultText.range(of: closeTag, range: openRange.upperBound..<resultText.endIndex) else {
-                resultText.removeSubrange(openRange.lowerBound..<openRange.upperBound)
+            guard let closeRange = html.range(of: closeTag, options: [], range: openRange.upperBound..<html.endIndex) else {
+                searchStart = openRange.upperBound
                 continue
             }
             
-            let contentStart = resultText.distance(from: resultText.startIndex, to: openRange.upperBound)
-            let contentEnd = resultText.distance(from: resultText.startIndex, to: closeRange.lowerBound)
+            let openStart = html.distance(from: html.startIndex, to: openRange.lowerBound)
+            let openEnd = html.distance(from: html.startIndex, to: openRange.upperBound)
+            let closeStart = html.distance(from: html.startIndex, to: closeRange.lowerBound)
+            let closeEnd = html.distance(from: html.startIndex, to: closeRange.upperBound)
             
-            tagPairs.append(TagPair(contentStart: contentStart, contentEnd: contentEnd, isUnderline: isUnderline))
-            
-            resultText.removeSubrange(closeRange.lowerBound..<closeRange.upperBound)
-            resultText.removeSubrange(openRange.lowerBound..<openRange.upperBound)
+            tags.append(TagInfo(openStart: openStart, openEnd: openEnd, closeStart: closeStart, closeEnd: closeEnd, isUnderline: isUnderline))
+            searchStart = closeRange.upperBound
         }
         
-        var result = AttributedString(resultText)
+        let plainText = html
+            .replacingOccurrences(of: "<u>", with: "")
+            .replacingOccurrences(of: "</u>", with: "")
+            .replacingOccurrences(of: "<mark>", with: "")
+            .replacingOccurrences(of: "</mark>", with: "")
         
-        for tag in tagPairs {
-            guard tag.contentStart >= 0 && tag.contentEnd <= resultText.count && tag.contentStart < tag.contentEnd else { continue }
+        var result = AttributedString(plainText)
+        
+        for tag in tags {
+            var contentStart = tag.openEnd
+            var contentEnd = tag.closeStart
             
-            let startIndex = result.characters.index(result.characters.startIndex, offsetBy: tag.contentStart)
-            let endIndex = result.characters.index(result.characters.startIndex, offsetBy: tag.contentEnd)
+            var offset = 0
+            for earlierTag in tags {
+                if earlierTag.openStart < tag.openStart {
+                    let openTagLen = earlierTag.openEnd - earlierTag.openStart
+                    let closeTagLen = earlierTag.closeEnd - earlierTag.closeStart
+                    offset += (openTagLen + closeTagLen)
+                }
+            }
+            
+            let currentOpenTagLen = tag.openEnd - tag.openStart
+            contentStart -= (offset + currentOpenTagLen)
+            contentEnd -= (offset + currentOpenTagLen)
+            
+            guard contentStart >= 0 && contentEnd <= plainText.count && contentStart < contentEnd else { continue }
+            
+            let startIndex = result.characters.index(result.characters.startIndex, offsetBy: contentStart)
+            let endIndex = result.characters.index(result.characters.startIndex, offsetBy: contentEnd)
             
             if tag.isUnderline {
                 result[startIndex..<endIndex].underlineStyle = .single
