@@ -10,6 +10,7 @@ import PhotosUI
 import Models
 import Account
 import Env
+import VisionKit
  
 
 @MainActor
@@ -29,6 +30,7 @@ struct MemoInput: View {
     
     @State private var showingPhotoPicker = false
     @State private var showingImagePicker = false
+    @State private var showingDocumentScanner = false
 
     // Voice input state
     @State private var isRecordingAudio = false
@@ -124,6 +126,11 @@ struct MemoInput: View {
                     toggleTodoItem()
                 } label: {
                     Image(systemName: "checkmark.square")
+                }
+                Button {
+                    scanText()
+                } label: {
+                    Image(systemName: "text.viewfinder")
                 }
                 if shouldShowImageActions {
                     Button {
@@ -257,12 +264,17 @@ struct MemoInput: View {
             }
         }
     }
+
+    private func scanText() {
+        // 使用 inputView 方式显示扫描界面，保持光标状态
+        showingDocumentScanner = true
+    }
     
     @ViewBuilder
     private func editor() -> some View {
-        ZStack(alignment: .bottom) {
+        VStack(spacing: 0) {
             VStack(alignment: .leading) {
-                TextView(text: $text, selection: $selection, shouldChangeText: shouldChangeText(in:replacementText:))
+                TextView(text: $text, selection: $selection, shouldChangeText: shouldChangeText(in:replacementText:), showingScanner: $showingDocumentScanner)
                     .focused($focused)
                     .overlay(alignment: .topLeading) {
                         if text.isEmpty {
@@ -275,8 +287,10 @@ struct MemoInput: View {
                 MemoInputResourceView(viewModel: viewModel, textContent: text)
             }
             .padding(.bottom, 40)
+            
             toolbar()
-
+        }
+        .overlay(alignment: .bottom) {
             if isRecordingPanelPresented {
                 GeometryReader { proxy in
                     VStack {
@@ -295,6 +309,7 @@ struct MemoInput: View {
                     }
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
+                .zIndex(2)
             }
         }
         
@@ -406,7 +421,7 @@ struct MemoInput: View {
                 }
         }
     }
-    
+
     private func upload(images: [PhotosPickerItem]) async throws {
         do {
             let remainingSlots = remainingImageSlots
