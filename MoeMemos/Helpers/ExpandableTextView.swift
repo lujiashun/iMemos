@@ -13,25 +13,15 @@ import UIKit
 @preconcurrency import MarkdownUI
 #endif
 
-/// 可展开/收起的文本视图
-/// 功能：
-/// - 当文本超过指定行数时，默认折叠显示
-/// - 提供展开/收起按钮
-/// - 适配不同字体、字号、屏幕尺寸
 struct ExpandableTextView: View {
-    // MARK: - 配置
     let text: String
     let maxLines: Int
     let font: Font
     let lineSpacing: CGFloat
     
-    // MARK: - 状态
     @State private var isExpanded: Bool = false
     @State private var isTruncated: Bool = false
-    @State private var intrinsicSize: CGSize = .zero
-    @State private var truncatedSize: CGSize = .zero
     
-    // MARK: - 初始化
     init(
         text: String,
         maxLines: Int = 6,
@@ -44,28 +34,22 @@ struct ExpandableTextView: View {
         self.lineSpacing = lineSpacing
     }
     
-    // MARK: - 主体视图
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // 文本内容
+            #if canImport(UIKit)
+            ExpandableUILabel(
+                attributedText: parseRichText(text),
+                maxLines: maxLines,
+                isExpanded: isExpanded,
+                isTruncated: $isTruncated
+            )
+            #else
             Text(text)
                 .font(font)
                 .lineSpacing(lineSpacing)
                 .lineLimit(isExpanded ? nil : maxLines)
-                .background(
-                    // 使用 GeometryReader 测量文本实际高度
-                    GeometryReader { geometry in
-                        Color.clear
-                            .onAppear {
-                                calculateTruncation(in: geometry.size.width)
-                            }
-                            .onChange(of: geometry.size.width) { _, newWidth in
-                                calculateTruncation(in: newWidth)
-                            }
-                    }
-                )
+            #endif
             
-            // 展开/收起按钮（仅在需要时显示）
             if isTruncated {
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.25)) {
@@ -87,7 +71,101 @@ struct ExpandableTextView: View {
         }
     }
     
-    // MARK: - 核心逻辑：计算文本是否需要截断
+    private func parseRichText(_ html: String) -> NSAttributedString {
+        let mutableAttrString = NSMutableAttributedString(string: html)
+        let defaultFont = UIFont.preferredFont(forTextStyle: .body)
+        
+        var result = mutableAttrString
+        var currentString = result.string
+        
+        while true {
+            var foundTag = false
+            
+            let uStartRange = currentString.range(of: "<u>")
+            let markStartRange = currentString.range(of: "<mark>")
+            
+            let shouldProcessUnderline: Bool
+            if let uStart = uStartRange, let markStart = markStartRange {
+                shouldProcessUnderline = uStart.lowerBound < markStart.lowerBound
+            } else {
+                shouldProcessUnderline = uStartRange != nil
+            }
+            
+            if shouldProcessUnderline,
+               let uStart = uStartRange,
+               let uEnd = currentString.range(of: "</u>", range: uStart.upperBound..<currentString.endIndex) {
+                foundTag = true
+                
+                let contentRange = uStart.upperBound..<uEnd.lowerBound
+                let content = String(currentString[contentRange])
+                
+                let nsRange = NSRange(uStart.lowerBound..<uEnd.upperBound, in: currentString)
+                result.replaceCharacters(in: nsRange, with: content)
+                
+                let newContentRange = NSRange(location: nsRange.location, length: content.count)
+                result.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: newContentRange)
+                result.addAttribute(.font, value: defaultFont, range: newContentRange)
+                
+                currentString = result.string
+            } else if let markStart = markStartRange,
+                      let markEnd = currentString.range(of: "</mark>", range: markStart.upperBound..<currentString.endIndex) {
+                foundTag = true
+                
+                let contentRange = markStart.upperBound..<markEnd.lowerBound
+                let content = String(currentString[contentRange])
+                
+                let nsRange = NSRange(markStart.lowerBound..<markEnd.upperBound, in: currentString)
+                result.replaceCharacters(in: nsRange, with: content)
+                
+                let newContentRange = NSRange(location: nsRange.location, length: content.count)
+                result.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: newContentRange)
+                result.addAttribute(.font, value: defaultFont, range: newContentRange)
+                
+                currentString = result.string
+            }
+            
+            if !foundTag {
+                break
+            }
+        }
+        
+        let fullRange = NSRange(location: 0, length: result.length)
+        result.addAttribute(.font, value: defaultFont, range: fullRange)
+        
+        return result
+    }
+}
+
+#if canImport(UIKit)
+struct ExpandableUILabel: UIViewRepresentable {
+    let attributedText: NSAttributedString
+    let maxLines: Int
+    let isExpanded: Bool
+    @Binding var isTruncated: Bool
+    
+    func makeUIView(context: Context) -> UILabel {
+        let label = UILabel()
+        label.numberOfLines = 0
+        label.lineBreakMode = .byWordWrapping
+        return label
+    }
+    
+    func updateUIView(_ uiView: UILabel, context: Context) {
+        uiView.attributedText = attributedText
+        uiView.numberOfLines = isExpanded ? 0 : maxLines
+        
+        DispatchQueue.main.async {
+            let textSize = uiView.sizeThatFits(CGSize(width: uiView.bounds.width, height: .greatestFiniteMagnitude))
+            let limitedHeight = uiView.sizeThatFits(CGSize(width: uiView.bounds.width, height: .greatestFiniteMagnitude))
+            
+            uiView.numberOfLines = isExpanded ? 0 : maxLines
+            let limitedTextSize = uiView.sizeThatFits(CGSize(width: uiView.bounds.width, height: .greatestFiniteMagnitude))
+            
+            self.isTruncated = textSize.height > limitedTextSize.height + 5
+        }
+    }
+}
+#endif
     
     /// 计算文本是否需要截断
     /// 方法：比较文本在无限行数和限制行数下的高度
