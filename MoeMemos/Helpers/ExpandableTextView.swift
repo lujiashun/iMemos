@@ -141,7 +141,11 @@ struct ExpandableTextView: View {
             if pair.isUnderline {
                 result[startIndex..<endIndex].underlineStyle = .single
             } else {
+                #if canImport(UIKit)
+                result[startIndex..<endIndex].backgroundColor = Color(UIColor.systemYellow.withAlphaComponent(0.3))
+                #else
                 result[startIndex..<endIndex].backgroundColor = .yellow.opacity(0.3)
+                #endif
             }
         }
         

@@ -113,9 +113,11 @@ struct ToolboxMenu: View {
             mutableAttributedString = NSMutableAttributedString(attributedString: attributedText)
         } else {
             mutableAttributedString = NSMutableAttributedString(string: text)
+            #if canImport(UIKit)
             let defaultFont = UIFont.preferredFont(forTextStyle: .body)
             let fullRange = NSRange(location: 0, length: mutableAttributedString.length)
             mutableAttributedString.addAttribute(.font, value: defaultFont, range: fullRange)
+            #endif
         }
         
         let nsRange = NSRange(currentSelection, in: text)
@@ -144,16 +146,24 @@ struct ToolboxMenu: View {
             mutableAttributedString = NSMutableAttributedString(attributedString: attributedText)
         } else {
             mutableAttributedString = NSMutableAttributedString(string: text)
+            #if canImport(UIKit)
             let defaultFont = UIFont.preferredFont(forTextStyle: .body)
             let fullRange = NSRange(location: 0, length: mutableAttributedString.length)
             mutableAttributedString.addAttribute(.font, value: defaultFont, range: fullRange)
+            #endif
         }
         
         let nsRange = NSRange(currentSelection, in: text)
         
         guard nsRange.location + nsRange.length <= mutableAttributedString.length else { return }
         
-        mutableAttributedString.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: nsRange)
+        #if canImport(UIKit)
+        let highlightColor = UIColor.systemYellow.withAlphaComponent(0.3)
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        highlightColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        print("📝 [Highlight] 应用高亮颜色 RGB: (\(red), \(green), \(blue)), alpha: \(alpha)")
+        mutableAttributedString.addAttribute(.backgroundColor, value: highlightColor, range: nsRange)
+        #endif
         
         attributedText = mutableAttributedString
         text = mutableAttributedString.string
