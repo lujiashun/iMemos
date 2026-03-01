@@ -40,8 +40,6 @@ struct ToolboxMenu: View {
             Image(systemName: "ellipsis.vertical")
                 .font(.system(size: 17))
         }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
     }
     
     private func applyUnderline() {
@@ -83,26 +81,4 @@ struct ToolboxMenu: View {
         let newCursorPos = newText.index(newText.startIndex, offsetBy: safeOffset)
         selection = newCursorPos..<newCursorPos
     }
-}
-
-#Preview {
-    struct PreviewWrapper: View {
-        @State var text = "Hello world"
-        @State var selection: Range<String.Index>? = nil
-        
-        var body: some View {
-            VStack {
-                TextEditor(text: $text)
-                    .frame(height: 200)
-                    .border(Color.gray)
-                
-                HStack {
-                    ToolboxMenu(text: $text, selection: $selection)
-                }
-            }
-            .padding()
-        }
-    }
-    
-    return PreviewWrapper()
 }
