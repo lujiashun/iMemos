@@ -534,7 +534,7 @@ struct MemoInput: View {
                 var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
                 color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
                 print("📝 [DEBUG] 找到背景色范围: \(range), RGB: (\(red), \(green), \(blue)), 内容: \(mutableAttrString.attributedSubstring(from: range).string)")
-                if red > 0.9 && green > 0.9 && blue < 0.3 {
+                if red > 0.9 && green > 0.7 && blue < 0.3 {
                     highlightRanges.append(range)
                 }
             }
