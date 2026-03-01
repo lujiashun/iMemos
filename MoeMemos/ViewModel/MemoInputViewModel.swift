@@ -13,6 +13,7 @@ import Markdown
 import Account
 import Models
 import Factory
+import OSLog
 
 @MainActor
 @Observable class MemoInputViewModel: ResourceManager {
