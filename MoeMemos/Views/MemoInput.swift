@@ -519,17 +519,23 @@ struct MemoInput: View {
         let mutableAttrString = NSMutableAttributedString(attributedString: attributedText)
         let fullRange = NSRange(location: 0, length: mutableAttrString.length)
         
-        struct StyleRange {
-            let range: NSRange
-            let isUnderline: Bool
+        struct StyleInfo {
+            var hasUnderline: Bool = false
+            var hasHighlight: Bool = false
         }
         
-        var styleRanges: [StyleRange] = []
+        var styleMap: [Int: StyleInfo] = [:]
+        
+        for i in 0..<mutableAttrString.length {
+            styleMap[i] = StyleInfo()
+        }
         
         mutableAttrString.enumerateAttribute(.underlineStyle, in: fullRange, options: []) { value, range, _ in
             if let style = value as? Int, style == NSUnderlineStyle.single.rawValue {
                 print("📝 [DEBUG] 找到下划线范围: \(range), 内容: \(mutableAttrString.attributedSubstring(from: range).string)")
-                styleRanges.append(StyleRange(range: range, isUnderline: true))
+                for i in range.location..<range.location + range.length {
+                    styleMap[i]?.hasUnderline = true
+                }
             }
         }
         
@@ -539,93 +545,123 @@ struct MemoInput: View {
                 color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
                 print("📝 [DEBUG] 找到背景色范围: \(range), RGB: (\(red), \(green), \(blue)), 内容: \(mutableAttrString.attributedSubstring(from: range).string)")
                 if red > 0.9 && green > 0.7 && blue < 0.3 {
-                    styleRanges.append(StyleRange(range: range, isUnderline: false))
+                    for i in range.location..<range.location + range.length {
+                        styleMap[i]?.hasHighlight = true
+                    }
                 }
             }
         }
         
-        print("📝 [DEBUG] 样式范围数量: \(styleRanges.count)")
-        
-        for styleRange in styleRanges.sorted(by: { $0.range.location > $1.range.location }) {
-            let range = styleRange.range
-            guard range.location + range.length <= mutableAttrString.length else { continue }
-            
-            let content = mutableAttrString.attributedSubstring(from: range).string
-            let tagged: String
-            if styleRange.isUnderline {
-                tagged = "<u>\(content)</u>"
-            } else {
-                tagged = "<mark>\(content)</mark>"
-            }
-            mutableAttrString.replaceCharacters(in: range, with: tagged)
+        struct Segment {
+            let range: NSRange
+            let hasUnderline: Bool
+            let hasHighlight: Bool
         }
         
-        print("📝 [DEBUG] 最终保存内容: \(mutableAttrString.string)")
-        return mutableAttrString.string
+        var segments: [Segment] = []
+        var currentStart = 0
+        var currentHasUnderline = styleMap[0]?.hasUnderline ?? false
+        var currentHasHighlight = styleMap[0]?.hasHighlight ?? false
+        
+        for i in 1..<mutableAttrString.length {
+            let hasUnderline = styleMap[i]?.hasUnderline ?? false
+            let hasHighlight = styleMap[i]?.hasHighlight ?? false
+            
+            if hasUnderline != currentHasUnderline || hasHighlight != currentHasHighlight {
+                segments.append(Segment(
+                    range: NSRange(location: currentStart, length: i - currentStart),
+                    hasUnderline: currentHasUnderline,
+                    hasHighlight: currentHasHighlight
+                ))
+                currentStart = i
+                currentHasUnderline = hasUnderline
+                currentHasHighlight = hasHighlight
+            }
+        }
+        
+        segments.append(Segment(
+            range: NSRange(location: currentStart, length: mutableAttrString.length - currentStart),
+            hasUnderline: currentHasUnderline,
+            hasHighlight: currentHasHighlight
+        ))
+        
+        print("📝 [DEBUG] 分段数量: \(segments.count)")
+        
+        var result = ""
+        for segment in segments {
+            guard segment.range.location + segment.range.length <= mutableAttrString.length else { continue }
+            var content = mutableAttrString.attributedSubstring(from: segment.range).string
+            
+            if segment.hasUnderline {
+                content = "<u>\(content)</u>"
+            }
+            if segment.hasHighlight {
+                content = "<mark>\(content)</mark>"
+            }
+            result += content
+        }
+        
+        print("📝 [DEBUG] 最终保存内容: \(result)")
+        return result
     }
     
     private func htmlToAttributedString(from html: String) -> NSAttributedString {
         print("📝 [DEBUG] htmlToAttributedString 输入: \(html)")
         let mutableAttrString = NSMutableAttributedString(string: html)
         let defaultFont = UIFont.preferredFont(forTextStyle: .body)
-        let fullRange = NSRange(location: 0, length: mutableAttrString.length)
-        mutableAttrString.addAttribute(.font, value: defaultFont, range: fullRange)
         
-        var rangesToProcess: [(tag: String, range: Range<String.Index>, attribute: NSAttributedString.Key, value: Any)] = []
+        var result = mutableAttrString
+        var currentString = result.string
         
-        let currentString = mutableAttrString.string
-        print("📝 [DEBUG] 当前字符串: \(currentString)")
-        
-        var index = currentString.startIndex
-        while index < currentString.endIndex {
-            let substring = currentString[index...]
+        while true {
+            var foundTag = false
             
-            if let uStart = substring.range(of: "<u>"),
-               let uEnd = substring.range(of: "</u>", range: uStart.upperBound..<substring.endIndex) {
-                print("📝 [DEBUG] 找到 <u> 标签，开始: \(uStart), 结束: \(uEnd)")
-                rangesToProcess.append(("u", uStart.lowerBound..<uEnd.upperBound, .underlineStyle, NSUnderlineStyle.single.rawValue))
-                index = uEnd.upperBound
-            } else if let markStart = substring.range(of: "<mark>"),
-                      let markEnd = substring.range(of: "</mark>", range: markStart.upperBound..<substring.endIndex) {
-                print("📝 [DEBUG] 找到 <mark> 标签，开始: \(markStart), 结束: \(markEnd)")
-                rangesToProcess.append(("mark", markStart.lowerBound..<markEnd.upperBound, .backgroundColor, UIColor.systemYellow.withAlphaComponent(0.3)))
-                index = markEnd.upperBound
-            } else {
-                index = currentString.endIndex
+            if let uStart = currentString.range(of: "<u>"),
+               let uEnd = currentString.range(of: "</u>", range: uStart.upperBound..<currentString.endIndex) {
+                foundTag = true
+                print("📝 [DEBUG] 找到 <u> 标签，范围: \(uStart) 到 \(uEnd)")
+                
+                let contentRange = uStart.upperBound..<uEnd.lowerBound
+                let content = String(currentString[contentRange])
+                
+                let nsRange = NSRange(uStart.lowerBound..<uEnd.upperBound, in: currentString)
+                result.replaceCharacters(in: nsRange, with: content)
+                
+                let newContentRange = NSRange(location: nsRange.location, length: content.count)
+                result.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: newContentRange)
+                result.addAttribute(.font, value: defaultFont, range: newContentRange)
+                
+                currentString = result.string
+            }
+            
+            if let markStart = currentString.range(of: "<mark>"),
+               let markEnd = currentString.range(of: "</mark>", range: markStart.upperBound..<currentString.endIndex) {
+                foundTag = true
+                print("📝 [DEBUG] 找到 <mark> 标签，范围: \(markStart) 到 \(markEnd)")
+                
+                let contentRange = markStart.upperBound..<markEnd.lowerBound
+                let content = String(currentString[contentRange])
+                
+                let nsRange = NSRange(markStart.lowerBound..<markEnd.upperBound, in: currentString)
+                result.replaceCharacters(in: nsRange, with: content)
+                
+                let newContentRange = NSRange(location: nsRange.location, length: content.count)
+                result.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: newContentRange)
+                result.addAttribute(.font, value: defaultFont, range: newContentRange)
+                
+                currentString = result.string
+            }
+            
+            if !foundTag {
+                break
             }
         }
         
-        print("📝 [DEBUG] 需要处理的标签数量: \(rangesToProcess.count)")
+        let fullRange = NSRange(location: 0, length: result.length)
+        result.addAttribute(.font, value: defaultFont, range: fullRange)
         
-        for rangeInfo in rangesToProcess.reversed() {
-            let tag = rangeInfo.tag
-            let fullTagRange = rangeInfo.range
-            let attribute = rangeInfo.attribute
-            let value = rangeInfo.value
-            
-            let nsFullTagRange = NSRange(fullTagRange, in: currentString)
-            let contentString: String
-            if tag == "u" {
-                contentString = String(currentString[fullTagRange])
-                    .replacingOccurrences(of: "<u>", with: "")
-                    .replacingOccurrences(of: "</u>", with: "")
-            } else {
-                contentString = String(currentString[fullTagRange])
-                    .replacingOccurrences(of: "<mark>", with: "")
-                    .replacingOccurrences(of: "</mark>", with: "")
-            }
-            
-            print("📝 [DEBUG] 处理标签: \(tag), 内容: \(contentString)")
-            
-            mutableAttrString.replaceCharacters(in: nsFullTagRange, with: contentString)
-            
-            let newContentRange = NSRange(location: nsFullTagRange.location, length: contentString.count)
-            mutableAttrString.addAttribute(attribute, value: value, range: newContentRange)
-            mutableAttrString.addAttribute(.font, value: defaultFont, range: newContentRange)
-        }
-        
-        print("📝 [DEBUG] htmlToAttributedString 输出长度: \(mutableAttrString.length)")
-        return mutableAttrString
+        print("📝 [DEBUG] htmlToAttributedString 输出: \(result.string)")
+        return result
     }
     
     private func insert(tag: Tag?) {
