@@ -172,7 +172,9 @@ struct FormattingMenu: View {
         
         let lineString = String(currentLine)
         
-        if lineString.hasPrefix("- ") || lineString.hasPrefix("- [ ] ") || lineString.hasPrefix("- [x] ") {
+        if lineString.hasPrefix("• ") {
+            currentListType = .unordered
+        } else if lineString.hasPrefix("- ") || lineString.hasPrefix("- [ ] ") || lineString.hasPrefix("- [x] ") {
             currentListType = (lineString.hasPrefix("- [ ] ") || lineString.hasPrefix("- [x] ")) ? .todo : .unordered
         } else if lineString.range(of: #"^\d+\.\s"#, options: .regularExpression) != nil {
             currentListType = .ordered
@@ -187,7 +189,7 @@ struct FormattingMenu: View {
     }
     
     private func applyUnorderedList() {
-        applyListPrefix("- ")
+        applyListPrefix("• ")
     }
     
     private func applyOrderedList() {
@@ -251,6 +253,9 @@ struct FormattingMenu: View {
     
     private func getExistingListPrefix(from line: String) -> String? {
         let trimmed = line.replacingOccurrences(of: "^[ \\t]+", with: "", options: .regularExpression)
+        if trimmed.hasPrefix("• ") {
+            return "• "
+        }
         if trimmed.hasPrefix("- ") || trimmed.hasPrefix("- [ ] ") || trimmed.hasPrefix("- [x] ") {
             if trimmed.hasPrefix("- [ ] ") || trimmed.hasPrefix("- [x] ") {
                 return "- [ ] "
