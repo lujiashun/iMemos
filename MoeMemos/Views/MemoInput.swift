@@ -320,6 +320,7 @@ struct MemoInput: View {
         .onAppear {
             if let memo = memo {
                 text = memo.content
+                attributedText = htmlToAttributedString(from: memo.content)
                 viewModel.visibility = memo.visibility
             } else {
                 if let prefill = appPath.newMemoPrefillContent {
@@ -481,16 +482,18 @@ struct MemoInput: View {
     
     private func saveMemo() async throws {
         viewModel.saving = true
+        let contentToSave = attributedTextToHTML()
         let tags = viewModel.extractCustomTags(from: text)
         
         do {
             if let memo = memo, let remoteId = memo.remoteId {
-                try await memosViewModel.editMemo(remoteId: remoteId, content: text, visibility: viewModel.visibility, resources: viewModel.resourceList, tags: tags)
+                try await memosViewModel.editMemo(remoteId: remoteId, content: contentToSave, visibility: viewModel.visibility, resources: viewModel.resourceList, tags: tags)
             } else {
-                try await memosViewModel.createMemo(content: text, visibility: viewModel.visibility, resources: viewModel.resourceList, tags: tags)
+                try await memosViewModel.createMemo(content: contentToSave, visibility: viewModel.visibility, resources: viewModel.resourceList, tags: tags)
                 draft = ""
             }
             text = ""
+            attributedText = nil
             dismiss()
             submitError = nil
         } catch {
@@ -498,6 +501,90 @@ struct MemoInput: View {
             showingErrorToast = true
         }
         viewModel.saving = false
+    }
+    
+    private func attributedTextToHTML() -> String {
+        guard let attributedText = attributedText else {
+            return text
+        }
+        
+        let mutableAttrString = NSMutableAttributedString(attributedString: attributedText)
+        let fullRange = NSRange(location: 0, length: mutableAttrString.length)
+        
+        var underlineRanges: [NSRange] = []
+        var highlightRanges: [NSRange] = []
+        
+        mutableAttrString.enumerateAttribute(.underlineStyle, in: fullRange, options: []) { value, range, _ in
+            if let style = value as? Int, style == NSUnderlineStyle.single.rawValue {
+                underlineRanges.append(range)
+            }
+        }
+        
+        mutableAttrString.enumerateAttribute(.backgroundColor, in: fullRange, options: []) { value, range, _ in
+            if let color = value as? UIColor {
+                var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+                color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+                if red > 0.9 && green > 0.9 && blue < 0.3 {
+                    highlightRanges.append(range)
+                }
+            }
+        }
+        
+        for range in underlineRanges.sorted(by: { $0.location > $1.location }) {
+            let content = mutableAttrString.attributedSubstring(from: range).string
+            let tagged = NSAttributedString(string: "<u>\(content)</u>")
+            mutableAttrString.replaceCharacters(in: range, with: tagged)
+        }
+        
+        let newFullRange = NSRange(location: 0, length: mutableAttrString.length)
+        for range in highlightRanges.sorted(by: { $0.location > $1.location }) {
+            if range.location + range.length <= mutableAttrString.length {
+                let content = mutableAttrString.attributedSubstring(from: range).string
+                let tagged = NSAttributedString(string: "<mark>\(content)</mark>")
+                mutableAttrString.replaceCharacters(in: range, with: tagged)
+            }
+        }
+        
+        return mutableAttrString.string
+    }
+    
+    private func htmlToAttributedString(from html: String) -> NSAttributedString {
+        let attributedString = NSMutableAttributedString(string: html)
+        
+        let underlinePattern = "<u>([^<]*)</u>"
+        let highlightPattern = "<mark>([^<]*)</mark>"
+        
+        while let range = attributedString.string.range(of: underlinePattern, options: .regularExpression),
+              let contentRange = Range(NSRange(range, in: attributedString.string), in: attributedString.string) {
+            
+            let matchString = String(attributedString.string[range])
+            let content = matchString
+                .replacingOccurrences(of: "<u>", with: "")
+                .replacingOccurrences(of: "</u>", with: "")
+            
+            let nsRange = NSRange(range, in: attributedString.string)
+            attributedString.replaceCharacters(in: nsRange, with: content)
+            
+            let newNsRange = NSRange(location: nsRange.location, length: content.count)
+            attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: newNsRange)
+        }
+        
+        while let range = attributedString.string.range(of: highlightPattern, options: .regularExpression),
+              let contentRange = Range(NSRange(range, in: attributedString.string), in: attributedString.string) {
+            
+            let matchString = String(attributedString.string[range])
+            let content = matchString
+                .replacingOccurrences(of: "<mark>", with: "")
+                .replacingOccurrences(of: "</mark>", with: "")
+            
+            let nsRange = NSRange(range, in: attributedString.string)
+            attributedString.replaceCharacters(in: nsRange, with: content)
+            
+            let newNsRange = NSRange(location: nsRange.location, length: content.count)
+            attributedString.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: newNsRange)
+        }
+        
+        return attributedString
     }
     
     private func insert(tag: Tag?) {
