@@ -616,7 +616,18 @@ struct MemoInput: View {
         while true {
             var foundTag = false
             
-            if let uStart = currentString.range(of: "<u>"),
+            let uStartRange = currentString.range(of: "<u>")
+            let markStartRange = currentString.range(of: "<mark>")
+            
+            let shouldProcessUnderline: Bool
+            if let uStart = uStartRange, let markStart = markStartRange {
+                shouldProcessUnderline = uStart.lowerBound < markStart.lowerBound
+            } else {
+                shouldProcessUnderline = uStartRange != nil
+            }
+            
+            if shouldProcessUnderline,
+               let uStart = uStartRange,
                let uEnd = currentString.range(of: "</u>", range: uStart.upperBound..<currentString.endIndex) {
                 foundTag = true
                 print("📝 [DEBUG] 找到 <u> 标签，范围: \(uStart) 到 \(uEnd)")
@@ -632,10 +643,8 @@ struct MemoInput: View {
                 result.addAttribute(.font, value: defaultFont, range: newContentRange)
                 
                 currentString = result.string
-            }
-            
-            if let markStart = currentString.range(of: "<mark>"),
-               let markEnd = currentString.range(of: "</mark>", range: markStart.upperBound..<currentString.endIndex) {
+            } else if let markStart = markStartRange,
+                      let markEnd = currentString.range(of: "</mark>", range: markStart.upperBound..<currentString.endIndex) {
                 foundTag = true
                 print("📝 [DEBUG] 找到 <mark> 标签，范围: \(markStart) 到 \(markEnd)")
                 
