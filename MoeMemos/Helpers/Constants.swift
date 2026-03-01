@@ -62,7 +62,7 @@ func shouldUseRefinedAudioTranscript(original: String, refined: String) -> Bool 
 }
 
 actor ImageDownloadCoordinator {
-	static let shared = ImageDownloadCoordinator(maxConcurrent: 2)
+	static let shared = ImageDownloadCoordinator(maxConcurrent: 4)
 
 	private let maxConcurrent: Int
 	private var activeCount: Int = 0
@@ -73,7 +73,8 @@ actor ImageDownloadCoordinator {
 	}
 
 	func withPermit<T>(_ operation: @Sendable () async throws -> T) async rethrows -> T {
-		if activeCount >= maxConcurrent {
+		// 等待获取许可
+		while activeCount >= maxConcurrent {
 			await withCheckedContinuation { continuation in
 				waiters.append(continuation)
 			}
@@ -82,12 +83,15 @@ actor ImageDownloadCoordinator {
 		activeCount += 1
 		defer {
 			activeCount -= 1
-			if !waiters.isEmpty {
-				let next = waiters.removeFirst()
-				next.resume()
-			}
+			resumeNextWaiter()
 		}
 
 		return try await operation()
+	}
+
+	private func resumeNextWaiter() {
+		guard !waiters.isEmpty else { return }
+		let next = waiters.removeFirst()
+		next.resume()
 	}
 }
