@@ -11,6 +11,12 @@ import Models
 import CryptoKit
 import UniformTypeIdentifiers
 
+#if DEBUG
+private func debugDownloadLog(_ message: String) {
+    print("[ServiceUtils][Download] \(message)")
+}
+#endif
+
 private func parseRetryAfter(_ header: String?) -> TimeInterval? {
     guard let header = header?.trimmingCharacters(in: .whitespacesAndNewlines), !header.isEmpty else { return nil }
     // If it's an integer, interpret as seconds
@@ -24,6 +30,10 @@ private func parseRetryAfter(_ header: String?) -> TimeInterval? {
         return max(0, date.timeIntervalSinceNow)
     }
     return nil
+}
+
+private func isRetriableStatusCode(_ statusCode: Int) -> Bool {
+    statusCode == 429 || (500...599).contains(statusCode)
 }
 
 private func isTransientError(_ error: Error) -> Bool {
@@ -98,15 +108,24 @@ public func downloadData(urlSession: URLSession, url: URL, middleware: (@Sendabl
             if let middleware = middleware {
                 request = try await middleware(request)
             }
+#if DEBUG
+            debugDownloadLog("downloadData start attempt=\(attempt)/\(maxAttempts) url=\(url.absoluteString)")
+#endif
 
             let (data, response) = try await urlSession.data(for: request)
             guard let response = response as? HTTPURLResponse else {
                 throw MoeMemosError.unknown
             }
-            if response.statusCode == 429 {
+#if DEBUG
+            debugDownloadLog("downloadData response attempt=\(attempt) status=\(response.statusCode) bytes=\(data.count) url=\(url.absoluteString)")
+#endif
+            if isRetriableStatusCode(response.statusCode) {
                 if attempt >= maxAttempts { throw MoeMemosError.invalidStatusCode(response.statusCode, url.absoluteString) }
-                let retryAfter = parseRetryAfter(response.value(forHTTPHeaderField: "Retry-After")) ?? baseDelay
+                let retryAfter = response.statusCode == 429 ? (parseRetryAfter(response.value(forHTTPHeaderField: "Retry-After")) ?? baseDelay) : baseDelay
                 let jitter = Double.random(in: 0.5...1.5)
+#if DEBUG
+                debugDownloadLog("downloadData retry attempt=\(attempt) status=\(response.statusCode) delay=\(retryAfter * jitter)s url=\(url.absoluteString)")
+#endif
                 try await Task.sleep(nanoseconds: UInt64(retryAfter * jitter * 1_000_000_000))
                 baseDelay *= 2
                 continue
@@ -118,10 +137,18 @@ public func downloadData(urlSession: URLSession, url: URL, middleware: (@Sendabl
         } catch {
             if isTransientError(error) && attempt < maxAttempts {
                 let jitter = Double.random(in: 0.5...1.5)
+#if DEBUG
+                let nsError = error as NSError
+                debugDownloadLog("downloadData transientError attempt=\(attempt) domain=\(nsError.domain) code=\(nsError.code) delay=\(baseDelay * jitter)s url=\(url.absoluteString)")
+#endif
                 try await Task.sleep(nanoseconds: UInt64(baseDelay * jitter * 1_000_000_000))
                 baseDelay *= 2
                 continue
             }
+#if DEBUG
+            let nsError = error as NSError
+            debugDownloadLog("downloadData failed attempt=\(attempt) domain=\(nsError.domain) code=\(nsError.code) url=\(url.absoluteString)")
+#endif
             throw error
         }
     }
@@ -167,6 +194,9 @@ public func download(urlSession: URLSession, url: URL, mimeType: String? = nil, 
             if let middleware = middleware {
                 request = try await middleware(request)
             }
+#if DEBUG
+            debugDownloadLog("download start attempt=\(attempt)/\(maxAttempts) url=\(url.absoluteString) cachedPath=\(downloadDestination.path)")
+#endif
 
             let (tmpURL, response) = try await downloadTask(
                 urlSession: urlSession,
@@ -176,10 +206,16 @@ public func download(urlSession: URLSession, url: URL, mimeType: String? = nil, 
             guard let response = response as? HTTPURLResponse else {
                 throw MoeMemosError.unknown
             }
-            if response.statusCode == 429 {
+#if DEBUG
+            debugDownloadLog("download response attempt=\(attempt) status=\(response.statusCode) url=\(url.absoluteString)")
+#endif
+            if isRetriableStatusCode(response.statusCode) {
                 if attempt >= maxAttempts { throw MoeMemosError.invalidStatusCode(response.statusCode, url.absoluteString) }
-                let retryAfter = parseRetryAfter(response.value(forHTTPHeaderField: "Retry-After")) ?? baseDelay
+                let retryAfter = response.statusCode == 429 ? (parseRetryAfter(response.value(forHTTPHeaderField: "Retry-After")) ?? baseDelay) : baseDelay
                 let jitter = Double.random(in: 0.5...1.5)
+#if DEBUG
+                debugDownloadLog("download retry attempt=\(attempt) status=\(response.statusCode) delay=\(retryAfter * jitter)s url=\(url.absoluteString)")
+#endif
                 try await Task.sleep(nanoseconds: UInt64(retryAfter * jitter * 1_000_000_000))
                 baseDelay *= 2
                 continue
@@ -194,14 +230,25 @@ public func download(urlSession: URLSession, url: URL, mimeType: String? = nil, 
                     try FileManager.default.removeItem(at: downloadDestination)
                 }
                 try FileManager.default.moveItem(at: tmpURL, to: downloadDestination)
+#if DEBUG
+                debugDownloadLog("download move success attempt=\(attempt) destination=\(downloadDestination.path)")
+#endif
             } catch {
                 // If move failed and it's transient, retry a few times
                 if isTransientError(error) && attempt < maxAttempts {
                     let jitter = Double.random(in: 0.5...1.5)
+#if DEBUG
+                    let nsError = error as NSError
+                    debugDownloadLog("download move transientError attempt=\(attempt) domain=\(nsError.domain) code=\(nsError.code) delay=\(baseDelay * jitter)s")
+#endif
                     try await Task.sleep(nanoseconds: UInt64(baseDelay * jitter * 1_000_000_000))
                     baseDelay *= 2
                     continue
                 }
+#if DEBUG
+                let nsError = error as NSError
+                debugDownloadLog("download move failed attempt=\(attempt) domain=\(nsError.domain) code=\(nsError.code)")
+#endif
                 throw error
             }
 
@@ -210,6 +257,10 @@ public func download(urlSession: URLSession, url: URL, mimeType: String? = nil, 
             if let resumeData = resumeDataFromDownloadError(error), isTransientError(error), attempt < maxAttempts {
                 pendingResumeData = resumeData
                 let jitter = Double.random(in: 0.5...1.5)
+#if DEBUG
+                let nsError = error as NSError
+                debugDownloadLog("download resume retry attempt=\(attempt) domain=\(nsError.domain) code=\(nsError.code) resumeBytes=\(resumeData.count) delay=\(baseDelay * jitter)s")
+#endif
                 try await Task.sleep(nanoseconds: UInt64(baseDelay * jitter * 1_000_000_000))
                 baseDelay *= 2
                 continue
@@ -218,10 +269,18 @@ public func download(urlSession: URLSession, url: URL, mimeType: String? = nil, 
             if isTransientError(error) && attempt < maxAttempts {
                 pendingResumeData = nil
                 let jitter = Double.random(in: 0.5...1.5)
+#if DEBUG
+                let nsError = error as NSError
+                debugDownloadLog("download transientError attempt=\(attempt) domain=\(nsError.domain) code=\(nsError.code) delay=\(baseDelay * jitter)s")
+#endif
                 try await Task.sleep(nanoseconds: UInt64(baseDelay * jitter * 1_000_000_000))
                 baseDelay *= 2
                 continue
             }
+#if DEBUG
+            let nsError = error as NSError
+            debugDownloadLog("download failed attempt=\(attempt) domain=\(nsError.domain) code=\(nsError.code) url=\(url.absoluteString)")
+#endif
             throw error
         }
     }

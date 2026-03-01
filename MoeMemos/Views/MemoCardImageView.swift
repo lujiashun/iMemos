@@ -9,6 +9,11 @@ import SwiftUI
 import QuickLook
 import Account
 
+#if DEBUG
+import OSLog
+private let memoCardImageLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MoeMemos", category: "MemoCardImage")
+#endif
+
 struct ImageInfo: Identifiable {
     let url: URL
     let mimeType: String?
@@ -46,15 +51,37 @@ struct MemoCardImageView: View {
                     Image(systemName: "exclamationmark.triangle")
                         .foregroundStyle(.secondary)
                 }
+                .onTapGesture {
+                    failures.remove(url)
+                }
         } else {
             ProgressView()
                 .task {
                     do {
                         if downloads[url] == nil, let memos = memosManager.currentService {
-                            downloads[url] = try await memos.download(url: url, mimeType: mimeType)
+#if DEBUG
+                            memoCardImageLogger.debug("start download image: \(url.absoluteString, privacy: .public)")
+#endif
+                            downloads[url] = try await ImageDownloadCoordinator.shared.withPermit {
+                                try await memos.download(url: url, mimeType: mimeType)
+                            }
+                            failures.remove(url)
+#if DEBUG
+                            memoCardImageLogger.debug("download success image: \(url.absoluteString, privacy: .public)")
+#endif
                         }
                     } catch {
-                        failures.insert(url)
+                        if !isCancellationError(error) {
+                            failures.insert(url)
+#if DEBUG
+                            let nsError = error as NSError
+                            memoCardImageLogger.error("download failed image: \(url.absoluteString, privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public)")
+#endif
+                        } else {
+#if DEBUG
+                            memoCardImageLogger.debug("download cancelled image: \(url.absoluteString, privacy: .public)")
+#endif
+                        }
                     }
                 }
         }
@@ -122,5 +149,13 @@ struct MemoCardImageView: View {
                     .edgesIgnoringSafeArea(.bottom)
                     .background(TransparentBackground())
             }
+    }
+
+    private func isCancellationError(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        if let urlError = error as? URLError, urlError.code == .cancelled { return true }
+
+        let nsError = error as NSError
+        return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
     }
 }

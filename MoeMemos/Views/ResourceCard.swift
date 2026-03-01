@@ -9,6 +9,11 @@ import SwiftUI
 import Models
 import Account
 
+#if DEBUG
+import OSLog
+private let resourceCardLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MoeMemos", category: "ResourceCard")
+#endif
+
 @MainActor
 struct ResourceCard: View {
     let resource: Resource
@@ -21,7 +26,6 @@ struct ResourceCard: View {
         self.showDeleteButton = showDeleteButton
     }
     
-    @Environment(MemosViewModel.self) private var memosViewModel: MemosViewModel
     @Environment(AccountManager.self) private var memosManager: AccountManager
     @State private var imagePreviewURL: URL?
     @State private var downloadedURL: URL?
@@ -54,6 +58,11 @@ struct ResourceCard: View {
                             Image(systemName: downloadFailed ? "exclamationmark.triangle" : "photo")
                                 .foregroundStyle(.secondary)
                         }
+                        .onTapGesture {
+                            guard downloadFailed else { return }
+                            downloadFailed = false
+                            Task { await downloadResource() }
+                        }
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -74,18 +83,7 @@ struct ResourceCard: View {
                     menu(for: resource)
                 }
             }
-            .task {
-                do {
-                    if downloadedURL == nil, let memos = memosManager.currentService {
-                        isDownloading = true
-                        downloadFailed = false
-                        downloadedURL = try await memos.download(url: resource.url, mimeType: resource.mimeType)
-                    }
-                } catch {
-                    downloadFailed = true
-                }
-                isDownloading = false
-            }
+            .task { await downloadResource() }
             .fullScreenCover(item: $imagePreviewURL) { url in
                 QuickLookPreview(selectedURL: url, urls: [url])
                     .edgesIgnoringSafeArea(.bottom)
@@ -105,5 +103,44 @@ struct ResourceCard: View {
     private func deleteCurrentResource() async {
         guard let remoteId = resource.remoteId else { return }
         try? await resourceManager.deleteResource(remoteId: remoteId)
+    }
+
+    private func downloadResource() async {
+        guard downloadedURL == nil, !isDownloading, let memos = memosManager.currentService else { return }
+        isDownloading = true
+        downloadFailed = false
+#if DEBUG
+        resourceCardLogger.debug("start download image: \(resource.url.absoluteString, privacy: .public)")
+#endif
+        defer { isDownloading = false }
+
+        do {
+            downloadedURL = try await ImageDownloadCoordinator.shared.withPermit {
+                try await memos.download(url: resource.url, mimeType: resource.mimeType)
+            }
+#if DEBUG
+            resourceCardLogger.debug("download success image: \(resource.url.absoluteString, privacy: .public)")
+#endif
+        } catch {
+            if isCancellationError(error) {
+#if DEBUG
+                resourceCardLogger.debug("download cancelled image: \(resource.url.absoluteString, privacy: .public)")
+#endif
+                return
+            }
+            downloadFailed = true
+#if DEBUG
+            let nsError = error as NSError
+            resourceCardLogger.error("download failed image: \(resource.url.absoluteString, privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public)")
+#endif
+        }
+    }
+
+    private func isCancellationError(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        if let urlError = error as? URLError, urlError.code == .cancelled { return true }
+
+        let nsError = error as NSError
+        return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
     }
 }
