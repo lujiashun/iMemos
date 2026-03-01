@@ -33,20 +33,6 @@ struct ExpandableTextView: View {
         self.lineSpacing = lineSpacing
     }
     
-    private var isTruncated: Bool {
-        let attributedText = parseRichText(text)
-        let label = UILabel()
-        label.attributedText = attributedText
-        label.numberOfLines = maxLines
-        
-        let maxWidth: CGFloat = UIScreen.main.bounds.width - 32
-        let fullHeight = label.sizeThatFits(CGSize(width: maxWidth, height: .greatestFiniteMagnitude)).height
-        let lineHeight: CGFloat = 22
-        let limitedHeight = lineHeight * CGFloat(maxLines)
-        
-        return fullHeight > limitedHeight
-    }
-    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             #if canImport(UIKit)
@@ -60,25 +46,6 @@ struct ExpandableTextView: View {
                 .lineSpacing(lineSpacing)
                 .lineLimit(isExpanded ? nil : maxLines)
             #endif
-            
-            if isTruncated {
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        isExpanded.toggle()
-                    }
-                }) {
-                    HStack(spacing: 4) {
-                        Text(isExpanded ? "收起" : "展开")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .font(.caption)
-                    }
-                    .foregroundColor(.accentColor)
-                }
-                .buttonStyle(.plain)
-                .padding(.top, 4)
-            }
         }
     }
     
