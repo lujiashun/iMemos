@@ -52,7 +52,7 @@ struct MemoCardContent: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading) {
             // Memo content with expand/collapse support for Explore page
             #if canImport(MarkdownUI)
             if isExplore {
@@ -121,7 +121,6 @@ struct MemoCardContent: View {
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
                                 .fill(Color.gray.opacity(0.12))
                         )
-                        .padding(.top, 12)
                     }
                 }
                 
