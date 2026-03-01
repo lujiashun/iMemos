@@ -209,18 +209,27 @@ struct FormattingMenu: View {
         let existingPrefix = getExistingListPrefix(from: lineString)
         let indentPrefix = getIndentPrefix(from: lineString)
         
+        var newText: String
+        var offsetChange = 0
+        
         if let existing = existingPrefix {
             if existing == prefix {
-                text = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + lineString.replacingOccurrences(of: "^" + existing, with: "", options: .regularExpression) + String(currentText[nextLineBreak..<currentText.endIndex])
+                newText = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + lineString.replacingOccurrences(of: "^" + existing, with: "", options: .regularExpression) + String(currentText[nextLineBreak..<currentText.endIndex])
+                offsetChange = -existing.count
             } else {
-                text = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + prefix + lineString.replacingOccurrences(of: "^" + existing.replacingOccurrences(of: "([.])", with: "\\$1", options: .regularExpression), with: "", options: .regularExpression) + String(currentText[nextLineBreak..<currentText.endIndex])
+                newText = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + prefix + lineString.replacingOccurrences(of: "^" + existing.replacingOccurrences(of: "([.])", with: "\\$1", options: .regularExpression), with: "", options: .regularExpression) + String(currentText[nextLineBreak..<currentText.endIndex])
+                offsetChange = prefix.count - existing.count
             }
         } else {
-            text = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + prefix + lineString + String(currentText[nextLineBreak..<currentText.endIndex])
+            newText = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + prefix + lineString + String(currentText[nextLineBreak..<currentText.endIndex])
+            offsetChange = prefix.count
         }
         
-        let newOffset = prefix.count
-        selection = text.index(currentSelection.lowerBound, offsetBy: newOffset)..<text.index(currentSelection.upperBound, offsetBy: newOffset)
+        text = newText
+        
+        let newLower = newText.index(currentSelection.lowerBound, offsetBy: offsetChange, limitedBy: newText.startIndex) ?? newText.startIndex
+        let newUpper = newText.index(currentSelection.upperBound, offsetBy: offsetChange, limitedBy: newText.endIndex) ?? newText.endIndex
+        selection = newLower..<newUpper
     }
     
     private func getExistingListPrefix(from line: String) -> String? {
@@ -248,7 +257,6 @@ struct FormattingMenu: View {
         
         let contentBefore = currentText[currentText.startIndex..<currentSelection.lowerBound]
         let lastLineBreak = contentBefore.lastIndex(of: "\n")
-        let nextLineBreak = currentText[currentSelection.lowerBound...].firstIndex(of: "\n") ?? currentText.endIndex
         
         let lineStartIndex: String.Index
         if let lastLineBreak = lastLineBreak {
@@ -258,9 +266,12 @@ struct FormattingMenu: View {
         }
         
         let indentToAdd = "  "
-        text = String(currentText[currentText.startIndex..<lineStartIndex]) + indentToAdd + String(currentText[lineStartIndex..<currentText.endIndex])
+        let newText = String(currentText[currentText.startIndex..<lineStartIndex]) + indentToAdd + String(currentText[lineStartIndex..<currentText.endIndex])
+        text = newText
         
-        selection = text.index(currentSelection.lowerBound, offsetBy: 2)..<text.index(currentSelection.upperBound, offsetBy: 2)
+        let newLower = newText.index(currentSelection.lowerBound, offsetBy: 2, limitedBy: newText.startIndex) ?? newText.startIndex
+        let newUpper = newText.index(currentSelection.upperBound, offsetBy: 2, limitedBy: newText.endIndex) ?? newText.endIndex
+        selection = newLower..<newUpper
     }
     
     private func decreaseIndent() {
@@ -285,10 +296,11 @@ struct FormattingMenu: View {
         let removeCount = min(2, indentMatch.count)
         let removeEndIndex = currentText.index(lineStartIndex, offsetBy: removeCount)
         
-        text = String(currentText[currentText.startIndex..<lineStartIndex]) + String(currentText[removeEndIndex..<currentText.endIndex])
+        let newText = String(currentText[currentText.startIndex..<lineStartIndex]) + String(currentText[removeEndIndex..<currentText.endIndex])
+        text = newText
         
-        let newLower = text.index(currentSelection.lowerBound, offsetBy: -removeCount, limitedBy: text.startIndex) ?? text.startIndex
-        let newUpper = text.index(currentSelection.upperBound, offsetBy: -removeCount, limitedBy: text.startIndex) ?? text.startIndex
+        let newLower = newText.index(currentSelection.lowerBound, offsetBy: -removeCount, limitedBy: newText.startIndex) ?? newText.startIndex
+        let newUpper = newText.index(currentSelection.upperBound, offsetBy: -removeCount, limitedBy: newText.endIndex) ?? newText.endIndex
         selection = newLower..<newUpper
     }
 }
