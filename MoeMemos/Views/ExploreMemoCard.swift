@@ -26,10 +26,10 @@ struct ExploreMemoCard: View {
                         .foregroundColor(.secondary)
                 }
             }
-            .padding(.vertical, 0)
+            .padding(.vertical, 2)
             
             MemoCard(memo, defaultMemoVisibility: userState.currentUser?.defaultVisibility ?? .private, isExplore: true)
         }
-        .padding([.top, .bottom], 0)
+        .padding([.top, .bottom], 2)
     }
 }

@@ -59,8 +59,6 @@ struct MemosList: View {
             List(filteredMemoList, id: \.remoteId) { memo in
                 Section {
                     MemoCard(memo, defaultMemoVisibility: defaultMemoVisibility, isExplore: tag == nil)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowSeparator(.hidden)
                 }
             }
             .listStyle(InsetGroupedListStyle())

@@ -12,7 +12,7 @@ struct Explore: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 2) {
+            LazyVStack(spacing: 0) {
                 ForEach(viewModel.memoList, id: \.remoteId) { memo in
                     ExploreMemoCard(memo: memo)
                         .padding(.horizontal, 16)
