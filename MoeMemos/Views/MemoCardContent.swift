@@ -112,8 +112,16 @@ struct MemoCardContent: View {
                                 .fill(Color.gray.opacity(0.12))
                         )
                     } else {
-                        AudioPlayerView(resource: resource, textContent: memo.content, ignoreContentTap: $ignoreContentTap, isExplore: isExplore)
-                            .padding(.top, 12)
+                        VStack(alignment: .leading, spacing: 8) {
+                            AudioPlayerView(resource: resource, textContent: memo.content, ignoreContentTap: $ignoreContentTap, isExplore: isExplore)
+                        }
+                        .padding(EdgeInsets(top: 8, leading: 10, bottom: 10, trailing: 10))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.gray.opacity(0.12))
+                        )
+                        .padding(.top, 12)
                     }
                 }
                 
