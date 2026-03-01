@@ -60,70 +60,80 @@ struct ExpandableTextView: View {
     
     private func parseRichText(_ html: String) -> AttributedString {
         struct TagPair {
-            let openTagStart: Int
-            let openTagEnd: Int
-            let closeTagStart: Int
-            let closeTagEnd: Int
+            let openStart: Int
+            let openEnd: Int
+            let closeStart: Int
+            let closeEnd: Int
             let isUnderline: Bool
         }
         
         var tagPairs: [TagPair] = []
-        var searchStart = html.startIndex
         
-        while searchStart < html.endIndex {
-            let searchRange = searchStart..<html.endIndex
+        var currentText = html
+        var totalRemoved = 0
+        
+        while true {
+            let uRange = currentText.range(of: "<u>")
+            let markRange = currentText.range(of: "<mark>")
             
-            guard let openTagRange = html.range(of: "<u>", options: [], range: searchRange) ??
-                                      html.range(of: "<mark>", options: [], range: searchRange) else {
-                break
+            var openTagRange: Range<String.Index>?
+            var isUnderline = false
+            
+            if let u = uRange, let mark = markRange {
+                if u.lowerBound < mark.lowerBound {
+                    openTagRange = u
+                    isUnderline = true
+                } else {
+                    openTagRange = mark
+                    isUnderline = false
+                }
+            } else if let u = uRange {
+                openTagRange = u
+                isUnderline = true
+            } else if let mark = markRange {
+                openTagRange = mark
+                isUnderline = false
             }
             
-            let isUnderline = html[openTagRange] == "<u>"
-            let closeTag = isUnderline ? "</u>" : "</mark>"
+            guard let openRange = openTagRange else { break }
             
-            guard let closeTagRange = html.range(of: closeTag, options: [], range: openTagRange.upperBound..<html.endIndex) else {
-                searchStart = openTagRange.upperBound
+            let closeTag = isUnderline ? "</u>" : "</mark>"
+            guard let closeRange = currentText.range(of: closeTag, range: openRange.upperBound..<currentText.endIndex) else {
+                currentText.removeSubrange(openRange.lowerBound..<openRange.upperBound)
                 continue
             }
             
-            let openTagStart = html.distance(from: html.startIndex, to: openTagRange.lowerBound)
-            let openTagEnd = html.distance(from: html.startIndex, to: openTagRange.upperBound)
-            let closeTagStart = html.distance(from: html.startIndex, to: closeTagRange.lowerBound)
-            let closeTagEnd = html.distance(from: html.startIndex, to: closeTagRange.upperBound)
+            let openStart = currentText.distance(from: currentText.startIndex, to: openRange.lowerBound) + totalRemoved
+            let openEnd = currentText.distance(from: currentText.startIndex, to: openRange.upperBound) + totalRemoved
+            let closeStart = currentText.distance(from: currentText.startIndex, to: closeRange.lowerBound) + totalRemoved
+            let closeEnd = currentText.distance(from: currentText.startIndex, to: closeRange.upperBound) + totalRemoved
             
-            tagPairs.append(TagPair(
-                openTagStart: openTagStart,
-                openTagEnd: openTagEnd,
-                closeTagStart: closeTagStart,
-                closeTagEnd: closeTagEnd,
-                isUnderline: isUnderline
-            ))
+            tagPairs.append(TagPair(openStart: openStart, openEnd: openEnd, closeStart: closeStart, closeEnd: closeEnd, isUnderline: isUnderline))
             
-            searchStart = closeTagRange.upperBound
+            let openTagLen = currentText.distance(from: openRange.lowerBound, to: openRange.upperBound)
+            let closeTagLen = currentText.distance(from: closeRange.lowerBound, to: closeRange.upperBound)
+            totalRemoved += openTagLen + closeTagLen
+            
+            currentText.removeSubrange(closeRange.lowerBound..<closeRange.upperBound)
+            currentText.removeSubrange(openRange.lowerBound..<openRange.upperBound)
         }
         
-        let plainText = html
-            .replacingOccurrences(of: "<u>", with: "")
-            .replacingOccurrences(of: "</u>", with: "")
-            .replacingOccurrences(of: "<mark>", with: "")
-            .replacingOccurrences(of: "</mark>", with: "")
-        
-        var result = AttributedString(plainText)
+        var result = AttributedString(currentText)
         
         for pair in tagPairs {
-            var adjustedStart = pair.openTagStart
-            var adjustedEnd = pair.closeTagStart
+            var adjustedStart = pair.openEnd
+            var adjustedEnd = pair.closeStart
             
-            for earlierPair in tagPairs {
-                if earlierPair.openTagStart < pair.openTagStart {
-                    let openTagLength = earlierPair.openTagEnd - earlierPair.openTagStart
-                    let closeTagLength = earlierPair.closeTagEnd - earlierPair.closeTagStart
-                    adjustedStart -= (openTagLength + closeTagLength)
-                    adjustedEnd -= (openTagLength + closeTagLength)
+            for earlier in tagPairs {
+                if earlier.openStart < pair.openStart {
+                    let openTagLen = earlier.openEnd - earlier.openStart
+                    let closeTagLen = earlier.closeEnd - earlier.closeStart
+                    adjustedStart -= (openTagLen + closeTagLen)
+                    adjustedEnd -= (openTagLen + closeTagLen)
                 }
             }
             
-            guard adjustedStart >= 0 && adjustedEnd <= plainText.count && adjustedStart < adjustedEnd else { continue }
+            guard adjustedStart >= 0 && adjustedEnd <= currentText.count && adjustedStart < adjustedEnd else { continue }
             
             let startIndex = result.characters.index(result.characters.startIndex, offsetBy: adjustedStart)
             let endIndex = result.characters.index(result.characters.startIndex, offsetBy: adjustedEnd)
