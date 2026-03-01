@@ -127,7 +127,6 @@ struct MemoCardContent: View {
                 
             }
         }
-        .background(Color(UIColor.secondarySystemGroupedBackground))
         .contentShape(Rectangle())
     }
 
@@ -276,7 +275,6 @@ struct AudioPlayerView: View {
                     performExpandTapped()
                 }
             }
-            .background(Color(UIColor.secondarySystemGroupedBackground))
             .contentShape(Rectangle())
 
             // Expanded Text Content
@@ -421,7 +419,6 @@ struct AudioPlayerView: View {
                 timeObserverToken = nil
             }
         }
-        .background(Color(UIColor.secondarySystemGroupedBackground))
         .contentShape(Rectangle())
     }
 
