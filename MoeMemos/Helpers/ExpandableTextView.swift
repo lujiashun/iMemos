@@ -20,7 +20,6 @@ struct ExpandableTextView: View {
     let lineSpacing: CGFloat
     
     @State private var isExpanded: Bool = false
-    @State private var isTruncated: Bool = false
     
     init(
         text: String,
@@ -34,14 +33,26 @@ struct ExpandableTextView: View {
         self.lineSpacing = lineSpacing
     }
     
+    private var isTruncated: Bool {
+        let attributedText = parseRichText(text)
+        let label = UILabel()
+        label.attributedText = attributedText
+        label.numberOfLines = maxLines
+        
+        let maxWidth: CGFloat = UIScreen.main.bounds.width - 32
+        let fullHeight = label.sizeThatFits(CGSize(width: maxWidth, height: .greatestFiniteMagnitude)).height
+        let lineHeight: CGFloat = 22
+        let limitedHeight = lineHeight * CGFloat(maxLines)
+        
+        return fullHeight > limitedHeight
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             #if canImport(UIKit)
-            ExpandableUILabel(
+            RichTextLabel(
                 attributedText: parseRichText(text),
-                maxLines: maxLines,
-                isExpanded: isExpanded,
-                isTruncated: $isTruncated
+                maxLines: isExpanded ? 0 : maxLines
             )
             #else
             Text(text)
@@ -137,56 +148,20 @@ struct ExpandableTextView: View {
 }
 
 #if canImport(UIKit)
-struct ExpandableUILabel: UIViewRepresentable {
+struct RichTextLabel: UIViewRepresentable {
     let attributedText: NSAttributedString
     let maxLines: Int
-    let isExpanded: Bool
-    @Binding var isTruncated: Bool
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
     
     func makeUIView(context: Context) -> UILabel {
         let label = UILabel()
-        label.numberOfLines = 0
+        label.numberOfLines = maxLines
         label.lineBreakMode = .byWordWrapping
         return label
     }
     
     func updateUIView(_ uiView: UILabel, context: Context) {
-        let needsUpdate = context.coordinator.lastText != attributedText.string || 
-                          context.coordinator.lastMaxLines != maxLines ||
-                          context.coordinator.lastWidth != uiView.bounds.width
-        
-        if needsUpdate {
-            uiView.attributedText = attributedText
-            uiView.numberOfLines = maxLines
-            
-            context.coordinator.lastText = attributedText.string
-            context.coordinator.lastMaxLines = maxLines
-            context.coordinator.lastWidth = uiView.bounds.width
-            
-            DispatchQueue.main.async {
-                let fullHeight = uiView.sizeThatFits(CGSize(width: uiView.bounds.width, height: .greatestFiniteMagnitude)).height
-                let limitedHeight = uiView.sizeThatFits(CGSize(width: uiView.bounds.width, height: CGFloat(maxLines) * 25)).height
-                
-                let newIsTruncated = fullHeight > limitedHeight + 5
-                if context.coordinator.lastIsTruncated != newIsTruncated {
-                    context.coordinator.lastIsTruncated = newIsTruncated
-                    self.isTruncated = newIsTruncated
-                }
-            }
-        }
-        
-        uiView.numberOfLines = isExpanded ? 0 : maxLines
-    }
-    
-    class Coordinator {
-        var lastText: String = ""
-        var lastMaxLines: Int = 0
-        var lastWidth: CGFloat = 0
-        var lastIsTruncated: Bool = false
+        uiView.attributedText = attributedText
+        uiView.numberOfLines = maxLines
     }
 }
 #endif
