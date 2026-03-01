@@ -55,6 +55,7 @@ struct MemosList: View {
             Section {
                 MemoCard(memo, defaultMemoVisibility: userState.currentUser?.defaultVisibility ?? .private, isExplore: tag == nil)
             }
+            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
         }
         .listStyle(InsetGroupedListStyle())
     }
