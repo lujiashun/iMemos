@@ -28,7 +28,7 @@ struct MemoCard: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(memo.renderTime())
                     .font(.footnote)
@@ -54,10 +54,14 @@ struct MemoCard: View {
                 }
             }
             .padding(.bottom, isExplore ? 2 : 8)
+            .background(Color.clear)
+            .contentShape(Rectangle())
             
             MemoCardContent(memo: memo, toggleTaskItem: toggleTaskItem(_:), isExplore: isExplore)
         }
         .padding([.top, .bottom], isExplore ? 2 : 5)
+        .background(Color.clear)
+        .contentShape(Rectangle())
         .contextMenu {
             Button {
                 UIPasteboard.general.setValue(memo.content, forPasteboardType: UTType.plainText.identifier)

@@ -52,7 +52,7 @@ struct MemoCardContent: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 0) {
             // Memo content with expand/collapse support for Explore page
             #if canImport(MarkdownUI)
             if isExplore {
@@ -118,6 +118,8 @@ struct MemoCardContent: View {
                 
             }
         }
+        .background(Color.clear)
+        .contentShape(Rectangle())
     }
     
     private func isAudioResource(_ resource: Resource) -> Bool {
@@ -169,7 +171,6 @@ struct AudioPlayerView: View {
     @State private var duration: TimeInterval = 0
     @State private var error: Error?
     @State private var currentTask: Task<Void, Never>?
-    @State private var handledByHighPriority = false
     // Raw/punctuated transcript states (for showing 原文)
     @State private var rawTranscript: String?
     @State private var punctuatedTranscript: String?
@@ -227,68 +228,47 @@ struct AudioPlayerView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Player Control Bar
             HStack(alignment: .center, spacing: 0) {
-                    ZStack {
-                    Button(action: {
-                        if handledByHighPriority {
-                            handledByHighPriority = false
-                            return
+                Button(action: {
+                    performPlayTapped()
+                }) {
+                    HStack(spacing: 8) {
+                        if isLoading {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                                .font(.system(size: 16))
                         }
-                        performPlayTapped()
-                    }) {
-                        HStack(spacing: 8) {
-                            if isLoading {
-                                ProgressView()
-                                    .controlSize(.small)
-                            } else {
-                                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                                    .font(.system(size: 16))
-                            }
-                            Text(formattedDuration)
-                                .font(.footnote)
-                                .monospacedDigit()
-                        }
-                        .foregroundStyle(.primary)
-                        .padding(.vertical, 8)
-                        .padding(.leading, 4)
-                        .padding(.trailing, 12)
+                        Text(formattedDuration)
+                            .font(.footnote)
+                            .monospacedDigit()
                     }
-                    .contentShape(Rectangle()) // Explicit hit-testing area
-                    .highPriorityGesture(TapGesture().onEnded {
-                        handledByHighPriority = true
-                        performPlayTapped()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { handledByHighPriority = false }
-                    })
+                    .foregroundStyle(.primary)
+                    .padding(.vertical, 8)
+                    .padding(.leading, 4)
+                    .padding(.trailing, 12)
                 }
-                .background(Color.clear)
+                .buttonStyle(.plain)
+                
                 Spacer(minLength: 0)
-                ZStack {
-                    Button(action: {
-                        if handledByHighPriority {
-                            handledByHighPriority = false
-                            return
-                        }
-                        performExpandTapped()
-                    }) {
-                        HStack(spacing: 4) {
-                            Text(isExpanded ? "收起" : (isExplore ? "原文" : "原文"))
-                                .font(.subheadline)
-                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                                .font(.caption)
-                        }
-                        .foregroundStyle(.secondary)
-                        .padding(.vertical, 8)
-                        .padding(.trailing, 0)
+                
+                Button(action: {
+                    performExpandTapped()
+                }) {
+                    HStack(spacing: 4) {
+                        Text(isExpanded ? "收起" : "原文")
+                            .font(.subheadline)
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.caption)
                     }
-                    .contentShape(Rectangle()) // Explicit hit-testing area
-                    .highPriorityGesture(TapGesture().onEnded {
-                        handledByHighPriority = true
-                        performExpandTapped()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { handledByHighPriority = false }
-                    })
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 8)
+                    .padding(.trailing, 0)
                 }
-                .background(Color.clear)
-                // (delete button moved below expanded transcript)
+                .buttonStyle(.plain)
             }
+            .background(Color.clear)
+            .contentShape(Rectangle())
             
             // Expanded Text Content
             // Precompute displayText here to avoid placing statements inside ViewBuilder.
@@ -432,6 +412,7 @@ struct AudioPlayerView: View {
                 timeObserverToken = nil
             }
         }
+        .contentShape(Rectangle())
     }
     
     private var formattedDuration: String {

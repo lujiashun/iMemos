@@ -14,7 +14,7 @@ struct ExploreMemoCard: View {
     @Environment(AccountViewModel.self) private var userState
 
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(memo.renderTime())
                     .font(.footnote)
@@ -27,9 +27,13 @@ struct ExploreMemoCard: View {
                 }
             }
             .padding(.vertical, 2)
+            .background(Color.clear)
+            .contentShape(Rectangle())
             
             MemoCard(memo, defaultMemoVisibility: userState.currentUser?.defaultVisibility ?? .private, isExplore: true)
         }
         .padding([.top, .bottom], 2)
+        .background(Color.clear)
+        .contentShape(Rectangle())
     }
 }
