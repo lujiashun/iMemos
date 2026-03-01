@@ -519,13 +519,17 @@ struct MemoInput: View {
         let mutableAttrString = NSMutableAttributedString(attributedString: attributedText)
         let fullRange = NSRange(location: 0, length: mutableAttrString.length)
         
-        var underlineRanges: [NSRange] = []
-        var highlightRanges: [NSRange] = []
+        struct StyleRange {
+            let range: NSRange
+            let isUnderline: Bool
+        }
+        
+        var styleRanges: [StyleRange] = []
         
         mutableAttrString.enumerateAttribute(.underlineStyle, in: fullRange, options: []) { value, range, _ in
             if let style = value as? Int, style == NSUnderlineStyle.single.rawValue {
                 print("📝 [DEBUG] 找到下划线范围: \(range), 内容: \(mutableAttrString.attributedSubstring(from: range).string)")
-                underlineRanges.append(range)
+                styleRanges.append(StyleRange(range: range, isUnderline: true))
             }
         }
         
@@ -535,26 +539,25 @@ struct MemoInput: View {
                 color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
                 print("📝 [DEBUG] 找到背景色范围: \(range), RGB: (\(red), \(green), \(blue)), 内容: \(mutableAttrString.attributedSubstring(from: range).string)")
                 if red > 0.9 && green > 0.7 && blue < 0.3 {
-                    highlightRanges.append(range)
+                    styleRanges.append(StyleRange(range: range, isUnderline: false))
                 }
             }
         }
         
-        print("📝 [DEBUG] 下划线范围数量: \(underlineRanges.count), 高亮范围数量: \(highlightRanges.count)")
+        print("📝 [DEBUG] 样式范围数量: \(styleRanges.count)")
         
-        for range in underlineRanges.sorted(by: { $0.location > $1.location }) {
+        for styleRange in styleRanges.sorted(by: { $0.range.location > $1.range.location }) {
+            let range = styleRange.range
+            guard range.location + range.length <= mutableAttrString.length else { continue }
+            
             let content = mutableAttrString.attributedSubstring(from: range).string
-            let tagged = NSAttributedString(string: "<u>\(content)</u>")
-            mutableAttrString.replaceCharacters(in: range, with: tagged)
-        }
-        
-        let newFullRange = NSRange(location: 0, length: mutableAttrString.length)
-        for range in highlightRanges.sorted(by: { $0.location > $1.location }) {
-            if range.location + range.length <= mutableAttrString.length {
-                let content = mutableAttrString.attributedSubstring(from: range).string
-                let tagged = NSAttributedString(string: "<mark>\(content)</mark>")
-                mutableAttrString.replaceCharacters(in: range, with: tagged)
+            let tagged: String
+            if styleRange.isUnderline {
+                tagged = "<u>\(content)</u>"
+            } else {
+                tagged = "<mark>\(content)</mark>"
             }
+            mutableAttrString.replaceCharacters(in: range, with: tagged)
         }
         
         print("📝 [DEBUG] 最终保存内容: \(mutableAttrString.string)")
