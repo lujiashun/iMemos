@@ -107,13 +107,7 @@ struct FormattingMenu: View {
             }
         }) {
             Image(systemName: icon)
-                .font(.system(size: 18, weight: isActive ? .semibold : .regular))
-                .foregroundColor(isDisabled ? .gray : (isActive ? .accentColor : .primary))
-                .frame(width: 36, height: 36)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(isActive ? Color.accentColor.opacity(0.15) : Color.clear)
-                )
+                .font(.system(size: 17))
         }
         .disabled(isDisabled)
         .accessibilityLabel(title)
