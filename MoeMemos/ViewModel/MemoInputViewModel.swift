@@ -28,7 +28,25 @@ import Factory
     var photos: [PhotosPickerItem] = []
 
     func upload(image: UIImage) async throws {
-        guard let data = image.jpegData(compressionQuality: 0.8) else { throw MoeMemosError.invalidParams }
+        // 智能压缩图片
+        let compressionResult = await ImageCompressor.compressAsync(image: image)
+        
+        let data: Data
+        switch compressionResult {
+        case .success(let compressedData, let quality, let originalSize, let compressedSize):
+            data = compressedData
+#if DEBUG
+            print("[ImageUpload] 图片已压缩: \(ByteCountFormatter.string(fromByteCount: Int64(originalSize), countStyle: .file)) -> \(ByteCountFormatter.string(fromByteCount: Int64(compressedSize), countStyle: .file)), 质量: \(Int(quality * 100))%")
+#endif
+        case .noNeed(let originalData, let originalSize):
+            data = originalData
+#if DEBUG
+            print("[ImageUpload] 图片无需压缩: \(ByteCountFormatter.string(fromByteCount: Int64(originalSize), countStyle: .file))")
+#endif
+        case .failure(let error):
+            throw error
+        }
+        
         let response = try await uploadResource(filename: "\(UUID().uuidString).jpg", data: data, type: "image/jpeg", memoRemoteId: nil)
         resourceList.append(response)
     }
