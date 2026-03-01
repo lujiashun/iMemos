@@ -37,7 +37,7 @@ struct ToolboxMenu: View {
             }
             .disabled(!hasSelection)
         } label: {
-            Image(systemName: "ellipsis.vertical")
+            Image(systemName: "ellipsis")
                 .font(.system(size: 17))
         }
     }
