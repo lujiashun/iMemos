@@ -280,97 +280,99 @@ struct AudioPlayerView: View {
             // Precompute displayText here to avoid placing statements inside ViewBuilder.
             let displayText = isExplore ? (refinedTranscript ?? punctuatedTranscript ?? rawTranscript ?? textContent) : (punctuatedTranscript ?? rawTranscript ?? textContent)
             if isExpanded {
-                if isPunctuating {
-                    HStack(spacing: 8) {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text("AI转写中…")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.top, 8)
-                    .padding(.horizontal, 4)
-                } else if isRefining {
-                    HStack(spacing: 8) {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text("优化中…")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.top, 8)
-                    .padding(.horizontal, 4)
-                } else if displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text("无文字内容")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 0) {
+                    if isPunctuating {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("AI转写中…")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                         .padding(.top, 8)
                         .padding(.horizontal, 4)
-                } else {
-                    Group {
-                        #if canImport(MarkdownUI)
-                        MarkdownView(displayText)
-                            .markdownImageProvider(.lazyImage(aspectRatio: 4 / 3))
-                            .markdownCodeSyntaxHighlighter(colorScheme == .dark ? .dark() : .light())
-                        #else
-                        Text(displayText)
-                        #endif
-                    }
-                    .padding(.top, 12)
-                    .padding(.horizontal, 4)
-                }
-
-                // Copy button: show only in Explore mode under the displayed transcript
-                if isExplore && !displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    HStack {
-                        Button(action: { copyTranscript() }) {
-                            Image(systemName: copied ? "doc.on.doc.fill" : "doc.on.doc")
-                                .font(.caption)
-                                .foregroundColor(copied ? Color.accentColor : Color.secondary)
-                                .padding(8)
-                                .background(copied ? Color.accentColor.opacity(0.12) : Color.clear)
-                                .cornerRadius(6)
+                    } else if isRefining {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("优化中…")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                         }
-                        .buttonStyle(.borderless)
-                        .animation(.easeInOut(duration: 0.18), value: copied)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 4)
-                }
-
-                // Delete button: show in editor (not Explore) under the expanded transcript.
-                // Previously the button was hidden when there was no display text; keep it visible
-                // so users can delete the audio even if the original text is empty or failed to load.
-                if !isExplore && isExpanded {
-                    HStack {
-                        Button(action: {
-                            onDelete?()
-                        }) {
-                            Image(systemName: "trash")
-                                .font(.caption)
-                                .foregroundStyle(.red)
-                                .padding(8)
+                        .padding(.top, 8)
+                        .padding(.horizontal, 4)
+                    } else if displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text("无文字内容")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 8)
+                            .padding(.horizontal, 4)
+                    } else {
+                        Group {
+                            #if canImport(MarkdownUI)
+                            MarkdownView(displayText)
+                                .markdownImageProvider(.lazyImage(aspectRatio: 4 / 3))
+                                .markdownCodeSyntaxHighlighter(colorScheme == .dark ? .dark() : .light())
+                            #else
+                            Text(displayText)
+                            #endif
                         }
-                        .buttonStyle(.borderless)
-                        Spacer()
+                        .padding(.top, 12)
+                        .padding(.horizontal, 4)
                     }
-                    .padding(.horizontal, 4)
-                }
 
-                if let err = punctuateError {
-                    Text("（原文恢复失败，显示可用文字）")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    // Copy button: show only in Explore mode under the displayed transcript
+                    if isExplore && !displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        HStack {
+                            Button(action: { copyTranscript() }) {
+                                Image(systemName: copied ? "doc.on.doc.fill" : "doc.on.doc")
+                                    .font(.caption)
+                                    .foregroundColor(copied ? Color.accentColor : Color.secondary)
+                                    .padding(8)
+                                    .background(copied ? Color.accentColor.opacity(0.12) : Color.clear)
+                                    .cornerRadius(6)
+                            }
+                            .buttonStyle(.borderless)
+                            .animation(.easeInOut(duration: 0.18), value: copied)
+                            Spacer()
+                        }
                         .padding(.horizontal, 4)
-                }
-                if let err = refineError {
-                    Text("（优化失败，显示原文）")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    }
+
+                    // Delete button: show in editor (not Explore) under the expanded transcript.
+                    if !isExplore {
+                        HStack {
+                            Button(action: {
+                                onDelete?()
+                            }) {
+                                Image(systemName: "trash")
+                                    .font(.caption)
+                                    .foregroundStyle(.red)
+                                    .padding(8)
+                            }
+                            .buttonStyle(.borderless)
+                            Spacer()
+                        }
                         .padding(.horizontal, 4)
+                    }
+
+                    if let err = punctuateError {
+                        Text("（原文恢复失败，显示可用文字）")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 4)
+                    }
+                    if let err = refineError {
+                        Text("（优化失败，显示原文）")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 4)
+                    }
                 }
+                .transition(.opacity)
             }
         }
+        .animation(.easeInOut(duration: 0.25), value: isExpanded)
         .onDisappear {
             // Clean up when view disappears
             currentTask?.cancel()
@@ -452,9 +454,7 @@ struct AudioPlayerView: View {
     private func performExpandTapped() {
         ignoreContentTap.wrappedValue = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { ignoreContentTap.wrappedValue = false }
-        withAnimation(.easeInOut(duration: 0.25)) {
-            isExpanded.toggle()
-        }
+        isExpanded.toggle()
         if isExpanded {
             // start async task to ensure we have a punctuated transcript
             Task { await ensurePunctuatedTranscript() }
