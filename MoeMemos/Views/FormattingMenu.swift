@@ -229,25 +229,29 @@ struct FormattingMenu: View {
         let indentPrefix = getIndentPrefix(from: lineString)
         
         var newText: String
+        var prefixLengthChange = 0
         
         if let existing = existingPrefix {
             if existing == prefix {
                 newText = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + lineString.replacingOccurrences(of: "^" + existing, with: "", options: .regularExpression) + String(currentText[nextLineBreak..<currentText.endIndex])
+                prefixLengthChange = -existing.count
             } else {
                 newText = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + prefix + lineString.replacingOccurrences(of: "^" + existing.replacingOccurrences(of: "([.])", with: "\\$1", options: .regularExpression), with: "", options: .regularExpression) + String(currentText[nextLineBreak..<currentText.endIndex])
+                prefixLengthChange = prefix.count - existing.count
             }
         } else {
             newText = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + prefix + lineString + String(currentText[nextLineBreak..<currentText.endIndex])
+            prefixLengthChange = prefix.count
         }
         
         text = newText
         
-        // Calculate cursor position based on distance from start
-        let cursorOffsetFromStart = currentText.distance(from: currentText.startIndex, to: currentSelection.lowerBound)
-        let safeOffset = min(cursorOffsetFromStart, newText.count)
-        let newLower = newText.index(newText.startIndex, offsetBy: safeOffset)
-        let newUpper = newText.index(newText.startIndex, offsetBy: min(safeOffset, newText.count))
-        selection = newLower..<newUpper
+        // Calculate cursor position: move to after the list prefix on the current line
+        let lineStartOffset = currentText.distance(from: currentText.startIndex, to: lineStartIndex)
+        let newCursorOffset = lineStartOffset + indentPrefix.count + prefix.count
+        let safeOffset = min(newCursorOffset, newText.count)
+        let newCursorPos = newText.index(newText.startIndex, offsetBy: safeOffset)
+        selection = newCursorPos..<newCursorPos
     }
     
     private func getExistingListPrefix(from line: String) -> String? {
