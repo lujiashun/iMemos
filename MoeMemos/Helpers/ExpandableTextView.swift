@@ -61,35 +61,50 @@ struct ExpandableTextView: View {
     private func parseRichText(_ html: String) -> AttributedString {
         var result = AttributedString(html)
         
-        var currentIndex = result.characters.startIndex
-        while currentIndex < result.characters.endIndex {
-            let substring = result.characters[currentIndex...]
+        while true {
+            let stringContent = String(result.characters)
             
-            if let uStart = substring.range(of: "<u>"),
-               let uEnd = substring.range(of: "</u>", range: uStart.upperBound..<substring.endIndex) {
-                let contentRange = uStart.upperBound..<uEnd.lowerBound
-                
-                result.characters.removeSubrange(uEnd.lowerBound..<uEnd.upperBound)
-                result.characters.removeSubrange(uStart.lowerBound..<uStart.upperBound)
-                
-                let newContentRange = result.characters.index(uStart.lowerBound, offsetBy: 0)..<result.characters.index(uStart.lowerBound, offsetBy: contentRange.count)
-                result[newContentRange].underlineStyle = .single
-                
-                currentIndex = result.characters.index(after: newContentRange.upperBound)
-            } else if let markStart = substring.range(of: "<mark>"),
-                      let markEnd = substring.range(of: "</mark>", range: markStart.upperBound..<substring.endIndex) {
-                let contentRange = markStart.upperBound..<markEnd.lowerBound
-                
-                result.characters.removeSubrange(markEnd.lowerBound..<markEnd.upperBound)
-                result.characters.removeSubrange(markStart.lowerBound..<markStart.upperBound)
-                
-                let newContentRange = result.characters.index(markStart.lowerBound, offsetBy: 0)..<result.characters.index(markStart.lowerBound, offsetBy: contentRange.count)
-                result[newContentRange].backgroundColor = .yellow.opacity(0.3)
-                
-                currentIndex = result.characters.index(after: newContentRange.upperBound)
-            } else {
+            guard let uStart = stringContent.range(of: "<u>"),
+                  let uEnd = stringContent.range(of: "</u>", range: uStart.upperBound..<stringContent.endIndex) else {
                 break
             }
+            
+            let contentRange = uStart.upperBound..<uEnd.lowerBound
+            let content = String(stringContent[contentRange])
+            
+            let attrStart = AttributedString.CharacterView.Index(uStart.lowerBound, within: result)!
+            let attrEnd = AttributedString.CharacterView.Index(uEnd.upperBound, within: result)!
+            result.characters.removeSubrange(attrStart..<attrEnd)
+            
+            let insertIndex = AttributedString.CharacterView.Index(uStart.lowerBound, within: result)!
+            result.insert(AttributedString(content), at: insertIndex)
+            
+            let newStart = AttributedString.CharacterView.Index(uStart.lowerBound, within: result)!
+            let newEnd = AttributedString.CharacterView.Index(uStart.lowerBound, offsetBy: content.count, within: result)!
+            result[newStart..<newEnd].underlineStyle = .single
+        }
+        
+        while true {
+            let stringContent = String(result.characters)
+            
+            guard let markStart = stringContent.range(of: "<mark>"),
+                  let markEnd = stringContent.range(of: "</mark>", range: markStart.upperBound..<stringContent.endIndex) else {
+                break
+            }
+            
+            let contentRange = markStart.upperBound..<markEnd.lowerBound
+            let content = String(stringContent[contentRange])
+            
+            let attrStart = AttributedString.CharacterView.Index(markStart.lowerBound, within: result)!
+            let attrEnd = AttributedString.CharacterView.Index(markEnd.upperBound, within: result)!
+            result.characters.removeSubrange(attrStart..<attrEnd)
+            
+            let insertIndex = AttributedString.CharacterView.Index(markStart.lowerBound, within: result)!
+            result.insert(AttributedString(content), at: insertIndex)
+            
+            let newStart = AttributedString.CharacterView.Index(markStart.lowerBound, within: result)!
+            let newEnd = AttributedString.CharacterView.Index(markStart.lowerBound, offsetBy: content.count, within: result)!
+            result[newStart..<newEnd].backgroundColor = .yellow.opacity(0.3)
         }
         
         return result
