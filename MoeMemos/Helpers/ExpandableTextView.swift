@@ -6,6 +6,12 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
+#if canImport(MarkdownUI)
+@preconcurrency import MarkdownUI
+#endif
 
 /// 可展开/收起的文本视图
 /// 功能：
