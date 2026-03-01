@@ -319,8 +319,9 @@ struct MemoInput: View {
         
         .onAppear {
             if let memo = memo {
-                text = memo.content
-                attributedText = htmlToAttributedString(from: memo.content)
+                let parsedAttrString = htmlToAttributedString(from: memo.content)
+                text = parsedAttrString.string
+                attributedText = parsedAttrString
                 viewModel.visibility = memo.visibility
             } else {
                 if let prefill = appPath.newMemoPrefillContent {

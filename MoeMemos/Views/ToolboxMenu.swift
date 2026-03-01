@@ -14,6 +14,10 @@ struct ToolboxMenu: View {
     
     @State private var isExpanded = false
     
+    private var currentText: String {
+        attributedText?.string ?? text
+    }
+    
     private var hasSelection: Bool {
         guard let currentSelection = selection,
               currentSelection.lowerBound >= text.startIndex,
@@ -101,8 +105,6 @@ struct ToolboxMenu: View {
               currentSelection.upperBound <= text.endIndex,
               currentSelection.lowerBound != currentSelection.upperBound else { return }
         
-        let nsRange = NSRange(currentSelection, in: text)
-        
         let mutableAttributedString: NSMutableAttributedString
         if let attributedText = attributedText {
             mutableAttributedString = NSMutableAttributedString(attributedString: attributedText)
@@ -110,9 +112,14 @@ struct ToolboxMenu: View {
             mutableAttributedString = NSMutableAttributedString(string: text)
         }
         
+        let nsRange = NSRange(currentSelection, in: text)
+        
+        guard nsRange.location + nsRange.length <= mutableAttributedString.length else { return }
+        
         mutableAttributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
         
         attributedText = mutableAttributedString
+        text = mutableAttributedString.string
         
         let newCursorOffset = text.distance(from: text.startIndex, to: currentSelection.upperBound)
         let safeOffset = min(newCursorOffset, text.count)
@@ -126,8 +133,6 @@ struct ToolboxMenu: View {
               currentSelection.upperBound <= text.endIndex,
               currentSelection.lowerBound != currentSelection.upperBound else { return }
         
-        let nsRange = NSRange(currentSelection, in: text)
-        
         let mutableAttributedString: NSMutableAttributedString
         if let attributedText = attributedText {
             mutableAttributedString = NSMutableAttributedString(attributedString: attributedText)
@@ -135,9 +140,14 @@ struct ToolboxMenu: View {
             mutableAttributedString = NSMutableAttributedString(string: text)
         }
         
+        let nsRange = NSRange(currentSelection, in: text)
+        
+        guard nsRange.location + nsRange.length <= mutableAttributedString.length else { return }
+        
         mutableAttributedString.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: nsRange)
         
         attributedText = mutableAttributedString
+        text = mutableAttributedString.string
         
         let newCursorOffset = text.distance(from: text.startIndex, to: currentSelection.upperBound)
         let safeOffset = min(newCursorOffset, text.count)

@@ -36,7 +36,7 @@ struct TextView: UIViewRepresentable {
         context.coordinator.isUpdatingView = true
         defer { context.coordinator.isUpdatingView = false }
 
-        if let attributedText = attributedText, attributedText.string == text {
+        if let attributedText = attributedText {
             if !attributedText.isEqual(to: uiView.attributedText) {
                 uiView.attributedText = attributedText
             }
@@ -44,8 +44,9 @@ struct TextView: UIViewRepresentable {
             uiView.text = text
         }
         
-        if let selection = selection, selection.upperBound <= text.endIndex {
-            let range = NSRange(selection, in: text)
+        let currentText = attributedText?.string ?? text
+        if let selection = selection, selection.upperBound <= currentText.endIndex {
+            let range = NSRange(selection, in: currentText)
             if uiView.selectedRange != range {
                 uiView.selectedRange = range
             }
