@@ -16,7 +16,7 @@ struct Explore: View {
                 ForEach(viewModel.memoList, id: \.remoteId) { memo in
                     ExploreMemoCard(memo: memo)
                         .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
+                        .padding(.vertical, 3)
                         .onAppear {
                             Task {
                                 if viewModel.memoList.firstIndex(where: { $0.remoteId == memo.remoteId }) == viewModel.memoList.count - 2 {
