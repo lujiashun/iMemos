@@ -141,21 +141,31 @@ struct FormattingMenu: View {
     }
     
     private func updateCurrentState() {
-        guard let currentSelection = selection else {
+        let currentText = text
+        
+        guard let currentSelection = selection,
+              currentSelection.lowerBound >= currentText.startIndex,
+              currentSelection.upperBound <= currentText.endIndex else {
             currentListType = .none
             canDecreaseIndent = false
             canIncreaseIndent = true
             return
         }
         
-        let currentText = text
         let contentBefore = currentText[currentText.startIndex..<currentSelection.lowerBound]
         let lastLineBreak = contentBefore.lastIndex(of: "\n")
         let nextLineBreak = currentText[currentSelection.lowerBound...].firstIndex(of: "\n") ?? currentText.endIndex
         
         let currentLine: Substring
         if let lastLineBreak = lastLineBreak {
-            currentLine = currentText[currentText.index(after: lastLineBreak)..<nextLineBreak]
+            let lineStart = currentText.index(after: lastLineBreak)
+            guard lineStart <= nextLineBreak else {
+                currentListType = .none
+                canDecreaseIndent = false
+                canIncreaseIndent = true
+                return
+            }
+            currentLine = currentText[lineStart..<nextLineBreak]
         } else {
             currentLine = currentText[currentText.startIndex..<nextLineBreak]
         }
@@ -186,7 +196,10 @@ struct FormattingMenu: View {
     
     private func applyListPrefix(_ prefix: String) {
         let currentText = text
-        guard let currentSelection = selection else {
+        
+        guard let currentSelection = selection,
+              currentSelection.lowerBound >= currentText.startIndex,
+              currentSelection.upperBound <= currentText.endIndex else {
             text = prefix + text
             return
         }
@@ -199,6 +212,10 @@ struct FormattingMenu: View {
         let lineStartIndex: String.Index
         if let lastLineBreak = lastLineBreak {
             lineStartIndex = currentText.index(after: lastLineBreak)
+            guard lineStartIndex <= nextLineBreak else {
+                text = prefix + text
+                return
+            }
             currentLine = currentText[lineStartIndex..<nextLineBreak]
         } else {
             lineStartIndex = currentText.startIndex
@@ -253,7 +270,10 @@ struct FormattingMenu: View {
     
     private func increaseIndent() {
         let currentText = text
-        guard let currentSelection = selection else { return }
+        
+        guard let currentSelection = selection,
+              currentSelection.lowerBound >= currentText.startIndex,
+              currentSelection.upperBound <= currentText.endIndex else { return }
         
         let contentBefore = currentText[currentText.startIndex..<currentSelection.lowerBound]
         let lastLineBreak = contentBefore.lastIndex(of: "\n")
@@ -276,7 +296,10 @@ struct FormattingMenu: View {
     
     private func decreaseIndent() {
         let currentText = text
-        guard let currentSelection = selection else { return }
+        
+        guard let currentSelection = selection,
+              currentSelection.lowerBound >= currentText.startIndex,
+              currentSelection.upperBound <= currentText.endIndex else { return }
         
         let contentBefore = currentText[currentText.startIndex..<currentSelection.lowerBound]
         let lastLineBreak = contentBefore.lastIndex(of: "\n")
