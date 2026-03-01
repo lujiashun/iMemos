@@ -35,6 +35,11 @@ struct FormattingMenu: View {
                         dismissPanel()
                     }
                     .ignoresSafeArea()
+                
+                formattingPanel
+                    .offset(y: -44)
+                    .transition(.opacity)
+                    .zIndex(1)
             }
             
             Button {
@@ -46,12 +51,6 @@ struct FormattingMenu: View {
                     .font(.system(size: 17))
             }
             .contentShape(Rectangle())
-            
-            if isExpanded {
-                formattingPanel
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-                    .zIndex(1)
-            }
         }
         .onAppear {
             updateCurrentState()
@@ -103,7 +102,6 @@ struct FormattingMenu: View {
                     .fill(.ultraThinMaterial)
                     .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
             )
-            .padding(.bottom, 8)
         }
     }
     
