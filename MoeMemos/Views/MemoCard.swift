@@ -53,11 +53,11 @@ struct MemoCard: View {
                         .padding([.leading, .top, .bottom], 10)
                 }
             }
-            .padding(.bottom, isExplore ? 2 : 8)
+            .padding(.bottom, isExplore ? 0 : 8)
             
             MemoCardContent(memo: memo, toggleTaskItem: toggleTaskItem(_:), isExplore: isExplore)
         }
-        .padding([.top, .bottom], isExplore ? 2 : 5)
+        .padding([.top, .bottom], isExplore ? 0 : 5)
         .contextMenu {
             Button {
                 UIPasteboard.general.setValue(memo.content, forPasteboardType: UTType.plainText.identifier)
