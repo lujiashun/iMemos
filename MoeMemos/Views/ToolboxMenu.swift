@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct ToolboxMenu: View {
     @Binding var text: String
@@ -110,6 +113,9 @@ struct ToolboxMenu: View {
             mutableAttributedString = NSMutableAttributedString(attributedString: attributedText)
         } else {
             mutableAttributedString = NSMutableAttributedString(string: text)
+            let defaultFont = UIFont.preferredFont(forTextStyle: .body)
+            let fullRange = NSRange(location: 0, length: mutableAttributedString.length)
+            mutableAttributedString.addAttribute(.font, value: defaultFont, range: fullRange)
         }
         
         let nsRange = NSRange(currentSelection, in: text)
@@ -138,6 +144,9 @@ struct ToolboxMenu: View {
             mutableAttributedString = NSMutableAttributedString(attributedString: attributedText)
         } else {
             mutableAttributedString = NSMutableAttributedString(string: text)
+            let defaultFont = UIFont.preferredFont(forTextStyle: .body)
+            let fullRange = NSRange(location: 0, length: mutableAttributedString.length)
+            mutableAttributedString.addAttribute(.font, value: defaultFont, range: fullRange)
         }
         
         let nsRange = NSRange(currentSelection, in: text)

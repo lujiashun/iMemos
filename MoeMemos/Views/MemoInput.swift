@@ -552,6 +552,10 @@ struct MemoInput: View {
     private func htmlToAttributedString(from html: String) -> NSAttributedString {
         let attributedString = NSMutableAttributedString(string: html)
         
+        let defaultFont = UIFont.preferredFont(forTextStyle: .body)
+        let fullRange = NSRange(location: 0, length: attributedString.length)
+        attributedString.addAttribute(.font, value: defaultFont, range: fullRange)
+        
         let underlinePattern = "<u>([^<]*)</u>"
         let highlightPattern = "<mark>([^<]*)</mark>"
         
@@ -568,6 +572,7 @@ struct MemoInput: View {
             
             let newNsRange = NSRange(location: nsRange.location, length: content.count)
             attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: newNsRange)
+            attributedString.addAttribute(.font, value: defaultFont, range: newNsRange)
         }
         
         while let range = attributedString.string.range(of: highlightPattern, options: .regularExpression),
@@ -583,6 +588,7 @@ struct MemoInput: View {
             
             let newNsRange = NSRange(location: nsRange.location, length: content.count)
             attributedString.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: newNsRange)
+            attributedString.addAttribute(.font, value: defaultFont, range: newNsRange)
         }
         
         return attributedString
