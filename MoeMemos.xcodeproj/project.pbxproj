@@ -61,6 +61,7 @@
 		197123DF2CEBC21900CEEECC /* AccountEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197123DE2CEBC21700CEEECC /* AccountEntity.swift */; };
 		1973B7D72916308D003C3710 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1973B7D62916308D003C3710 /* Constants.swift */; };
 		8B2F4A1E2D73A8B400E1C3D5 /* ImageCompressor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B2F4A1D2D73A8B400E1C3D5 /* ImageCompressor.swift */; };
+		8B3G5B2F3E84B9C500F2D4E6 /* ExpandableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3G5B2E3E84B9C500F2D4E6 /* ExpandableTextView.swift */; };
 		197A4D3329599C300027427E /* MemoCardImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197A4D3229599C300027427E /* MemoCardImageView.swift */; };
 		197BEF472B00998F0025C17B /* Models in Frameworks */ = {isa = PBXBuildFile; productRef = 197BEF462B00998F0025C17B /* Models */; };
 		197D9D47292D4B160033AF33 /* ImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197D9D46292D4B160033AF33 /* ImagePicker.swift */; };
@@ -201,6 +202,7 @@
 		1973B7D529160F48003C3710 /* MoeMemos.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MoeMemos.entitlements; sourceTree = "<group>"; };
 		1973B7D62916308D003C3710 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		8B2F4A1D2D73A8B400E1C3D5 /* ImageCompressor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCompressor.swift; sourceTree = "<group>"; };
+		8B3G5B2E3E84B9C500F2D4E6 /* ExpandableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandableTextView.swift; sourceTree = "<group>"; };
 		197A4D3229599C300027427E /* MemoCardImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoCardImageView.swift; sourceTree = "<group>"; };
 		197D9D46292D4B160033AF33 /* ImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePicker.swift; sourceTree = "<group>"; };
 		199009B82CE4F43100578B04 /* SaveMemoIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveMemoIntent.swift; sourceTree = "<group>"; };
@@ -326,6 +328,7 @@
 				193D274E29C8D85700BDE4A2 /* TagVisitor.swift */,
 				194502F42A36341D00A70A03 /* TextView.swift */,
 				5F7A1A832345678900ABCDEF /* AudioMemoRecorder.swift */,
+				8B3G5B2E3E84B9C500F2D4E6 /* ExpandableTextView.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -698,6 +701,7 @@
 				193DE93028C65104002651E0 /* MemosViewModel.swift in Sources */,
 				1973B7D72916308D003C3710 /* Constants.swift in Sources */,
 				8B2F4A1E2D73A8B400E1C3D5 /* ImageCompressor.swift in Sources */,
+				8B3G5B2F3E84B9C500F2D4E6 /* ExpandableTextView.swift in Sources */,
 				197D9D47292D4B160033AF33 /* ImagePicker.swift in Sources */,
 				1A6D0B5B2F9C4E0C00ABCD01 /* SpeechTranscriber.swift in Sources */,
 				193D274F29C8D85700BDE4A2 /* TagVisitor.swift in Sources */,
