@@ -53,19 +53,38 @@ struct MemoCardContent: View {
     
     var body: some View {
         VStack(alignment: .leading) {
-            // Always show memo content.
+            // Memo content with expand/collapse support for Explore page
             #if canImport(MarkdownUI)
-            MarkdownView(memo.content)
-                .markdownImageProvider(.lazyImage(aspectRatio: 4 / 3))
-                .markdownCodeSyntaxHighlighter(colorScheme == .dark ? .dark() : .light())
+            if isExplore {
+                // For Explore page, use expandable text view
+                ExpandableTextView(
+                    text: memo.content,
+                    maxLines: 6,
+                    font: .body,
+                    lineSpacing: 4
+                )
                 .onTapGesture {
                     if ignoreContentTap { return }
                 }
+            } else {
+                // For normal memo list, use full Markdown
+                MarkdownView(memo.content)
+                    .markdownImageProvider(.lazyImage(aspectRatio: 4 / 3))
+                    .markdownCodeSyntaxHighlighter(colorScheme == .dark ? .dark() : .light())
+                    .onTapGesture {
+                        if ignoreContentTap { return }
+                    }
+            }
             #else
-            Text(memo.content)
-                .onTapGesture {
-                    if ignoreContentTap { return }
-                }
+            ExpandableTextView(
+                text: memo.content,
+                maxLines: 6,
+                font: .body,
+                lineSpacing: 4
+            )
+            .onTapGesture {
+                if ignoreContentTap { return }
+            }
             #endif
             
             ForEach(resources()) { content in
