@@ -20,6 +20,7 @@ struct ExpandableTextView: View {
     let lineSpacing: CGFloat
     
     @State private var isExpanded: Bool = false
+    @State private var cachedAttributedString: AttributedString?
     
     init(
         text: String,
@@ -35,100 +36,62 @@ struct ExpandableTextView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            #if canImport(UIKit)
-            RichTextLabel(
-                attributedText: parseRichText(text),
-                maxLines: isExpanded ? 0 : maxLines
-            )
-            #else
-            Text(text)
-                .font(font)
-                .lineSpacing(lineSpacing)
-                .lineLimit(isExpanded ? nil : maxLines)
-            #endif
+            if let attributedString = cachedAttributedString {
+                Text(attributedString)
+                    .font(font)
+                    .lineSpacing(lineSpacing)
+                    .lineLimit(isExpanded ? nil : maxLines)
+            } else {
+                Text(text)
+                    .font(font)
+                    .lineSpacing(lineSpacing)
+                    .lineLimit(isExpanded ? nil : maxLines)
+            }
+        }
+        .onAppear {
+            if cachedAttributedString == nil {
+                cachedAttributedString = parseRichText(text)
+            }
+        }
+        .onChange(of: text) { _, newText in
+            cachedAttributedString = parseRichText(newText)
         }
     }
     
-    private func parseRichText(_ html: String) -> NSAttributedString {
-        let mutableAttrString = NSMutableAttributedString(string: html)
-        let defaultFont = UIFont.preferredFont(forTextStyle: .body)
+    private func parseRichText(_ html: String) -> AttributedString {
+        var result = AttributedString(html)
         
-        var result = mutableAttrString
-        var currentString = result.string
-        
-        while true {
-            var foundTag = false
+        var currentIndex = result.characters.startIndex
+        while currentIndex < result.characters.endIndex {
+            let substring = result.characters[currentIndex...]
             
-            let uStartRange = currentString.range(of: "<u>")
-            let markStartRange = currentString.range(of: "<mark>")
-            
-            let shouldProcessUnderline: Bool
-            if let uStart = uStartRange, let markStart = markStartRange {
-                shouldProcessUnderline = uStart.lowerBound < markStart.lowerBound
-            } else {
-                shouldProcessUnderline = uStartRange != nil
-            }
-            
-            if shouldProcessUnderline,
-               let uStart = uStartRange,
-               let uEnd = currentString.range(of: "</u>", range: uStart.upperBound..<currentString.endIndex) {
-                foundTag = true
-                
+            if let uStart = substring.range(of: "<u>"),
+               let uEnd = substring.range(of: "</u>", range: uStart.upperBound..<substring.endIndex) {
                 let contentRange = uStart.upperBound..<uEnd.lowerBound
-                let content = String(currentString[contentRange])
                 
-                let nsRange = NSRange(uStart.lowerBound..<uEnd.upperBound, in: currentString)
-                result.replaceCharacters(in: nsRange, with: content)
+                result.characters.removeSubrange(uEnd.lowerBound..<uEnd.upperBound)
+                result.characters.removeSubrange(uStart.lowerBound..<uStart.upperBound)
                 
-                let newContentRange = NSRange(location: nsRange.location, length: content.count)
-                result.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: newContentRange)
-                result.addAttribute(.font, value: defaultFont, range: newContentRange)
+                let newContentRange = result.characters.index(uStart.lowerBound, offsetBy: 0)..<result.characters.index(uStart.lowerBound, offsetBy: contentRange.count)
+                result[newContentRange].underlineStyle = .single
                 
-                currentString = result.string
-            } else if let markStart = markStartRange,
-                      let markEnd = currentString.range(of: "</mark>", range: markStart.upperBound..<currentString.endIndex) {
-                foundTag = true
-                
+                currentIndex = result.characters.index(after: newContentRange.upperBound)
+            } else if let markStart = substring.range(of: "<mark>"),
+                      let markEnd = substring.range(of: "</mark>", range: markStart.upperBound..<substring.endIndex) {
                 let contentRange = markStart.upperBound..<markEnd.lowerBound
-                let content = String(currentString[contentRange])
                 
-                let nsRange = NSRange(markStart.lowerBound..<markEnd.upperBound, in: currentString)
-                result.replaceCharacters(in: nsRange, with: content)
+                result.characters.removeSubrange(markEnd.lowerBound..<markEnd.upperBound)
+                result.characters.removeSubrange(markStart.lowerBound..<markStart.upperBound)
                 
-                let newContentRange = NSRange(location: nsRange.location, length: content.count)
-                result.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: newContentRange)
-                result.addAttribute(.font, value: defaultFont, range: newContentRange)
+                let newContentRange = result.characters.index(markStart.lowerBound, offsetBy: 0)..<result.characters.index(markStart.lowerBound, offsetBy: contentRange.count)
+                result[newContentRange].backgroundColor = .yellow.opacity(0.3)
                 
-                currentString = result.string
-            }
-            
-            if !foundTag {
+                currentIndex = result.characters.index(after: newContentRange.upperBound)
+            } else {
                 break
             }
         }
         
-        let fullRange = NSRange(location: 0, length: result.length)
-        result.addAttribute(.font, value: defaultFont, range: fullRange)
-        
         return result
     }
 }
-
-#if canImport(UIKit)
-struct RichTextLabel: UIViewRepresentable {
-    let attributedText: NSAttributedString
-    let maxLines: Int
-    
-    func makeUIView(context: Context) -> UILabel {
-        let label = UILabel()
-        label.numberOfLines = maxLines
-        label.lineBreakMode = .byWordWrapping
-        return label
-    }
-    
-    func updateUIView(_ uiView: UILabel, context: Context) {
-        uiView.attributedText = attributedText
-        uiView.numberOfLines = maxLines
-    }
-}
-#endif
