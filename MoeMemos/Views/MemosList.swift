@@ -50,19 +50,21 @@ struct MemosList: View {
     private let maxRecordingDuration: TimeInterval = 180
     private let meterTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
     
+    private var memoListView: some View {
+        List(filteredMemoList, id: \.remoteId) { memo in
+            Section {
+                MemoCard(memo, defaultMemoVisibility: userState.currentUser?.defaultVisibility ?? .private, isExplore: tag == nil)
+            }
+        }
+        .listStyle(InsetGroupedListStyle())
+    }
+    
     var body: some View {
         @Bindable var appPath = appPath
-        let defaultMemoVisibility = userState.currentUser?.defaultVisibility ?? .private
         let selectedDay = appPath.selectedMemoDay
         
         ZStack(alignment: .bottom) {
-            List(filteredMemoList, id: \.remoteId) { memo in
-                Section {
-                    MemoCard(memo, defaultMemoVisibility: defaultMemoVisibility, isExplore: tag == nil)
-                }
-            }
-            .listStyle(InsetGroupedListStyle())
-            .environment(\.defaultMinListRowGridSpacing, 4)
+            memoListView
             
             if #unavailable(iOS 26.0) {
                 addMemoButton(style: .floatingCircle)
