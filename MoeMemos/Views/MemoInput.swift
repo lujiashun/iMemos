@@ -550,48 +550,60 @@ struct MemoInput: View {
     }
     
     private func htmlToAttributedString(from html: String) -> NSAttributedString {
-        let attributedString = NSMutableAttributedString(string: html)
-        
+        let mutableAttrString = NSMutableAttributedString(string: html)
         let defaultFont = UIFont.preferredFont(forTextStyle: .body)
-        let fullRange = NSRange(location: 0, length: attributedString.length)
-        attributedString.addAttribute(.font, value: defaultFont, range: fullRange)
+        let fullRange = NSRange(location: 0, length: mutableAttrString.length)
+        mutableAttrString.addAttribute(.font, value: defaultFont, range: fullRange)
         
-        let underlinePattern = "<u>([^<]*)</u>"
-        let highlightPattern = "<mark>([^<]*)</mark>"
+        var rangesToProcess: [(tag: String, range: Range<String.Index>, attribute: NSAttributedString.Key, value: Any)] = []
         
-        while let range = attributedString.string.range(of: underlinePattern, options: .regularExpression),
-              let contentRange = Range(NSRange(range, in: attributedString.string), in: attributedString.string) {
+        let currentString = mutableAttrString.string
+        
+        var index = currentString.startIndex
+        while index < currentString.endIndex {
+            let substring = currentString[index...]
             
-            let matchString = String(attributedString.string[range])
-            let content = matchString
-                .replacingOccurrences(of: "<u>", with: "")
-                .replacingOccurrences(of: "</u>", with: "")
-            
-            let nsRange = NSRange(range, in: attributedString.string)
-            attributedString.replaceCharacters(in: nsRange, with: content)
-            
-            let newNsRange = NSRange(location: nsRange.location, length: content.count)
-            attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: newNsRange)
-            attributedString.addAttribute(.font, value: defaultFont, range: newNsRange)
+            if let uStart = substring.range(of: "<u>"),
+               let uEnd = substring.range(of: "</u>", range: uStart.upperBound..<substring.endIndex) {
+                let contentRange = uStart.upperBound..<uEnd.lowerBound
+                rangesToProcess.append(("u", uStart.lowerBound..<uEnd.upperBound, .underlineStyle, NSUnderlineStyle.single.rawValue))
+                index = uEnd.upperBound
+            } else if let markStart = substring.range(of: "<mark>"),
+                      let markEnd = substring.range(of: "</mark>", range: markStart.upperBound..<substring.endIndex) {
+                let contentRange = markStart.upperBound..<markEnd.lowerBound
+                rangesToProcess.append(("mark", markStart.lowerBound..<markEnd.upperBound, .backgroundColor, UIColor.systemYellow.withAlphaComponent(0.3)))
+                index = markEnd.upperBound
+            } else {
+                index = currentString.endIndex
+            }
         }
         
-        while let range = attributedString.string.range(of: highlightPattern, options: .regularExpression),
-              let contentRange = Range(NSRange(range, in: attributedString.string), in: attributedString.string) {
+        for rangeInfo in rangesToProcess.reversed() {
+            let tag = rangeInfo.tag
+            let fullTagRange = rangeInfo.range
+            let attribute = rangeInfo.attribute
+            let value = rangeInfo.value
             
-            let matchString = String(attributedString.string[range])
-            let content = matchString
-                .replacingOccurrences(of: "<mark>", with: "")
-                .replacingOccurrences(of: "</mark>", with: "")
+            let nsFullTagRange = NSRange(fullTagRange, in: currentString)
+            let contentString: String
+            if tag == "u" {
+                contentString = String(currentString[fullTagRange])
+                    .replacingOccurrences(of: "<u>", with: "")
+                    .replacingOccurrences(of: "</u>", with: "")
+            } else {
+                contentString = String(currentString[fullTagRange])
+                    .replacingOccurrences(of: "<mark>", with: "")
+                    .replacingOccurrences(of: "</mark>", with: "")
+            }
             
-            let nsRange = NSRange(range, in: attributedString.string)
-            attributedString.replaceCharacters(in: nsRange, with: content)
+            mutableAttrString.replaceCharacters(in: nsFullTagRange, with: contentString)
             
-            let newNsRange = NSRange(location: nsRange.location, length: content.count)
-            attributedString.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: newNsRange)
-            attributedString.addAttribute(.font, value: defaultFont, range: newNsRange)
+            let newContentRange = NSRange(location: nsFullTagRange.location, length: contentString.count)
+            mutableAttrString.addAttribute(attribute, value: value, range: newContentRange)
+            mutableAttrString.addAttribute(.font, value: defaultFont, range: newContentRange)
         }
         
-        return attributedString
+        return mutableAttrString
     }
     
     private func insert(tag: Tag?) {
