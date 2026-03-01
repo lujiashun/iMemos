@@ -28,6 +28,15 @@ struct FormattingMenu: View {
     
     var body: some View {
         ZStack(alignment: .bottom) {
+            if isExpanded {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        dismissPanel()
+                    }
+                    .ignoresSafeArea()
+            }
+            
             Button {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     isExpanded.toggle()
