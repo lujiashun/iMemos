@@ -47,7 +47,6 @@ struct ToolboxMenu: View {
                     toolboxPanel
                         .offset(y: -44)
                         .transition(.opacity)
-                        .onTapGesture { }
                 }
             }
         }
@@ -56,17 +55,29 @@ struct ToolboxMenu: View {
     @ViewBuilder
     private var toolboxPanel: some View {
         HStack(spacing: 16) {
-            toolButton(
-                icon: "underline",
-                isDisabled: !hasSelection,
-                action: { applyUnderline() }
-            )
+            Button {
+                if hasSelection {
+                    applyUnderline()
+                    dismissPanel()
+                }
+            } label: {
+                Image(systemName: "underline")
+                    .font(.system(size: 17))
+                    .foregroundColor(hasSelection ? .primary : .gray)
+            }
+            .disabled(!hasSelection)
             
-            toolButton(
-                icon: "highlighter",
-                isDisabled: !hasSelection,
-                action: { applyHighlight() }
-            )
+            Button {
+                if hasSelection {
+                    applyHighlight()
+                    dismissPanel()
+                }
+            } label: {
+                Image(systemName: "highlighter")
+                    .font(.system(size: 17))
+                    .foregroundColor(hasSelection ? .primary : .gray)
+            }
+            .disabled(!hasSelection)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -75,21 +86,6 @@ struct ToolboxMenu: View {
                 .fill(.ultraThinMaterial)
                 .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
         )
-    }
-    
-    @ViewBuilder
-    private func toolButton(icon: String, isDisabled: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: {
-            if !isDisabled {
-                action()
-                dismissPanel()
-            }
-        }) {
-            Image(systemName: icon)
-                .font(.system(size: 17))
-                .foregroundColor(isDisabled ? .gray : .primary)
-        }
-        .disabled(isDisabled)
     }
     
     private func dismissPanel() {
