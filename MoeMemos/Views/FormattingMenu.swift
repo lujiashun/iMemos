@@ -37,7 +37,7 @@ struct FormattingMenu: View {
         }
         .frame(width: 44, height: 44)
         .contentShape(Rectangle())
-        .overlay(alignment: .bottom) {
+        .overlay(alignment: .bottomLeading) {
             if isExpanded {
                 formattingPanel
                     .offset(y: -44)
@@ -58,44 +58,42 @@ struct FormattingMenu: View {
     
     @ViewBuilder
     private var formattingPanel: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                formatButton(
-                    icon: "list.bullet",
-                    title: "无序列表",
-                    isActive: currentListType == .unordered,
-                    action: { applyUnorderedList() }
-                )
-                
-                formatButton(
-                    icon: "list.number",
-                    title: "有序列表",
-                    isActive: currentListType == .ordered,
-                    action: { applyOrderedList() }
-                )
-                
-                formatButton(
-                    icon: "increase.indent",
-                    title: "增加缩进",
-                    isDisabled: !canIncreaseIndent,
-                    action: { increaseIndent() }
-                )
-                
-                formatButton(
-                    icon: "decrease.indent",
-                    title: "减少缩进",
-                    isDisabled: !canDecreaseIndent,
-                    action: { decreaseIndent() }
-                )
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+        HStack(spacing: 16) {
+            formatButton(
+                icon: "list.bullet",
+                title: "无序列表",
+                isActive: currentListType == .unordered,
+                action: { applyUnorderedList() }
+            )
+            
+            formatButton(
+                icon: "list.number",
+                title: "有序列表",
+                isActive: currentListType == .ordered,
+                action: { applyOrderedList() }
+            )
+            
+            formatButton(
+                icon: "increase.indent",
+                title: "增加缩进",
+                isDisabled: !canIncreaseIndent,
+                action: { increaseIndent() }
+            )
+            
+            formatButton(
+                icon: "decrease.indent",
+                title: "减少缩进",
+                isDisabled: !canDecreaseIndent,
+                action: { decreaseIndent() }
             )
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+        )
     }
     
     @ViewBuilder
