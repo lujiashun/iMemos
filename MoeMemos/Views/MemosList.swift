@@ -51,13 +51,13 @@ struct MemosList: View {
     private let meterTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
     
     private var memoListView: some View {
-        List {
-            ForEach(filteredMemoList, id: \.remoteId) { memo in
+        List(filteredMemoList, id: \.remoteId) { memo in
+            Section {
                 MemoCard(memo, defaultMemoVisibility: userState.currentUser?.defaultVisibility ?? .private, isExplore: tag == nil)
-                    .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
             }
+            .listSectionSpacing(8)
         }
-        .listStyle(PlainListStyle())
+        .listStyle(InsetGroupedListStyle())
     }
     
     var body: some View {
