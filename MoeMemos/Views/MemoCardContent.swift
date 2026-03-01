@@ -113,6 +113,7 @@ struct MemoCardContent: View {
                         )
                     } else {
                         AudioPlayerView(resource: resource, textContent: memo.content, ignoreContentTap: $ignoreContentTap, isExplore: isExplore)
+                            .padding(.top, 8)
                     }
                 }
                 
