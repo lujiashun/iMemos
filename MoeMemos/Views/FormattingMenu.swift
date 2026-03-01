@@ -27,26 +27,26 @@ struct FormattingMenu: View {
     private let maxIndentLevel = 4
     
     var body: some View {
-        ZStack {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isExpanded.toggle()
+            }
+        } label: {
+            Image(systemName: mainButtonIcon)
+                .font(.system(size: 17))
+        }
+        .fixedSize()
+        .contentShape(Rectangle())
+        .overlay(alignment: .bottomLeading) {
             if isExpanded {
-                Color.black.opacity(0.001)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        dismissPanel()
-                    }
-            }
-            
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isExpanded.toggle()
-                }
-            } label: {
-                Image(systemName: mainButtonIcon)
-                    .font(.system(size: 17))
-            }
-            .contentShape(Rectangle())
-            .overlay(alignment: .bottomLeading) {
-                if isExpanded {
+                ZStack {
+                    Color.black.opacity(0.001)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            dismissPanel()
+                        }
+                    
                     formattingPanel
                         .offset(y: -44)
                         .transition(.opacity)
