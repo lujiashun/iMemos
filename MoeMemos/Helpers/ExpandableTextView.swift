@@ -143,6 +143,10 @@ struct ExpandableUILabel: UIViewRepresentable {
     let isExpanded: Bool
     @Binding var isTruncated: Bool
     
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+    
     func makeUIView(context: Context) -> UILabel {
         let label = UILabel()
         label.numberOfLines = 0
@@ -151,17 +155,38 @@ struct ExpandableUILabel: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UILabel, context: Context) {
-        uiView.attributedText = attributedText
-        uiView.numberOfLines = isExpanded ? 0 : maxLines
+        let needsUpdate = context.coordinator.lastText != attributedText.string || 
+                          context.coordinator.lastMaxLines != maxLines ||
+                          context.coordinator.lastWidth != uiView.bounds.width
         
-        DispatchQueue.main.async {
-            let textSize = uiView.sizeThatFits(CGSize(width: uiView.bounds.width, height: .greatestFiniteMagnitude))
+        if needsUpdate {
+            uiView.attributedText = attributedText
+            uiView.numberOfLines = maxLines
             
-            uiView.numberOfLines = isExpanded ? 0 : maxLines
-            let limitedTextSize = uiView.sizeThatFits(CGSize(width: uiView.bounds.width, height: .greatestFiniteMagnitude))
+            context.coordinator.lastText = attributedText.string
+            context.coordinator.lastMaxLines = maxLines
+            context.coordinator.lastWidth = uiView.bounds.width
             
-            self.isTruncated = textSize.height > limitedTextSize.height + 5
+            DispatchQueue.main.async {
+                let fullHeight = uiView.sizeThatFits(CGSize(width: uiView.bounds.width, height: .greatestFiniteMagnitude)).height
+                let limitedHeight = uiView.sizeThatFits(CGSize(width: uiView.bounds.width, height: CGFloat(maxLines) * 25)).height
+                
+                let newIsTruncated = fullHeight > limitedHeight + 5
+                if context.coordinator.lastIsTruncated != newIsTruncated {
+                    context.coordinator.lastIsTruncated = newIsTruncated
+                    self.isTruncated = newIsTruncated
+                }
+            }
         }
+        
+        uiView.numberOfLines = isExpanded ? 0 : maxLines
+    }
+    
+    class Coordinator {
+        var lastText: String = ""
+        var lastMaxLines: Int = 0
+        var lastWidth: CGFloat = 0
+        var lastIsTruncated: Bool = false
     }
 }
 #endif
