@@ -62,6 +62,7 @@ struct MemosList: View {
                 }
             }
             .listStyle(InsetGroupedListStyle())
+            .environment(\.defaultMinListRowGridSpacing, 4)
             
             if #unavailable(iOS 26.0) {
                 addMemoButton(style: .floatingCircle)
