@@ -54,8 +54,9 @@ struct MemoCard: View {
                 }
             }
             .padding(.bottom, isExplore ? 2 : 8)
-            .background(Color.clear)
+            .background(Color(UIColor.secondarySystemGroupedBackground))
             .contentShape(Rectangle())
+            .onTapGesture { }
             
             MemoCardContent(memo: memo, toggleTaskItem: toggleTaskItem(_:), isExplore: isExplore)
         }

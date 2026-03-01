@@ -19,7 +19,7 @@ struct ExploreMemoCard: View {
                 Text(memo.renderTime())
                     .font(.footnote)
                     .foregroundColor(.secondary)
-                
+
                 if let creatorName = memo.user?.nickname {
                     Text("@\(creatorName)")
                         .font(.footnote)
@@ -27,13 +27,13 @@ struct ExploreMemoCard: View {
                 }
             }
             .padding(.vertical, 2)
-            .background(Color.clear)
+            .background(Color(UIColor.systemBackground))
             .contentShape(Rectangle())
-            
+
             MemoCard(memo, defaultMemoVisibility: userState.currentUser?.defaultVisibility ?? .private, isExplore: true)
         }
         .padding([.top, .bottom], 2)
-        .background(Color.clear)
+        .background(Color(UIColor.systemBackground))
         .contentShape(Rectangle())
     }
 }

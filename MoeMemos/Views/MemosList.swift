@@ -54,6 +54,7 @@ struct MemosList: View {
         List(filteredMemoList, id: \.remoteId) { memo in
             Section {
                 MemoCard(memo, defaultMemoVisibility: userState.currentUser?.defaultVisibility ?? .private, isExplore: tag == nil)
+                    .listRowBackground(Color(UIColor.secondarySystemGroupedBackground))
             }
             .listSectionSpacing(8)
         }

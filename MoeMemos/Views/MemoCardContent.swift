@@ -119,10 +119,10 @@ struct MemoCardContent: View {
                 
             }
         }
-        .background(Color.clear)
+        .background(Color(UIColor.secondarySystemGroupedBackground))
         .contentShape(Rectangle())
     }
-    
+
     private func isAudioResource(_ resource: Resource) -> Bool {
         let audioMime = resource.mimeType.hasPrefix("audio/")
         let audioExt = resource.url.pathExtension.lowercased()
@@ -229,48 +229,48 @@ struct AudioPlayerView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Player Control Bar
             HStack(alignment: .center, spacing: 0) {
-                Button(action: {
-                    performPlayTapped()
-                }) {
-                    HStack(spacing: 8) {
-                        if isLoading {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else {
-                            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                                .font(.system(size: 16))
-                        }
-                        Text(formattedDuration)
-                            .font(.footnote)
-                            .monospacedDigit()
+                // Play button with explicit tap area
+                HStack(spacing: 8) {
+                    if isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 16))
                     }
-                    .foregroundStyle(.primary)
-                    .padding(.vertical, 8)
-                    .padding(.leading, 4)
-                    .padding(.trailing, 12)
+                    Text(formattedDuration)
+                        .font(.footnote)
+                        .monospacedDigit()
                 }
-                .buttonStyle(.plain)
+                .foregroundStyle(.primary)
+                .padding(.vertical, 8)
+                .padding(.leading, 4)
+                .padding(.trailing, 12)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    performPlayTapped()
+                }
                 
                 Spacer(minLength: 0)
                 
-                Button(action: {
-                    performExpandTapped()
-                }) {
-                    HStack(spacing: 4) {
-                        Text(isExpanded ? "收起" : "原文")
-                            .font(.subheadline)
-                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .font(.caption)
-                    }
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 8)
-                    .padding(.trailing, 0)
+                // Expand button with explicit tap area
+                HStack(spacing: 4) {
+                    Text(isExpanded ? "收起" : "原文")
+                        .font(.subheadline)
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption)
                 }
-                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .padding(.vertical, 8)
+                .padding(.trailing, 0)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    performExpandTapped()
+                }
             }
-            .background(Color.clear)
+            .background(Color(UIColor.secondarySystemGroupedBackground))
             .contentShape(Rectangle())
-            
+
             // Expanded Text Content
             // Precompute displayText here to avoid placing statements inside ViewBuilder.
             let displayText = isExplore ? (refinedTranscript ?? punctuatedTranscript ?? rawTranscript ?? textContent) : (punctuatedTranscript ?? rawTranscript ?? textContent)
@@ -413,9 +413,10 @@ struct AudioPlayerView: View {
                 timeObserverToken = nil
             }
         }
+        .background(Color(UIColor.secondarySystemGroupedBackground))
         .contentShape(Rectangle())
     }
-    
+
     private var formattedDuration: String {
         guard duration > 0 else { return "00:00" }
         let remaining = max(duration - currentTime, 0)
