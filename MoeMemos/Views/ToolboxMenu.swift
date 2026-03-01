@@ -13,9 +13,8 @@ struct ToolboxMenu: View {
     
     private var hasSelection: Bool {
         guard let currentSelection = selection,
-              let currentText = text as String?,
-              currentSelection.lowerBound >= currentText.startIndex,
-              currentSelection.upperBound <= currentText.endIndex,
+              currentSelection.lowerBound >= text.startIndex,
+              currentSelection.upperBound <= text.endIndex,
               currentSelection.lowerBound != currentSelection.upperBound else {
             return false
         }
