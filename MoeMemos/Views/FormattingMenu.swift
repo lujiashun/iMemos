@@ -44,7 +44,6 @@ struct FormattingMenu: View {
             } label: {
                 Image(systemName: mainButtonIcon)
                     .font(.system(size: 17))
-                    .foregroundColor(isExpanded ? .accentColor : .primary)
             }
             .contentShape(Rectangle())
             
