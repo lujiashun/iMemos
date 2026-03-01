@@ -10,6 +10,7 @@ import VisionKit
 struct TextView: UIViewRepresentable {
     @Binding var text: String
     @Binding var selection: Range<String.Index>?
+    @Binding var attributedText: NSAttributedString?
     let shouldChangeText: ((_ range: Range<String.Index>, _ replacementText: String) -> Bool)?
     @Binding var showingScanner: Bool
     var onScanComplete: ((String) -> Void)?
@@ -35,7 +36,11 @@ struct TextView: UIViewRepresentable {
         context.coordinator.isUpdatingView = true
         defer { context.coordinator.isUpdatingView = false }
 
-        if text != uiView.text {
+        if let attributedText = attributedText, attributedText.string == text {
+            if !attributedText.isEqual(to: uiView.attributedText) {
+                uiView.attributedText = attributedText
+            }
+        } else if text != uiView.text {
             uiView.text = text
         }
         
@@ -50,7 +55,6 @@ struct TextView: UIViewRepresentable {
             }
         }
         
-        // Update scanner visibility
         uiView.showingScanner = showingScanner
     }
     
@@ -66,12 +70,14 @@ struct TextView: UIViewRepresentable {
         func textViewDidChange(_ textView: UITextView) {
             guard !isUpdatingView else { return }
             parent._text.wrappedValue = textView.text
+            parent._attributedText.wrappedValue = textView.attributedText
             parent._selection.wrappedValue = Range(textView.selectedRange, in: textView.text)
         }
         
         func textViewDidChangeSelection(_ textView: UITextView) {
             guard !isUpdatingView else { return }
             parent._text.wrappedValue = textView.text
+            parent._attributedText.wrappedValue = textView.attributedText
             parent._selection.wrappedValue = Range(textView.selectedRange, in: textView.text)
         }
         
@@ -272,9 +278,10 @@ extension ScannerTextView: DataScannerViewControllerDelegate {
 struct TextView_Previews: PreviewProvider {
     @State static var text = "Hello world"
     @State static var selection: Range<String.Index>? = nil
+    @State static var attributedText: NSAttributedString? = nil
     @State static var showingScanner = false
     
     static var previews: some View {
-        TextView(text: $text, selection: $selection, shouldChangeText: nil, showingScanner: $showingScanner)
+        TextView(text: $text, selection: $selection, attributedText: $attributedText, shouldChangeText: nil, showingScanner: $showingScanner)
     }
 }

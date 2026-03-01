@@ -23,6 +23,7 @@ struct MemoInput: View {
 
     @State private var text = ""
     @State private var selection: Range<String.Index>? = nil
+    @State private var attributedText: NSAttributedString? = nil
     @AppStorage("draft") private var draft = ""
     
     @FocusState private var focused: Bool
@@ -98,7 +99,7 @@ struct MemoInput: View {
             Divider()
             HStack(alignment: .center) {
                 FormattingMenu(text: $text, selection: $selection)
-                ToolboxMenu(text: $text, selection: $selection)
+                ToolboxMenu(text: $text, selection: $selection, attributedText: $attributedText)
                 
                 if !memosViewModel.tags.isEmpty {
                     ZStack {
@@ -277,7 +278,7 @@ struct MemoInput: View {
     private func editor() -> some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading) {
-                TextView(text: $text, selection: $selection, shouldChangeText: shouldChangeText(in:replacementText:), showingScanner: $showingDocumentScanner)
+                TextView(text: $text, selection: $selection, attributedText: $attributedText, shouldChangeText: shouldChangeText(in:replacementText:), showingScanner: $showingDocumentScanner)
                     .focused($focused)
                     .overlay(alignment: .topLeading) {
                         if text.isEmpty {

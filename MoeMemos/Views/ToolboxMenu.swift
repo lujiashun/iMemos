@@ -10,6 +10,7 @@ import SwiftUI
 struct ToolboxMenu: View {
     @Binding var text: String
     @Binding var selection: Range<String.Index>?
+    @Binding var attributedText: NSAttributedString?
     
     @State private var isExpanded = false
     
@@ -100,17 +101,22 @@ struct ToolboxMenu: View {
               currentSelection.upperBound <= text.endIndex,
               currentSelection.lowerBound != currentSelection.upperBound else { return }
         
-        let selectedText = String(text[currentSelection.lowerBound..<currentSelection.upperBound])
-        let beforeSelection = String(text[text.startIndex..<currentSelection.lowerBound])
-        let afterSelection = String(text[currentSelection.upperBound..<text.endIndex])
+        let nsRange = NSRange(currentSelection, in: text)
         
-        let wrappedText = "<u>\(selectedText)</u>"
-        let newText = beforeSelection + wrappedText + afterSelection
-        text = newText
+        let mutableAttributedString: NSMutableAttributedString
+        if let attributedText = attributedText {
+            mutableAttributedString = NSMutableAttributedString(attributedString: attributedText)
+        } else {
+            mutableAttributedString = NSMutableAttributedString(string: text)
+        }
         
-        let newCursorOffset = beforeSelection.count + wrappedText.count
-        let safeOffset = min(newCursorOffset, newText.count)
-        let newCursorPos = newText.index(newText.startIndex, offsetBy: safeOffset)
+        mutableAttributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
+        
+        attributedText = mutableAttributedString
+        
+        let newCursorOffset = text.distance(from: text.startIndex, to: currentSelection.upperBound)
+        let safeOffset = min(newCursorOffset, text.count)
+        let newCursorPos = text.index(text.startIndex, offsetBy: safeOffset)
         selection = newCursorPos..<newCursorPos
     }
     
@@ -120,17 +126,22 @@ struct ToolboxMenu: View {
               currentSelection.upperBound <= text.endIndex,
               currentSelection.lowerBound != currentSelection.upperBound else { return }
         
-        let selectedText = String(text[currentSelection.lowerBound..<currentSelection.upperBound])
-        let beforeSelection = String(text[text.startIndex..<currentSelection.lowerBound])
-        let afterSelection = String(text[currentSelection.upperBound..<text.endIndex])
+        let nsRange = NSRange(currentSelection, in: text)
         
-        let wrappedText = "<mark>\(selectedText)</mark>"
-        let newText = beforeSelection + wrappedText + afterSelection
-        text = newText
+        let mutableAttributedString: NSMutableAttributedString
+        if let attributedText = attributedText {
+            mutableAttributedString = NSMutableAttributedString(attributedString: attributedText)
+        } else {
+            mutableAttributedString = NSMutableAttributedString(string: text)
+        }
         
-        let newCursorOffset = beforeSelection.count + wrappedText.count
-        let safeOffset = min(newCursorOffset, newText.count)
-        let newCursorPos = newText.index(newText.startIndex, offsetBy: safeOffset)
+        mutableAttributedString.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: nsRange)
+        
+        attributedText = mutableAttributedString
+        
+        let newCursorOffset = text.distance(from: text.startIndex, to: currentSelection.upperBound)
+        let safeOffset = min(newCursorOffset, text.count)
+        let newCursorPos = text.index(text.startIndex, offsetBy: safeOffset)
         selection = newCursorPos..<newCursorPos
     }
 }
