@@ -577,6 +577,13 @@ struct MemoInput: View {
             hasHighlight: currentHasHighlight
         ))
         
+        print("📝 [Save] 分段数量: \(segments.count)")
+        for (index, segment) in segments.enumerated() {
+            guard segment.range.location + segment.range.length <= mutableAttrString.length else { continue }
+            let content = mutableAttrString.attributedSubstring(from: segment.range).string
+            print("📝 [Save] 分段 \(index): 位置=\(segment.range), 下划线=\(segment.hasUnderline), 高亮=\(segment.hasHighlight), 内容='\(content)'")
+        }
+        
         var result = ""
         for segment in segments {
             guard segment.range.location + segment.range.length <= mutableAttrString.length else { continue }

@@ -120,6 +120,10 @@ struct ExpandableTextView: View {
         
         var result = AttributedString(currentText)
         
+        print("📝 [Load] 输入: \(html)")
+        print("📝 [Load] 纯文本: \(currentText)")
+        print("📝 [Load] 标签数量: \(tagPairs.count)")
+        
         for pair in tagPairs {
             var adjustedStart = pair.openEnd
             var adjustedEnd = pair.closeStart
@@ -133,7 +137,12 @@ struct ExpandableTextView: View {
                 }
             }
             
-            guard adjustedStart >= 0 && adjustedEnd <= currentText.count && adjustedStart < adjustedEnd else { continue }
+            print("📝 [Load] 标签: \(pair.isUnderline ? "<u>" : "<mark>"), 调整后位置: \(adjustedStart)-\(adjustedEnd)")
+            
+            guard adjustedStart >= 0 && adjustedEnd <= currentText.count && adjustedStart < adjustedEnd else {
+                print("📝 [Load] 位置无效，跳过")
+                continue
+            }
             
             let startIndex = result.characters.index(result.characters.startIndex, offsetBy: adjustedStart)
             let endIndex = result.characters.index(result.characters.startIndex, offsetBy: adjustedEnd)
