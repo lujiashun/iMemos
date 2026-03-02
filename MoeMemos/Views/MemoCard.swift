@@ -16,15 +16,17 @@ struct MemoCard: View {
     let memo: Memo
     let defaultMemoVisilibity: MemoVisibility?
     var isExplore: Bool = false
+    var onTagTapped: ((String) -> Void)? = nil
     
     @Environment(MemosViewModel.self) private var memosViewModel: MemosViewModel
     @Environment(AppPath.self) private var appPath
     @State private var showingDeleteConfirmation = false
     
-    init(_ memo: Memo, defaultMemoVisibility: MemoVisibility, isExplore: Bool = false) {
+    init(_ memo: Memo, defaultMemoVisibility: MemoVisibility, isExplore: Bool = false, onTagTapped: ((String) -> Void)? = nil) {
         self.memo = memo
         self.defaultMemoVisilibity = defaultMemoVisibility
         self.isExplore = isExplore
+        self.onTagTapped = onTagTapped
     }
     
     var body: some View {
@@ -58,7 +60,7 @@ struct MemoCard: View {
             .contentShape(Rectangle())
             .onTapGesture { }
             
-            MemoCardContent(memo: memo, toggleTaskItem: toggleTaskItem(_:), isExplore: isExplore)
+            MemoCardContent(memo: memo, toggleTaskItem: toggleTaskItem(_:), isExplore: isExplore, onTagTapped: onTagTapped)
         }
         .padding([.top, .bottom], isExplore ? 2 : 5)
         .background(Color.clear)

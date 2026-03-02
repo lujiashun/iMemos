@@ -39,16 +39,16 @@ struct MemoCardContent: View {
     let memo: Memo
     let toggleTaskItem: ((TaskListMarkerConfiguration) async -> Void)?
     var isExplore: Bool = false
+    var onTagTapped: ((String) -> Void)? = nil
     @State private var ignoreContentTap = false
     @Environment(\.colorScheme) var colorScheme
     @Environment(AccountManager.self) private var memosManager: AccountManager
     
-    init(memo: Memo, toggleTaskItem: ((TaskListMarkerConfiguration) async -> Void)?, isExplore: Bool = false) {
+    init(memo: Memo, toggleTaskItem: ((TaskListMarkerConfiguration) async -> Void)?, isExplore: Bool = false, onTagTapped: ((String) -> Void)? = nil) {
         self.memo = memo
         self.toggleTaskItem = toggleTaskItem
         self.isExplore = isExplore
-        
-        // No debug prints in production; keep init lightweight
+        self.onTagTapped = onTagTapped
     }
     
     var body: some View {
@@ -56,16 +56,14 @@ struct MemoCardContent: View {
             // Memo content with expand/collapse support for Explore page
             #if canImport(MarkdownUI)
             if isExplore {
-                // For Explore page, use expandable text view
-                ExpandableTextView(
+                // MARK: - 灵感页面使用可点击标签的文本视图
+                ClickableTagTextView(
                     text: memo.content,
                     maxLines: 6,
-                    font: .body,
-                    lineSpacing: 4
+                    onTagTapped: { tagName in
+                        handleTagTapped(tagName)
+                    }
                 )
-                .onTapGesture {
-                    if ignoreContentTap { return }
-                }
             } else {
                 // For normal memo list, use full Markdown
                 MarkdownView(memo.content)
@@ -80,7 +78,10 @@ struct MemoCardContent: View {
                 text: memo.content,
                 maxLines: 6,
                 font: .body,
-                lineSpacing: 4
+                lineSpacing: 4,
+                onTagTapped: { tagName in
+                    handleTagTapped(tagName)
+                }
             )
             .onTapGesture {
                 if ignoreContentTap { return }
@@ -127,6 +128,18 @@ struct MemoCardContent: View {
             }
         }
         .contentShape(Rectangle())
+    }
+    
+    // MARK: - 处理标签点击
+    private func handleTagTapped(_ tagName: String) {
+        // 提供触觉反馈
+        #if canImport(UIKit)
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        #endif
+        
+        // 调用外部回调
+        onTagTapped?(tagName)
     }
 
     private func isAudioResource(_ resource: Resource) -> Bool {

@@ -99,9 +99,7 @@ struct MemoInput: View {
         VStack(spacing: 0) {
             Divider()
             HStack(alignment: .center, spacing: 8) {
-                FormattingMenu(text: $text, selection: $selection, attributedText: $attributedText)
-                ToolboxMenu(text: $text, selection: $selection, attributedText: $attributedText, inputMode: $inputMode)
-                
+                // MARK: - 标签按钮（最左侧）
                 if !memosViewModel.tags.isEmpty {
                     ZStack {
                         Menu {
@@ -129,6 +127,12 @@ struct MemoInput: View {
                             .font(.system(size: 20))
                     }
                 }
+                
+                // MARK: - 排版和工具箱
+                FormattingMenu(text: $text, selection: $selection, attributedText: $attributedText)
+                ToolboxMenu(text: $text, selection: $selection, attributedText: $attributedText, inputMode: $inputMode)
+                
+                // MARK: - 其他工具按钮
                 Button {
                     scanText()
                 } label: {
@@ -516,6 +520,7 @@ struct MemoInput: View {
         viewModel.saving = false
     }
     
+    // MARK: - 将富文本转换为HTML（保存下划线、高亮和标签样式）
     private func attributedTextToHTML() -> String {
         guard let attributedText = attributedText else {
             return text
@@ -524,9 +529,11 @@ struct MemoInput: View {
         let mutableAttrString = NSMutableAttributedString(attributedString: attributedText)
         let fullRange = NSRange(location: 0, length: mutableAttrString.length)
         
+        // MARK: 样式信息结构
         struct StyleInfo {
             var hasUnderline: Bool = false
             var hasHighlight: Bool = false
+            var isTag: Bool = false
         }
         
         var styleMap: [Int: StyleInfo] = [:]
@@ -535,6 +542,7 @@ struct MemoInput: View {
             styleMap[i] = StyleInfo()
         }
         
+        // 检测下划线样式
         mutableAttrString.enumerateAttribute(.underlineStyle, in: fullRange, options: []) { value, range, _ in
             if let style = value as? Int, style == NSUnderlineStyle.single.rawValue {
                 for i in range.location..<range.location + range.length {
@@ -543,6 +551,7 @@ struct MemoInput: View {
             }
         }
         
+        // 检测高亮样式（黄色背景）
         mutableAttrString.enumerateAttribute(.backgroundColor, in: fullRange, options: []) { value, range, _ in
             if let color = value as? UIColor {
                 var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
@@ -555,49 +564,85 @@ struct MemoInput: View {
             }
         }
         
+        // MARK: 检测标签样式（蓝色字体+灰色背景）
+        mutableAttrString.enumerateAttributes(in: fullRange, options: []) { attrs, range, _ in
+            #if canImport(UIKit)
+            if let fgColor = attrs[.foregroundColor] as? UIColor,
+               let bgColor = attrs[.backgroundColor] as? UIColor {
+                // 检查是否为系统蓝色
+                var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+                fgColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+                let isSystemBlue = blue > 0.9 && red < 0.2 && green < 0.6
+                
+                // 检查是否为灰色背景
+                var bgRed: CGFloat = 0, bgGreen: CGFloat = 0, bgBlue: CGFloat = 0, bgAlpha: CGFloat = 0
+                bgColor.getRed(&bgRed, green: &bgGreen, blue: &bgBlue, alpha: &bgAlpha)
+                let isGrayBackground = bgAlpha > 0 && abs(bgRed - bgGreen) < 0.1 && abs(bgGreen - bgBlue) < 0.1
+                
+                if isSystemBlue && isGrayBackground {
+                    for i in range.location..<range.location + range.length {
+                        styleMap[i]?.isTag = true
+                    }
+                }
+            }
+            #endif
+        }
+        
+        // MARK: 构建分段
         struct Segment {
             let range: NSRange
             let hasUnderline: Bool
             let hasHighlight: Bool
+            let isTag: Bool
         }
         
         var segments: [Segment] = []
         var currentStart = 0
         var currentHasUnderline = styleMap[0]?.hasUnderline ?? false
         var currentHasHighlight = styleMap[0]?.hasHighlight ?? false
+        var currentIsTag = styleMap[0]?.isTag ?? false
         
         for i in 1..<mutableAttrString.length {
             let hasUnderline = styleMap[i]?.hasUnderline ?? false
             let hasHighlight = styleMap[i]?.hasHighlight ?? false
+            let isTag = styleMap[i]?.isTag ?? false
             
-            if hasUnderline != currentHasUnderline || hasHighlight != currentHasHighlight {
+            if hasUnderline != currentHasUnderline || hasHighlight != currentHasHighlight || isTag != currentIsTag {
                 segments.append(Segment(
                     range: NSRange(location: currentStart, length: i - currentStart),
                     hasUnderline: currentHasUnderline,
-                    hasHighlight: currentHasHighlight
+                    hasHighlight: currentHasHighlight,
+                    isTag: currentIsTag
                 ))
                 currentStart = i
                 currentHasUnderline = hasUnderline
                 currentHasHighlight = hasHighlight
+                currentIsTag = isTag
             }
         }
         
         segments.append(Segment(
             range: NSRange(location: currentStart, length: mutableAttrString.length - currentStart),
             hasUnderline: currentHasUnderline,
-            hasHighlight: currentHasHighlight
+            hasHighlight: currentHasHighlight,
+            isTag: currentIsTag
         ))
         
+        // MARK: 生成HTML
         var result = ""
         for segment in segments {
             guard segment.range.location + segment.range.length <= mutableAttrString.length else { continue }
             var content = mutableAttrString.attributedSubstring(from: segment.range).string
             
-            if segment.hasUnderline {
-                content = "<u>\(content)</u>"
-            }
-            if segment.hasHighlight {
-                content = "<mark>\(content)</mark>"
+            if segment.isTag {
+                content = "<tag>\(content)</tag>"
+            } else {
+                if segment.hasUnderline {
+                    content = "<u>\(content)</u>"
+                }
+                if segment.hasHighlight {
+                    content = "<mark>\(content)</mark>"
+                }
             }
             result += content
         }
@@ -639,6 +684,7 @@ struct MemoInput: View {
         return mutableAttributedString
     }
     
+    // MARK: - 将HTML转换为富文本（解析下划线、高亮和标签）
     private func htmlToAttributedString(from html: String) -> NSAttributedString {
         let mutableAttrString = NSMutableAttributedString(string: html)
         let defaultFont = UIFont.preferredFont(forTextStyle: .body)
@@ -651,15 +697,26 @@ struct MemoInput: View {
             
             let uStartRange = currentString.range(of: "<u>")
             let markStartRange = currentString.range(of: "<mark>")
+            let tagStartRange = currentString.range(of: "<tag>")
             
-            let shouldProcessUnderline: Bool
-            if let uStart = uStartRange, let markStart = markStartRange {
-                shouldProcessUnderline = uStart.lowerBound < markStart.lowerBound
-            } else {
-                shouldProcessUnderline = uStartRange != nil
+            // 确定优先处理哪个标签（按出现顺序）
+            var earliestPos = currentString.endIndex
+            var tagType: Int = 0 // 1: u, 2: mark, 3: tag
+            
+            if let uStart = uStartRange, uStart.lowerBound < earliestPos {
+                earliestPos = uStart.lowerBound
+                tagType = 1
+            }
+            if let markStart = markStartRange, markStart.lowerBound < earliestPos {
+                earliestPos = markStart.lowerBound
+                tagType = 2
+            }
+            if let tagStart = tagStartRange, tagStart.lowerBound < earliestPos {
+                earliestPos = tagStart.lowerBound
+                tagType = 3
             }
             
-            if shouldProcessUnderline,
+            if tagType == 1,
                let uStart = uStartRange,
                let uEnd = currentString.range(of: "</u>", range: uStart.upperBound..<currentString.endIndex) {
                 foundTag = true
@@ -675,7 +732,8 @@ struct MemoInput: View {
                 result.addAttribute(.font, value: defaultFont, range: newContentRange)
                 
                 currentString = result.string
-            } else if let markStart = markStartRange,
+            } else if tagType == 2,
+                      let markStart = markStartRange,
                       let markEnd = currentString.range(of: "</mark>", range: markStart.upperBound..<currentString.endIndex) {
                 foundTag = true
                 
@@ -687,6 +745,24 @@ struct MemoInput: View {
                 
                 let newContentRange = NSRange(location: nsRange.location, length: content.count)
                 result.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: newContentRange)
+                result.addAttribute(.font, value: defaultFont, range: newContentRange)
+                
+                currentString = result.string
+            } else if tagType == 3,
+                      let tagStart = tagStartRange,
+                      let tagEnd = currentString.range(of: "</tag>", range: tagStart.upperBound..<currentString.endIndex) {
+                foundTag = true
+                
+                let contentRange = tagStart.upperBound..<tagEnd.lowerBound
+                let content = String(currentString[contentRange])
+                
+                let nsRange = NSRange(tagStart.lowerBound..<tagEnd.upperBound, in: currentString)
+                result.replaceCharacters(in: nsRange, with: content)
+                
+                // MARK: 应用标签样式（蓝色字体+灰色背景）
+                let newContentRange = NSRange(location: nsRange.location, length: content.count)
+                result.addAttribute(.foregroundColor, value: UIColor.systemBlue, range: newContentRange)
+                result.addAttribute(.backgroundColor, value: UIColor.lightGray.withAlphaComponent(0.3), range: newContentRange)
                 result.addAttribute(.font, value: defaultFont, range: newContentRange)
                 
                 currentString = result.string
@@ -703,16 +779,61 @@ struct MemoInput: View {
         return result
     }
     
+    // MARK: - 插入标签（带富文本样式：蓝色字体+灰色背景）
     private func insert(tag: Tag?) {
-        let tagText = "#\(tag?.name ?? "") "
-        guard let selection = selection else {
-            text += tagText
-            return
+        let tagName = tag?.name ?? ""
+        let tagText = "#\(tagName) "
+        
+        // 获取当前 attributedText 或创建新的
+        let mutableAttrString: NSMutableAttributedString
+        if let attrText = attributedText {
+            mutableAttrString = NSMutableAttributedString(attributedString: attrText)
+        } else {
+            mutableAttrString = NSMutableAttributedString(string: text)
+            #if canImport(UIKit)
+            let defaultFont = UIFont.preferredFont(forTextStyle: .body)
+            let fullRange = NSRange(location: 0, length: mutableAttrString.length)
+            mutableAttrString.addAttribute(.font, value: defaultFont, range: fullRange)
+            #endif
         }
         
-        text = text.replacingCharacters(in: selection, with: tagText)
-        let index = text.index(selection.lowerBound, offsetBy: tagText.count)
-        self.selection = index..<text.index(selection.lowerBound, offsetBy: tagText.count)
+        // 计算插入位置
+        let insertLocation: Int
+        if let currentSelection = selection,
+           currentSelection.lowerBound >= text.startIndex,
+           currentSelection.lowerBound <= text.endIndex {
+            insertLocation = NSRange(currentSelection, in: text).location
+        } else {
+            insertLocation = mutableAttrString.length
+        }
+        
+        // 创建带样式的标签文本
+        let styledTagText = NSMutableAttributedString(string: tagText)
+        let tagRange = NSRange(location: 0, length: tagText.count)
+        
+        #if canImport(UIKit)
+        // 设置蓝色字体
+        styledTagText.addAttribute(.foregroundColor, value: UIColor.systemBlue, range: tagRange)
+        // 设置灰色背景
+        styledTagText.addAttribute(.backgroundColor, value: UIColor.lightGray.withAlphaComponent(0.3), range: tagRange)
+        // 设置字体
+        let font = UIFont.preferredFont(forTextStyle: .body)
+        styledTagText.addAttribute(.font, value: font, range: tagRange)
+        #endif
+        
+        // 插入到 attributedText
+        mutableAttrString.insert(styledTagText, at: insertLocation)
+        
+        // 更新 text 和 attributedText
+        text = mutableAttrString.string
+        attributedText = mutableAttrString
+        
+        // 更新光标位置
+        let newCursorLocation = insertLocation + tagText.count
+        if newCursorLocation <= text.count {
+            let newCursorPos = text.index(text.startIndex, offsetBy: newCursorLocation)
+            selection = newCursorPos..<newCursorPos
+        }
     }
     
     private func toggleTodoItem() {

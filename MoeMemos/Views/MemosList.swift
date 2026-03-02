@@ -35,6 +35,7 @@ struct MemosList: View {
     @Environment(AccountManager.self) private var accountManager: AccountManager
     @Environment(AccountViewModel.self) var userState: AccountViewModel
     @Environment(MemosViewModel.self) private var memosViewModel: MemosViewModel
+    @Environment(\.navigationSelect) private var navigationSelect
     @State private var filteredMemoList: [Memo] = []
 
     @State private var audioRecorder = AudioMemoRecorder()
@@ -53,12 +54,26 @@ struct MemosList: View {
     private var memoListView: some View {
         List(filteredMemoList, id: \.remoteId) { memo in
             Section {
-                MemoCard(memo, defaultMemoVisibility: userState.currentUser?.defaultVisibility ?? .private, isExplore: tag == nil)
+                MemoCard(memo, defaultMemoVisibility: userState.currentUser?.defaultVisibility ?? .private, isExplore: tag == nil, onTagTapped: { tagName in
+                    handleTagTapped(tagName)
+                })
                     .listRowBackground(Color(UIColor.secondarySystemGroupedBackground))
             }
             .listSectionSpacing(8)
         }
         .listStyle(InsetGroupedListStyle())
+    }
+    
+    // MARK: - 处理标签点击跳转
+    private func handleTagTapped(_ tagName: String) {
+        // 从标签名提取纯标签名（去掉 # 前缀）
+        let cleanTagName = tagName.hasPrefix("#") ? String(tagName.dropFirst()) : tagName
+        
+        // 从标签名找到对应的 Tag 对象
+        if let targetTag = memosViewModel.tags.first(where: { $0.name == cleanTagName }) {
+            // 跳转到标签页面
+            navigationSelect.perform(.tag(targetTag))
+        }
     }
     
     var body: some View {
