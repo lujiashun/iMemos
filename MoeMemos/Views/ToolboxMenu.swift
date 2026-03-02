@@ -33,11 +33,15 @@ struct ToolboxMenu: View {
     }
     
     private var cursorPosition: Int {
-        guard let currentSelection = selection,
-              currentSelection.lowerBound >= text.startIndex else {
+        guard let currentSelection = selection else {
             return 0
         }
-        return text.distance(from: text.startIndex, to: currentSelection.lowerBound)
+        let currentText = attributedText?.string ?? text
+        guard currentSelection.lowerBound >= currentText.startIndex,
+              currentSelection.lowerBound <= currentText.endIndex else {
+            return 0
+        }
+        return NSRange(currentSelection, in: currentText).location
     }
     
     private var isUnderlineActive: Bool {
