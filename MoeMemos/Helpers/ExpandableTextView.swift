@@ -18,6 +18,15 @@ import Models
 // 功能：当文本超过指定行数时，显示展开/收起按钮
 // 支持标签点击交互
 
+#if DEBUG
+import OSLog
+
+ fileprivate let logger = Logger(
+     subsystem: Bundle.main.bundleIdentifier ?? "MoeMemos",
+     category: "ExpandableTextView"
+ )
+#endif
+
 struct ExpandableTextView: View {
     // MARK: - 配置参数
     let text: String
@@ -116,6 +125,10 @@ struct ExpandableTextView: View {
     // MARK: - 核心逻辑：计算文本是否需要截断
     private func calculateTruncation() {
         #if canImport(UIKit)
+        #if DEBUG
+        let startTime = CFAbsoluteTimeGetCurrent()
+        #endif
+        
         // 获取纯文本内容
         let plainText: String
         if let attrString = cachedAttributedString {
@@ -157,6 +170,11 @@ struct ExpandableTextView: View {
         
         // 判断是否需要截断
         let needsTruncation = unlimitedRect.height > maxAllowedHeight + 5
+        
+        #if DEBUG
+        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+        logger.debug("ExpandableTextView: calculateTruncation took \(elapsed * 1000)ms, height=\(unlimitedRect.height), maxAllowedHeight=\(maxAllowedHeight)")
+        #endif
         
         DispatchQueue.main.async {
             self.isTruncated = needsTruncation
@@ -269,38 +287,168 @@ struct ExpandableTextView: View {
 }
 
 // MARK: - 可点击标签的文本视图（用于灵感页面）
-struct ClickableTagTextView: UIViewRepresentable {
+struct ClickableTagTextView: View {
     let text: String
     let maxLines: Int
     var onTagTapped: ((String) -> Void)?
     
-    func makeUIView(context: Context) -> UITextView {
-        let textView = UITextView()
+    @State private var isExpanded: Bool = false
+    @State private var isTruncated: Bool = false
+    @State private var textHeight: CGFloat = 20
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            GeometryReader { geometry in
+                let _ = print("[ClickableTagTextView] GeometryReader width: \(geometry.size.width)")
+                ClickableTagTextViewInternal(
+                    text: text,
+                    maxLines: isExpanded ? 0 : maxLines,
+                    availableWidth: geometry.size.width,
+                    onTagTapped: onTagTapped,
+                    truncationChanged: { truncated in
+                        print("[ClickableTagTextView] truncationChanged: \(truncated)")
+                        isTruncated = truncated
+                    },
+                    heightChanged: { height in
+                        print("[ClickableTagTextView] heightChanged: \(height)")
+                        if textHeight != height {
+                            textHeight = height
+                        }
+                    }
+                )
+            }
+            .frame(height: textHeight)
+            
+            // 展开/收起按钮（在文本被截断或已展开时显示）
+            if isTruncated || isExpanded {
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        isExpanded.toggle()
+                    }
+                }) {
+                    HStack(spacing: 4) {
+                        Text(isExpanded ? "收起" : "展开")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.caption)
+                    }
+                    .foregroundColor(.accentColor)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
+            }
+        }
+    }
+}
+
+// MARK: - 容器视图
+class TagTextContainerView: UIView {
+    let textView = UITextView()
+    var widthConstraint: NSLayoutConstraint?
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupTextView()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupTextView()
+    }
+    
+    private func setupTextView() {
         textView.isEditable = false
         textView.isScrollEnabled = false
         textView.backgroundColor = .clear
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
-        textView.delegate = context.coordinator
         textView.font = UIFont.preferredFont(forTextStyle: .body)
         textView.isSelectable = true
         textView.dataDetectorTypes = []
+        textView.textContainer.lineBreakMode = .byWordWrapping
+        textView.textContainer.widthTracksTextView = true
+        
+        addSubview(textView)
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            textView.topAnchor.constraint(equalTo: topAnchor),
+            textView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            textView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            textView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+    }
+    
+    func setWidth(_ width: CGFloat) {
+        widthConstraint?.isActive = false
+        widthConstraint = self.widthAnchor.constraint(equalToConstant: width)
+        widthConstraint?.priority = .required
+        widthConstraint?.isActive = true
+        setNeedsLayout()
+        layoutIfNeeded()
+    }
+}
+
+// MARK: - 内部 UITextView 包装器
+struct ClickableTagTextViewInternal: UIViewRepresentable {
+    let text: String
+    let maxLines: Int
+    let availableWidth: CGFloat
+    var onTagTapped: ((String) -> Void)?
+    var truncationChanged: ((Bool) -> Void)?
+    var heightChanged: ((CGFloat) -> Void)?
+    
+    func makeUIView(context: Context) -> TagTextContainerView {
+        let container = TagTextContainerView()
+        container.textView.delegate = context.coordinator
         
         // 添加点击手势
         let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
         tapGesture.numberOfTapsRequired = 1
-        textView.addGestureRecognizer(tapGesture)
+        container.textView.addGestureRecognizer(tapGesture)
         
-        return textView
+        return container
     }
     
-    func updateUIView(_ textView: UITextView, context: Context) {
+    func updateUIView(_ container: TagTextContainerView, context: Context) {
+        print("[ClickableTagTextViewInternal] updateUIView called, availableWidth: \(availableWidth)")
+        print("[ClickableTagTextViewInternal] text length: \(text.count)")
+        
+        // 关键：设置容器宽度约束
+        container.setWidth(availableWidth)
+        
+        let textView = container.textView
         let attributedString = context.coordinator.parseRichText(text)
         textView.attributedText = attributedString
         
         // 设置行数限制
-        textView.textContainer.maximumNumberOfLines = context.coordinator.isExpanded ? 0 : maxLines
-        textView.textContainer.lineBreakMode = .byTruncatingTail
+        textView.textContainer.maximumNumberOfLines = maxLines == 0 ? 0 : maxLines
+        textView.textContainer.lineBreakMode = .byWordWrapping
+        
+        print("[ClickableTagTextViewInternal] container.bounds: \(container.bounds)")
+        print("[ClickableTagTextViewInternal] textView.bounds: \(textView.bounds)")
+        
+        // 计算大小和截断状态
+        DispatchQueue.main.async {
+            let size = textView.sizeThatFits(CGSize(width: self.availableWidth, height: CGFloat.greatestFiniteMagnitude))
+            print("[ClickableTagTextViewInternal] sizeThatFits result: \(size)")
+            print("[ClickableTagTextViewInternal] textView.contentSize: \(textView.contentSize)")
+            
+            self.heightChanged?(size.height)
+            
+            // 计算是否截断
+            if self.maxLines > 0 {
+                let font = UIFont.preferredFont(forTextStyle: .body)
+                let lineHeight = font.lineHeight
+                let maxAllowedHeight = lineHeight * CGFloat(self.maxLines)
+                let isTruncated = size.height > maxAllowedHeight + 5
+                print("[ClickableTagTextViewInternal] maxAllowedHeight: \(maxAllowedHeight), isTruncated: \(isTruncated)")
+                self.truncationChanged?(isTruncated)
+            } else {
+                self.truncationChanged?(false)
+            }
+        }
     }
     
     func makeCoordinator() -> Coordinator {
@@ -308,11 +456,10 @@ struct ClickableTagTextView: UIViewRepresentable {
     }
     
     class Coordinator: NSObject, UITextViewDelegate {
-        var parent: ClickableTagTextView
-        var isExpanded: Bool = false
+        var parent: ClickableTagTextViewInternal
         var tagRanges: [(range: NSRange, tagName: String)] = []
         
-        init(_ parent: ClickableTagTextView) {
+        init(_ parent: ClickableTagTextViewInternal) {
             self.parent = parent
         }
         
@@ -448,34 +595,3 @@ struct ClickableTagTextView: UIViewRepresentable {
     }
 }
 
-// MARK: - 预览
-#Preview {
-    ScrollView {
-        VStack(spacing: 20) {
-            ExpandableTextView(
-                text: "这是一段短文本，不需要展开。",
-                maxLines: 6
-            )
-            .padding()
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
-            
-            ExpandableTextView(
-                text: """
-                这是一段很长的文本内容，用于测试展开/收起功能。
-                第二行内容：SwiftUI 是一种现代化的声明式 UI 框架。
-                第三行内容：它让开发者可以用更少的代码构建用户界面。
-                第四行内容：通过组合简单的视图，可以创建复杂的界面。
-                第五行内容：状态管理是 SwiftUI 的核心概念之一。
-                第六行内容：当状态改变时，视图会自动更新。
-                第七行内容：这是超过六行的内容，应该显示展开按钮。
-                """,
-                maxLines: 6
-            )
-            .padding()
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
-        }
-        .padding()
-    }
-}
