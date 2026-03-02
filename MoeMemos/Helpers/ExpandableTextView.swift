@@ -59,59 +59,6 @@ struct ExpandableTextView: View {
     }
     
     private func parseRichText(_ html: String) -> AttributedString {
-        struct TagInfo {
-            let openStart: Int
-            let openEnd: Int
-            let closeStart: Int
-            let closeEnd: Int
-            let isUnderline: Bool
-        }
-        
-        var tags: [TagInfo] = []
-        var searchStart = html.startIndex
-        
-        while searchStart < html.endIndex {
-            let searchRange = searchStart..<html.endIndex
-            
-            let uRange = html.range(of: "<u>", options: [], range: searchRange)
-            let markRange = html.range(of: "<mark>", options: [], range: searchRange)
-            
-            var openTagRange: Range<String.Index>?
-            var isUnderline = false
-            
-            if let u = uRange, let mark = markRange {
-                if u.lowerBound < mark.lowerBound {
-                    openTagRange = u
-                    isUnderline = true
-                } else {
-                    openTagRange = mark
-                    isUnderline = false
-                }
-            } else if let u = uRange {
-                openTagRange = u
-                isUnderline = true
-            } else if let mark = markRange {
-                openTagRange = mark
-                isUnderline = false
-            }
-            
-            guard let openRange = openTagRange else { break }
-            
-            let closeTag = isUnderline ? "</u>" : "</mark>"
-            guard let closeRange = html.range(of: closeTag, options: [], range: openRange.upperBound..<html.endIndex) else {
-                searchStart = openRange.upperBound
-                continue
-            }
-            
-            let openStart = html.distance(from: html.startIndex, to: openRange.lowerBound)
-            let openEnd = html.distance(from: html.startIndex, to: openRange.upperBound)
-            let closeStart = html.distance(from: html.startIndex, to: closeRange.lowerBound)
-            let closeEnd = html.distance(from: html.startIndex, to: closeRange.upperBound)
-            
-            tags.append(TagInfo(openStart: openStart, openEnd: openEnd, closeStart: closeStart, closeEnd: closeEnd, isUnderline: isUnderline))
-            searchStart = closeRange.upperBound
-        }
-        
         let plainText = html
             .replacingOccurrences(of: "<u>", with: "")
             .replacingOccurrences(of: "</u>", with: "")
@@ -120,39 +67,64 @@ struct ExpandableTextView: View {
         
         var result = AttributedString(plainText)
         
-        for tag in tags {
-            var contentStart = tag.openEnd
-            var contentEnd = tag.closeStart
-            
-            var offset = 0
-            for earlierTag in tags {
-                if earlierTag.openStart < tag.openStart {
-                    let openTagLen = earlierTag.openEnd - earlierTag.openStart
-                    let closeTagLen = earlierTag.closeEnd - earlierTag.closeStart
-                    offset += (openTagLen + closeTagLen)
-                }
-            }
-            
-            let currentOpenTagLen = tag.openEnd - tag.openStart
-            contentStart -= (offset + currentOpenTagLen)
-            contentEnd -= (offset + currentOpenTagLen)
-            
-            guard contentStart >= 0 && contentEnd <= plainText.count && contentStart < contentEnd else { continue }
-            
-            let startIndex = result.characters.index(result.characters.startIndex, offsetBy: contentStart)
-            let endIndex = result.characters.index(result.characters.startIndex, offsetBy: contentEnd)
-            
-            if tag.isUnderline {
-                result[startIndex..<endIndex].underlineStyle = .single
-            } else {
-                #if canImport(UIKit)
-                result[startIndex..<endIndex].backgroundColor = Color(UIColor.systemYellow.withAlphaComponent(0.3))
-                #else
-                result[startIndex..<endIndex].backgroundColor = .yellow.opacity(0.3)
-                #endif
-            }
-        }
+        applyStyles(from: html, to: &result, plainText: plainText)
         
         return result
+    }
+    
+    private func applyStyles(from html: String, to result: inout AttributedString, plainText: String) {
+        var htmlIndex = html.startIndex
+        var plainIndex = plainText.startIndex
+        var htmlOffset = 0
+        var plainOffset = 0
+        
+        var underlineStack: [Int] = []
+        var highlightStack: [Int] = []
+        
+        while htmlIndex < html.endIndex {
+            if html[htmlIndex...].hasPrefix("<u>") {
+                let plainOffsetAtTag = plainOffset
+                underlineStack.append(plainOffsetAtTag)
+                htmlIndex = html.index(htmlIndex, offsetBy: 3)
+                htmlOffset += 3
+            } else if html[htmlIndex...].hasPrefix("</u>") {
+                if let startOffset = underlineStack.popLast() {
+                    let endOffset = plainOffset
+                    if startOffset < endOffset {
+                        let startIndex = result.characters.index(result.characters.startIndex, offsetBy: startOffset)
+                        let endIndex = result.characters.index(result.characters.startIndex, offsetBy: endOffset)
+                        result[startIndex..<endIndex].underlineStyle = .single
+                    }
+                }
+                htmlIndex = html.index(htmlIndex, offsetBy: 4)
+                htmlOffset += 4
+            } else if html[htmlIndex...].hasPrefix("<mark>") {
+                let plainOffsetAtTag = plainOffset
+                highlightStack.append(plainOffsetAtTag)
+                htmlIndex = html.index(htmlIndex, offsetBy: 6)
+                htmlOffset += 6
+            } else if html[htmlIndex...].hasPrefix("</mark>") {
+                if let startOffset = highlightStack.popLast() {
+                    let endOffset = plainOffset
+                    if startOffset < endOffset {
+                        let startIndex = result.characters.index(result.characters.startIndex, offsetBy: startOffset)
+                        let endIndex = result.characters.index(result.characters.startIndex, offsetBy: endOffset)
+                        #if canImport(UIKit)
+                        result[startIndex..<endIndex].backgroundColor = Color(UIColor.systemYellow.withAlphaComponent(0.3))
+                        #else
+                        result[startIndex..<endIndex].backgroundColor = .yellow.opacity(0.3)
+                        #endif
+                    }
+                }
+                htmlIndex = html.index(htmlIndex, offsetBy: 7)
+                htmlOffset += 7
+            } else {
+                htmlIndex = html.index(after: htmlIndex)
+                if plainIndex < plainText.endIndex {
+                    plainIndex = plainText.index(after: plainIndex)
+                    plainOffset += 1
+                }
+            }
+        }
     }
 }

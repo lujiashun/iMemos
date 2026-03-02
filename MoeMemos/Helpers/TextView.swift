@@ -6,11 +6,13 @@
 
 import SwiftUI
 import VisionKit
+import UIKit
 
 struct TextView: UIViewRepresentable {
     @Binding var text: String
     @Binding var selection: Range<String.Index>?
     @Binding var attributedText: NSAttributedString?
+    @Binding var inputMode: TextFormatMode?
     let shouldChangeText: ((_ range: Range<String.Index>, _ replacementText: String) -> Bool)?
     @Binding var showingScanner: Bool
     var onScanComplete: ((String) -> Void)?
@@ -20,6 +22,7 @@ struct TextView: UIViewRepresentable {
         let textView = ScannerTextView()
         textView.delegate = context.coordinator
         textView.font = UIFont.preferredFont(forTextStyle: .body)
+        print("📝 [TextView] makeUIView called, delegate set: \(textView.delegate != nil)")
         textView.onScanComplete = { scannedText in
             context.coordinator.insertScannedText(scannedText, into: textView)
         }
@@ -36,6 +39,24 @@ struct TextView: UIViewRepresentable {
     func updateUIView(_ uiView: ScannerTextView, context: Context) {
         context.coordinator.isUpdatingView = true
         defer { context.coordinator.isUpdatingView = false }
+        
+        var attrs = uiView.typingAttributes ?? [:]
+        if let mode = inputMode {
+            if mode.contains(.underline) {
+                attrs[.underlineStyle] = NSUnderlineStyle.single.rawValue
+            } else {
+                attrs.removeValue(forKey: .underlineStyle)
+            }
+            if mode.contains(.highlight) {
+                attrs[.backgroundColor] = UIColor.systemYellow.withAlphaComponent(0.3)
+            } else {
+                attrs.removeValue(forKey: .backgroundColor)
+            }
+        } else {
+            attrs.removeValue(forKey: .underlineStyle)
+            attrs.removeValue(forKey: .backgroundColor)
+        }
+        uiView.typingAttributes = attrs
 
         if let attributedText = attributedText {
             if !attributedText.isEqual(to: uiView.attributedText) {
@@ -64,13 +85,89 @@ struct TextView: UIViewRepresentable {
     class Coordinator: NSObject, UITextViewDelegate {
         let parent: TextView
         var isUpdatingView = false
+        var previousTextLength = 0
+        var previousSelectedRange = NSRange(location: 0, length: 0)
+        var wasComposing = false
+        var composingStartPosition: Int?
         
         init(_ parent: TextView) {
             self.parent = parent
         }
         
         func textViewDidChange(_ textView: UITextView) {
-            guard !isUpdatingView else { return }
+            NSLog("📝 [TextView] ===== textViewDidChange called =====")
+            
+            let currentLength = textView.attributedText.length
+            let currentSelectedRange = textView.selectedRange
+            let isComposing = textView.markedTextRange != nil
+            
+            NSLog("📝 [TextView] textViewDidChange: currentLength=\(currentLength), previousLength=\(previousTextLength), currentSelectedRange=\(currentSelectedRange), previousSelectedRange=\(previousSelectedRange), isComposing=\(isComposing), wasComposing=\(wasComposing)")
+            
+            if let onTextInsert = parent.onTextInsert {
+                if wasComposing && !isComposing {
+                    if let startPos = composingStartPosition {
+                        let range = NSRange(location: startPos, length: currentLength - startPos)
+                        if range.location >= 0 && range.location + range.length <= currentLength && range.length > 0 {
+                            let insertedAttrText = textView.attributedText.attributedSubstring(from: range)
+                            let insertedText = insertedAttrText.string
+                            NSLog("📝 [TextView] composition ended, checking style for: \"\(insertedText)\" at range: \(range)")
+                            
+                            let hasUnderline = insertedAttrText.attribute(.underlineStyle, at: 0, effectiveRange: nil) != nil
+                            let hasHighlight = insertedAttrText.attribute(.backgroundColor, at: 0, effectiveRange: nil) != nil
+                            
+                            if !hasUnderline && !hasHighlight {
+                                if let newAttrText = onTextInsert(range, insertedText) {
+                                    NSLog("📝 [TextView] style applied successfully")
+                                    textView.attributedText = newAttrText
+                                    parent._attributedText.wrappedValue = newAttrText
+                                    parent._text.wrappedValue = newAttrText.string
+                                }
+                            } else {
+                                NSLog("📝 [TextView] text already has style, skipping")
+                            }
+                        }
+                    }
+                    composingStartPosition = nil
+                } else if !isComposing {
+                    let textAdded = currentLength > previousTextLength
+                    
+                    if textAdded {
+                        let insertedLength = currentLength - previousTextLength
+                        let insertStart = previousSelectedRange.location
+                        let insertRange = NSRange(location: insertStart, length: insertedLength)
+                        
+                        NSLog("📝 [TextView] non-composing insert at range: \(insertRange)")
+                        
+                        if insertRange.location + insertRange.length <= currentLength {
+                            let insertedAttrText = textView.attributedText.attributedSubstring(from: insertRange)
+                            let insertedText = insertedAttrText.string
+                            NSLog("📝 [TextView] detecting inserted text: \"\(insertedText)\" at range: \(insertRange)")
+                            
+                            let hasUnderline = insertedAttrText.attribute(.underlineStyle, at: 0, effectiveRange: nil) != nil
+                            let hasHighlight = insertedAttrText.attribute(.backgroundColor, at: 0, effectiveRange: nil) != nil
+                            
+                            if !hasUnderline && !hasHighlight {
+                                if let newAttrText = onTextInsert(insertRange, insertedText) {
+                                    NSLog("📝 [TextView] applying style to inserted text")
+                                    textView.attributedText = newAttrText
+                                    parent._attributedText.wrappedValue = newAttrText
+                                    parent._text.wrappedValue = newAttrText.string
+                                }
+                            } else {
+                                NSLog("📝 [TextView] text already has style, skipping")
+                            }
+                        }
+                    }
+                } else if isComposing && !wasComposing {
+                    composingStartPosition = previousSelectedRange.location
+                    NSLog("📝 [TextView] composition started at position: \(String(describing: composingStartPosition))")
+                }
+            }
+            
+            wasComposing = isComposing
+            previousTextLength = textView.attributedText.length
+            previousSelectedRange = textView.selectedRange
+            
             parent._text.wrappedValue = textView.text
             parent._attributedText.wrappedValue = textView.attributedText
             parent._selection.wrappedValue = Range(textView.selectedRange, in: textView.text)
@@ -89,23 +186,6 @@ struct TextView: UIViewRepresentable {
                     return false
                 }
             }
-            
-            if !text.isEmpty, let onTextInsert = parent.onTextInsert {
-                let newAttrText = onTextInsert(range, text)
-                if let newAttrText = newAttrText {
-                    textView.attributedText = newAttrText
-                    parent._attributedText.wrappedValue = newAttrText
-                    parent._text.wrappedValue = newAttrText.string
-                    
-                    let newPosition = range.location + text.count
-                    textView.selectedRange = NSRange(location: newPosition, length: 0)
-                    if let newSelection = Range(textView.selectedRange, in: newAttrText.string) {
-                        parent._selection.wrappedValue = newSelection
-                    }
-                    return false
-                }
-            }
-            
             return true
         }
         
@@ -300,9 +380,10 @@ struct TextView_Previews: PreviewProvider {
     @State static var text = "Hello world"
     @State static var selection: Range<String.Index>? = nil
     @State static var attributedText: NSAttributedString? = nil
+    @State static var inputMode: TextFormatMode? = nil
     @State static var showingScanner = false
     
     static var previews: some View {
-        TextView(text: $text, selection: $selection, attributedText: $attributedText, shouldChangeText: nil, showingScanner: $showingScanner)
+        TextView(text: $text, selection: $selection, attributedText: $attributedText, inputMode: $inputMode, shouldChangeText: nil, showingScanner: $showingScanner)
     }
 }

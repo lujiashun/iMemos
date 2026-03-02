@@ -283,6 +283,7 @@ struct MemoInput: View {
                     text: $text,
                     selection: $selection,
                     attributedText: $attributedText,
+                    inputMode: $inputMode,
                     shouldChangeText: shouldChangeText(in:replacementText:),
                     showingScanner: $showingDocumentScanner,
                     onTextInsert: applyInputModeToText(range:text:)
@@ -370,6 +371,9 @@ struct MemoInput: View {
         }
         .onReceive(meterTimer) { _ in
             updateRecordingMeters()
+        }
+        .onChange(of: inputMode) { oldValue, newValue in
+            print("📝 [MemoInput] inputMode changed from \(String(describing: oldValue)) to \(String(describing: newValue))")
         }
         .safeToast(isPresenting: $showingErrorToast, message: submitError?.localizedDescription, systemImage: "xmark.circle")
         .safeToast(isPresenting: $showingAudioErrorToast, message: audioActionError?.localizedDescription, systemImage: "xmark.circle")
@@ -602,49 +606,37 @@ struct MemoInput: View {
     }
     
     private func applyInputModeToText(range: NSRange, text: String) -> NSAttributedString? {
-        guard let mode = inputMode else { return nil }
+        print("📝 [InputMode] applyInputModeToText called, inputMode: \(String(describing: inputMode))")
+        guard let mode = inputMode else { 
+            print("📝 [InputMode] inputMode is nil, returning nil")
+            return nil 
+        }
         
         print("📝 [InputMode] applyInputModeToText called, mode: \(mode), range: \(range), text: \(text)")
         
-        let mutableAttributedString: NSMutableAttributedString
-        if let attrText = attributedText {
-            mutableAttributedString = NSMutableAttributedString(attributedString: attrText)
-        } else {
-            mutableAttributedString = NSMutableAttributedString(string: self.text)
-            let defaultFont = UIFont.preferredFont(forTextStyle: .body)
-            let fullRange = NSRange(location: 0, length: mutableAttributedString.length)
-            mutableAttributedString.addAttribute(.font, value: defaultFont, range: fullRange)
+        guard let attrText = attributedText else { 
+            print("📝 [InputMode] attributedText is nil, returning nil")
+            return nil 
         }
         
-        let insertPosition = range.location
-        let insertLength = (text as NSString).length
+        let mutableAttributedString = NSMutableAttributedString(attributedString: attrText)
         
-        let newString = (mutableAttributedString.string as NSString).replacingCharacters(in: range, with: text)
-        
-        let newAttrString = NSMutableAttributedString(string: newString)
-        let defaultFont = UIFont.preferredFont(forTextStyle: .body)
-        newAttrString.addAttribute(.font, value: defaultFont, range: NSRange(location: 0, length: newAttrString.length))
-        
-        for i in 0..<mutableAttributedString.length {
-            var charRange = NSRange(location: i, length: 1)
-            if i < range.location {
-                newAttrString.setAttributes(mutableAttributedString.attributes(at: i, effectiveRange: nil), range: charRange)
-            } else if i >= range.location + range.length {
-                charRange = NSRange(location: i - range.length + insertLength, length: 1)
-                newAttrString.setAttributes(mutableAttributedString.attributes(at: i, effectiveRange: nil), range: charRange)
-            }
+        guard range.location + range.length <= mutableAttributedString.length else {
+            print("📝 [InputMode] range out of bounds, returning nil")
+            return nil
         }
         
-        let styleRange = NSRange(location: insertPosition, length: insertLength)
-        if mode == .underline {
-            newAttrString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: styleRange)
-            print("📝 [InputMode] applied underline to range: \(styleRange)")
-        } else {
-            newAttrString.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: styleRange)
-            print("📝 [InputMode] applied highlight to range: \(styleRange)")
+        if mode.contains(.underline) {
+            mutableAttributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: range)
+            print("📝 [InputMode] applied underline to range: \(range)")
         }
         
-        return newAttrString
+        if mode.contains(.highlight) {
+            mutableAttributedString.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: range)
+            print("📝 [InputMode] applied highlight to range: \(range)")
+        }
+        
+        return mutableAttributedString
     }
     
     private func htmlToAttributedString(from html: String) -> NSAttributedString {

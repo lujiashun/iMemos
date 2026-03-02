@@ -45,9 +45,9 @@ struct ToolboxMenu: View {
     }
     
     private var isUnderlineActive: Bool {
-        guard let attrText = attributedText else { return inputMode == .underline }
+        guard let attrText = attributedText else { return inputMode?.contains(.underline) == true }
         let position = cursorPosition
-        guard position < attrText.length else { return inputMode == .underline }
+        guard position < attrText.length else { return inputMode?.contains(.underline) == true }
         
         let range = NSRange(location: position, length: 1)
         var hasStyle = false
@@ -57,13 +57,13 @@ struct ToolboxMenu: View {
                 stop.pointee = true
             }
         }
-        return hasStyle || inputMode == .underline
+        return hasStyle || inputMode?.contains(.underline) == true
     }
     
     private var isHighlightActive: Bool {
-        guard let attrText = attributedText else { return inputMode == .highlight }
+        guard let attrText = attributedText else { return inputMode?.contains(.highlight) == true }
         let position = cursorPosition
-        guard position < attrText.length else { return inputMode == .highlight }
+        guard position < attrText.length else { return inputMode?.contains(.highlight) == true }
         
         let range = NSRange(location: position, length: 1)
         var hasStyle = false
@@ -79,7 +79,7 @@ struct ToolboxMenu: View {
             }
         }
         #endif
-        return hasStyle || inputMode == .highlight
+        return hasStyle || inputMode?.contains(.highlight) == true
     }
     
     var body: some View {
@@ -150,7 +150,6 @@ struct ToolboxMenu: View {
         withAnimation(.easeInOut(duration: 0.2)) {
             isExpanded = false
         }
-        inputMode = nil
     }
     
     private func toggleUnderline() {
@@ -160,10 +159,16 @@ struct ToolboxMenu: View {
         } else if let styleRange = findStyleRangeAtCursor(isUnderline: true) {
             toggleStyleForRange(styleRange, isUnderline: true)
         } else {
-            if inputMode == .underline {
-                inputMode = nil
+            if inputMode?.contains(.underline) == true {
+                inputMode?.remove(.underline)
+                print("📝 [Toggle] inputMode removed underline")
             } else {
-                inputMode = .underline
+                if inputMode == nil {
+                    inputMode = .underline
+                } else {
+                    inputMode?.insert(.underline)
+                }
+                print("📝 [Toggle] inputMode added underline")
             }
         }
     }
@@ -175,10 +180,17 @@ struct ToolboxMenu: View {
         } else if let styleRange = findStyleRangeAtCursor(isUnderline: false) {
             toggleStyleForRange(styleRange, isUnderline: false)
         } else {
-            if inputMode == .highlight {
-                inputMode = nil
+            print("📝 [Toggle] entering else branch, current inputMode: \(String(describing: inputMode))")
+            if inputMode?.contains(.highlight) == true {
+                inputMode?.remove(.highlight)
+                print("📝 [Toggle] inputMode removed highlight")
             } else {
-                inputMode = .highlight
+                if inputMode == nil {
+                    inputMode = .highlight
+                } else {
+                    inputMode?.insert(.highlight)
+                }
+                print("📝 [Toggle] inputMode added highlight")
             }
         }
     }
@@ -337,7 +349,9 @@ struct ToolboxMenu: View {
     }
 }
 
-enum TextFormatMode {
-    case underline
-    case highlight
+struct TextFormatMode: OptionSet {
+    let rawValue: Int
+    
+    static let underline = TextFormatMode(rawValue: 1 << 0)
+    static let highlight = TextFormatMode(rawValue: 1 << 1)
 }
