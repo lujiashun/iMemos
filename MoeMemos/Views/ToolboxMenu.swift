@@ -80,6 +80,7 @@ struct ToolboxMenu: View {
     
     var body: some View {
         Button {
+            print("📝 [Toggle] 工具箱按钮点击, isExpanded: \(isExpanded)")
             withAnimation(.easeInOut(duration: 0.2)) {
                 isExpanded.toggle()
             }
