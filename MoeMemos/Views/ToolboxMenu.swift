@@ -180,8 +180,12 @@ struct ToolboxMenu: View {
     }
     
     private func findStyleRangeAtCursor(isUnderline: Bool) -> NSRange? {
-        guard let attrText = attributedText else { return nil }
+        guard let attrText = attributedText else { 
+            print("📝 [Toggle] findStyleRangeAtCursor: attributedText is nil")
+            return nil 
+        }
         let position = cursorPosition
+        print("📝 [Toggle] findStyleRangeAtCursor: position=\(position), attrText.length=\(attrText.length)")
         guard position < attrText.length else { return nil }
         
         var foundRange: NSRange?
@@ -189,6 +193,7 @@ struct ToolboxMenu: View {
         if isUnderline {
             attrText.enumerateAttribute(.underlineStyle, in: NSRange(location: 0, length: attrText.length), options: []) { value, range, stop in
                 if let style = value as? Int, style == NSUnderlineStyle.single.rawValue {
+                    print("📝 [Toggle] found underline range: \(range)")
                     if NSLocationInRange(position, range) {
                         foundRange = range
                         stop.pointee = true
@@ -201,6 +206,7 @@ struct ToolboxMenu: View {
                 if let color = value as? UIColor {
                     var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
                     color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+                    print("📝 [Toggle] found background range: \(range), RGB: (\(red), \(green), \(blue))")
                     if red > 0.9 && green > 0.7 && blue < 0.3 {
                         if NSLocationInRange(position, range) {
                             foundRange = range
@@ -212,7 +218,7 @@ struct ToolboxMenu: View {
             #endif
         }
         
-        print("📝 [Toggle] findStyleRangeAtCursor: \(String(describing: foundRange))")
+        print("📝 [Toggle] findStyleRangeAtCursor result: \(String(describing: foundRange))")
         return foundRange
     }
     
