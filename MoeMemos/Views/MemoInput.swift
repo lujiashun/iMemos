@@ -825,12 +825,17 @@ struct MemoInput: View {
         // 插入到 attributedText
         mutableAttrString.insert(styledTagText, at: insertLocation)
         
+        // 插入空格（使用默认样式）
+        let spaceText = NSMutableAttributedString(string: " ")
+        spaceText.addAttribute(.font, value: UIFont.preferredFont(forTextStyle: .body), range: NSRange(location: 0, length: 1))
+        mutableAttrString.insert(spaceText, at: insertLocation + tagText.count)
+        
         // 更新 text 和 attributedText
         text = mutableAttrString.string
         attributedText = mutableAttrString
         
-        // 更新光标位置（定位在标签后，不包括空格，这样新输入的文本使用默认颜色）
-        let newCursorLocation = insertLocation + tagText.count
+        // 更新光标位置（定位在空格后，这样新输入的文本使用默认颜色）
+        let newCursorLocation = insertLocation + tagText.count + 1
         if newCursorLocation <= text.count {
             let newCursorPos = text.index(text.startIndex, offsetBy: newCursorLocation)
             selection = newCursorPos..<newCursorPos
