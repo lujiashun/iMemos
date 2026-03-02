@@ -45,6 +45,7 @@ struct MemoInput: View {
     @State private var audioRecorder = AudioMemoRecorder()
     @State private var submitError: Error?
     @State private var showingErrorToast = false
+    @State private var inputMode: TextFormatMode? = nil
 
     private let maxRecordingDuration: TimeInterval = 180
     private let meterTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
@@ -99,7 +100,7 @@ struct MemoInput: View {
             Divider()
             HStack(alignment: .center) {
                 FormattingMenu(text: $text, selection: $selection)
-                ToolboxMenu(text: $text, selection: $selection, attributedText: $attributedText)
+                ToolboxMenu(text: $text, selection: $selection, attributedText: $attributedText, inputMode: $inputMode)
                 
                 if !memosViewModel.tags.isEmpty {
                     ZStack {
@@ -278,7 +279,14 @@ struct MemoInput: View {
     private func editor() -> some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading) {
-                TextView(text: $text, selection: $selection, attributedText: $attributedText, shouldChangeText: shouldChangeText(in:replacementText:), showingScanner: $showingDocumentScanner)
+                TextView(
+                    text: $text,
+                    selection: $selection,
+                    attributedText: $attributedText,
+                    shouldChangeText: shouldChangeText(in:replacementText:),
+                    showingScanner: $showingDocumentScanner,
+                    onTextInsert: applyInputModeToText(range:text:)
+                )
                     .focused($focused)
                     .overlay(alignment: .topLeading) {
                         if text.isEmpty {
@@ -535,7 +543,6 @@ struct MemoInput: View {
             if let color = value as? UIColor {
                 var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
                 color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-                print("📝 [Save] 背景色范围: \(range), RGB: (\(red), \(green), \(blue)), alpha: \(alpha)")
                 if red > 0.9 && green > 0.7 && blue < 0.3 {
                     for i in range.location..<range.location + range.length {
                         styleMap[i]?.hasHighlight = true
@@ -577,13 +584,6 @@ struct MemoInput: View {
             hasHighlight: currentHasHighlight
         ))
         
-        print("📝 [Save] 分段数量: \(segments.count)")
-        for (index, segment) in segments.enumerated() {
-            guard segment.range.location + segment.range.length <= mutableAttrString.length else { continue }
-            let content = mutableAttrString.attributedSubstring(from: segment.range).string
-            print("📝 [Save] 分段 \(index): 位置=\(segment.range), 下划线=\(segment.hasUnderline), 高亮=\(segment.hasHighlight), 内容='\(content)'")
-        }
-        
         var result = ""
         for segment in segments {
             guard segment.range.location + segment.range.length <= mutableAttrString.length else { continue }
@@ -599,6 +599,49 @@ struct MemoInput: View {
         }
         
         return result
+    }
+    
+    private func applyInputModeToText(range: NSRange, text: String) -> NSAttributedString? {
+        guard let mode = inputMode else { return nil }
+        
+        let mutableAttributedString: NSMutableAttributedString
+        if let attrText = attributedText {
+            mutableAttributedString = NSMutableAttributedString(attributedString: attrText)
+        } else {
+            mutableAttributedString = NSMutableAttributedString(string: self.text)
+            let defaultFont = UIFont.preferredFont(forTextStyle: .body)
+            let fullRange = NSRange(location: 0, length: mutableAttributedString.length)
+            mutableAttributedString.addAttribute(.font, value: defaultFont, range: fullRange)
+        }
+        
+        let insertPosition = range.location
+        let insertLength = text.count
+        
+        let newLength = mutableAttributedString.length + insertLength - range.length
+        let newString = (mutableAttributedString.string as NSString).replacingCharacters(in: range, with: text)
+        
+        let newAttrString = NSMutableAttributedString(string: newString)
+        let defaultFont = UIFont.preferredFont(forTextStyle: .body)
+        newAttrString.addAttribute(.font, value: defaultFont, range: NSRange(location: 0, length: newAttrString.length))
+        
+        for i in 0..<mutableAttributedString.length {
+            var charRange = NSRange(location: i, length: 1)
+            if i < range.location {
+                newAttrString.setAttributes(mutableAttributedString.attributes(at: i, effectiveRange: nil), range: charRange)
+            } else if i >= range.location + range.length {
+                charRange = NSRange(location: i - range.length + insertLength, length: 1)
+                newAttrString.setAttributes(mutableAttributedString.attributes(at: i, effectiveRange: nil), range: charRange)
+            }
+        }
+        
+        let styleRange = NSRange(location: insertPosition, length: insertLength)
+        if mode == .underline {
+            newAttrString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: styleRange)
+        } else {
+            newAttrString.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: styleRange)
+        }
+        
+        return newAttrString
     }
     
     private func htmlToAttributedString(from html: String) -> NSAttributedString {

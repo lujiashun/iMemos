@@ -14,6 +14,7 @@ struct TextView: UIViewRepresentable {
     let shouldChangeText: ((_ range: Range<String.Index>, _ replacementText: String) -> Bool)?
     @Binding var showingScanner: Bool
     var onScanComplete: ((String) -> Void)?
+    var onTextInsert: ((_ range: NSRange, _ text: String) -> NSAttributedString?)?
     
     func makeUIView(context: Context) -> ScannerTextView {
         let textView = ScannerTextView()
@@ -84,8 +85,27 @@ struct TextView: UIViewRepresentable {
         
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
             if let shouldChangeText = parent.shouldChangeText, let textRange = Range(range, in: textView.text) {
-                return shouldChangeText(textRange, text)
+                if !shouldChangeText(textRange, text) {
+                    return false
+                }
             }
+            
+            if !text.isEmpty, let onTextInsert = parent.onTextInsert {
+                let newAttrText = onTextInsert(range, text)
+                if let newAttrText = newAttrText {
+                    textView.attributedText = newAttrText
+                    parent._attributedText.wrappedValue = newAttrText
+                    parent._text.wrappedValue = newAttrText.string
+                    
+                    let newPosition = range.location + text.count
+                    textView.selectedRange = NSRange(location: newPosition, length: 0)
+                    if let newSelection = Range(textView.selectedRange, in: newAttrText.string) {
+                        parent._selection.wrappedValue = newSelection
+                    }
+                    return false
+                }
+            }
+            
             return true
         }
         

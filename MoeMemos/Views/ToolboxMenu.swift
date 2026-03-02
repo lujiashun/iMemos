@@ -14,6 +14,7 @@ struct ToolboxMenu: View {
     @Binding var text: String
     @Binding var selection: Range<String.Index>?
     @Binding var attributedText: NSAttributedString?
+    @Binding var inputMode: TextFormatMode?
     
     @State private var isExpanded = false
     
@@ -29,6 +30,50 @@ struct ToolboxMenu: View {
             return false
         }
         return true
+    }
+    
+    private var cursorPosition: Int {
+        guard let currentSelection = selection,
+              currentSelection.lowerBound >= text.startIndex else {
+            return 0
+        }
+        return text.distance(from: text.startIndex, to: currentSelection.lowerBound)
+    }
+    
+    private var isUnderlineActive: Bool {
+        guard let attrText = attributedText else { return inputMode == .underline }
+        let position = cursorPosition
+        guard position < attrText.length else { return inputMode == .underline }
+        
+        let range = NSRange(location: position, length: 1)
+        var hasStyle = false
+        attrText.enumerateAttribute(.underlineStyle, in: range, options: []) { value, _, stop in
+            if let style = value as? Int, style == NSUnderlineStyle.single.rawValue {
+                hasStyle = true
+                stop.pointee = true
+            }
+        }
+        return hasStyle || inputMode == .underline
+    }
+    
+    private var isHighlightActive: Bool {
+        guard let attrText = attributedText else { return inputMode == .highlight }
+        let position = cursorPosition
+        guard position < attrText.length else { return inputMode == .highlight }
+        
+        let range = NSRange(location: position, length: 1)
+        var hasStyle = false
+        attrText.enumerateAttribute(.backgroundColor, in: range, options: []) { value, _, stop in
+            if let color = value as? UIColor {
+                var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+                color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+                if red > 0.9 && green > 0.7 && blue < 0.3 {
+                    hasStyle = true
+                    stop.pointee = true
+                }
+            }
+        }
+        return hasStyle || inputMode == .highlight
     }
     
     var body: some View {
@@ -64,28 +109,26 @@ struct ToolboxMenu: View {
     private var toolboxPanel: some View {
         HStack(spacing: 16) {
             Button {
-                if hasSelection {
-                    applyUnderline()
-                    dismissPanel()
-                }
+                toggleUnderline()
             } label: {
                 Image(systemName: "underline")
                     .font(.system(size: 17))
-                    .foregroundColor(hasSelection ? .primary : .gray)
+                    .foregroundColor(isUnderlineActive ? .accentColor : .primary)
+                    .padding(8)
+                    .background(isUnderlineActive ? Color.accentColor.opacity(0.15) : Color.clear)
+                    .cornerRadius(6)
             }
-            .disabled(!hasSelection)
             
             Button {
-                if hasSelection {
-                    applyHighlight()
-                    dismissPanel()
-                }
+                toggleHighlight()
             } label: {
                 Image(systemName: "highlighter")
                     .font(.system(size: 17))
-                    .foregroundColor(hasSelection ? .primary : .gray)
+                    .foregroundColor(isHighlightActive ? .accentColor : .primary)
+                    .padding(8)
+                    .background(isHighlightActive ? Color.accentColor.opacity(0.15) : Color.clear)
+                    .cornerRadius(6)
             }
-            .disabled(!hasSelection)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -100,13 +143,37 @@ struct ToolboxMenu: View {
         withAnimation(.easeInOut(duration: 0.2)) {
             isExpanded = false
         }
+        inputMode = nil
     }
     
-    private func applyUnderline() {
+    private func toggleUnderline() {
+        if hasSelection {
+            toggleStyleForSelection(isUnderline: true)
+        } else {
+            if inputMode == .underline {
+                inputMode = nil
+            } else {
+                inputMode = .underline
+            }
+        }
+    }
+    
+    private func toggleHighlight() {
+        if hasSelection {
+            toggleStyleForSelection(isUnderline: false)
+        } else {
+            if inputMode == .highlight {
+                inputMode = nil
+            } else {
+                inputMode = .highlight
+            }
+        }
+    }
+    
+    private func toggleStyleForSelection(isUnderline: Bool) {
         guard let currentSelection = selection,
               currentSelection.lowerBound >= text.startIndex,
-              currentSelection.upperBound <= text.endIndex,
-              currentSelection.lowerBound != currentSelection.upperBound else { return }
+              currentSelection.upperBound <= text.endIndex else { return }
         
         let mutableAttributedString: NSMutableAttributedString
         if let attributedText = attributedText {
@@ -121,56 +188,66 @@ struct ToolboxMenu: View {
         }
         
         let nsRange = NSRange(currentSelection, in: text)
-        
         guard nsRange.location + nsRange.length <= mutableAttributedString.length else { return }
         
-        mutableAttributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
+        let hasStyle = checkStyleInRange(mutableAttributedString, range: nsRange, isUnderline: isUnderline)
         
-        attributedText = mutableAttributedString
-        text = mutableAttributedString.string
-        
-        let newCursorOffset = text.distance(from: text.startIndex, to: currentSelection.upperBound)
-        let safeOffset = min(newCursorOffset, text.count)
-        let newCursorPos = text.index(text.startIndex, offsetBy: safeOffset)
-        selection = newCursorPos..<newCursorPos
-    }
-    
-    private func applyHighlight() {
-        guard let currentSelection = selection,
-              currentSelection.lowerBound >= text.startIndex,
-              currentSelection.upperBound <= text.endIndex,
-              currentSelection.lowerBound != currentSelection.upperBound else { return }
-        
-        let mutableAttributedString: NSMutableAttributedString
-        if let attributedText = attributedText {
-            mutableAttributedString = NSMutableAttributedString(attributedString: attributedText)
+        if hasStyle {
+            removeStyle(mutableAttributedString, range: nsRange, isUnderline: isUnderline)
         } else {
-            mutableAttributedString = NSMutableAttributedString(string: text)
-            #if canImport(UIKit)
-            let defaultFont = UIFont.preferredFont(forTextStyle: .body)
-            let fullRange = NSRange(location: 0, length: mutableAttributedString.length)
-            mutableAttributedString.addAttribute(.font, value: defaultFont, range: fullRange)
-            #endif
+            applyStyle(mutableAttributedString, range: nsRange, isUnderline: isUnderline)
         }
         
-        let nsRange = NSRange(currentSelection, in: text)
-        
-        guard nsRange.location + nsRange.length <= mutableAttributedString.length else { return }
-        
-        #if canImport(UIKit)
-        let highlightColor = UIColor.systemYellow.withAlphaComponent(0.3)
-        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
-        highlightColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        print("📝 [Highlight] 应用高亮颜色 RGB: (\(red), \(green), \(blue)), alpha: \(alpha)")
-        mutableAttributedString.addAttribute(.backgroundColor, value: highlightColor, range: nsRange)
-        #endif
-        
         attributedText = mutableAttributedString
         text = mutableAttributedString.string
-        
-        let newCursorOffset = text.distance(from: text.startIndex, to: currentSelection.upperBound)
-        let safeOffset = min(newCursorOffset, text.count)
-        let newCursorPos = text.index(text.startIndex, offsetBy: safeOffset)
-        selection = newCursorPos..<newCursorPos
     }
+    
+    private func checkStyleInRange(_ attrString: NSAttributedString, range: NSRange, isUnderline: Bool) -> Bool {
+        var hasStyle = false
+        
+        if isUnderline {
+            attrString.enumerateAttribute(.underlineStyle, in: range, options: []) { value, _, stop in
+                if let style = value as? Int, style == NSUnderlineStyle.single.rawValue {
+                    hasStyle = true
+                    stop.pointee = true
+                }
+            }
+        } else {
+            attrString.enumerateAttribute(.backgroundColor, in: range, options: []) { value, _, stop in
+                if let color = value as? UIColor {
+                    var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+                    color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+                    if red > 0.9 && green > 0.7 && blue < 0.3 {
+                        hasStyle = true
+                        stop.pointee = true
+                    }
+                }
+            }
+        }
+        
+        return hasStyle
+    }
+    
+    private func applyStyle(_ attrString: NSMutableAttributedString, range: NSRange, isUnderline: Bool) {
+        if isUnderline {
+            attrString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: range)
+        } else {
+            #if canImport(UIKit)
+            attrString.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: range)
+            #endif
+        }
+    }
+    
+    private func removeStyle(_ attrString: NSMutableAttributedString, range: NSRange, isUnderline: Bool) {
+        if isUnderline {
+            attrString.removeAttribute(.underlineStyle, range: range)
+        } else {
+            attrString.removeAttribute(.backgroundColor, range: range)
+        }
+    }
+}
+
+enum TextFormatMode {
+    case underline
+    case highlight
 }
