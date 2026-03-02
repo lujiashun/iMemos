@@ -63,6 +63,7 @@ struct ToolboxMenu: View {
         
         let range = NSRange(location: position, length: 1)
         var hasStyle = false
+        #if canImport(UIKit)
         attrText.enumerateAttribute(.backgroundColor, in: range, options: []) { value, _, stop in
             if let color = value as? UIColor {
                 var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
@@ -73,6 +74,7 @@ struct ToolboxMenu: View {
                 }
             }
         }
+        #endif
         return hasStyle || inputMode == .highlight
     }
     
@@ -191,9 +193,11 @@ struct ToolboxMenu: View {
         guard nsRange.location + nsRange.length <= mutableAttributedString.length else { return }
         
         let hasStyle = checkStyleInRange(mutableAttributedString, range: nsRange, isUnderline: isUnderline)
+        print("📝 [Toggle] hasStyle: \(hasStyle), range: \(nsRange), isUnderline: \(isUnderline)")
         
         if hasStyle {
             removeStyle(mutableAttributedString, range: nsRange, isUnderline: isUnderline)
+            print("📝 [Toggle] 移除样式后 attributedText: \(mutableAttributedString)")
         } else {
             applyStyle(mutableAttributedString, range: nsRange, isUnderline: isUnderline)
         }
@@ -213,6 +217,7 @@ struct ToolboxMenu: View {
                 }
             }
         } else {
+            #if canImport(UIKit)
             attrString.enumerateAttribute(.backgroundColor, in: range, options: []) { value, _, stop in
                 if let color = value as? UIColor {
                     var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
@@ -223,6 +228,7 @@ struct ToolboxMenu: View {
                     }
                 }
             }
+            #endif
         }
         
         return hasStyle
