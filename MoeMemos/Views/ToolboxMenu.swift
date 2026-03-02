@@ -149,6 +149,7 @@ struct ToolboxMenu: View {
     }
     
     private func toggleUnderline() {
+        print("📝 [Toggle] toggleUnderline called, hasSelection: \(hasSelection), selection: \(String(describing: selection))")
         if hasSelection {
             toggleStyleForSelection(isUnderline: true)
         } else {
@@ -161,6 +162,7 @@ struct ToolboxMenu: View {
     }
     
     private func toggleHighlight() {
+        print("📝 [Toggle] toggleHighlight called, hasSelection: \(hasSelection), selection: \(String(describing: selection))")
         if hasSelection {
             toggleStyleForSelection(isUnderline: false)
         } else {
