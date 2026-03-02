@@ -604,6 +604,8 @@ struct MemoInput: View {
     private func applyInputModeToText(range: NSRange, text: String) -> NSAttributedString? {
         guard let mode = inputMode else { return nil }
         
+        print("📝 [InputMode] applyInputModeToText called, mode: \(mode), range: \(range), text: \(text)")
+        
         let mutableAttributedString: NSMutableAttributedString
         if let attrText = attributedText {
             mutableAttributedString = NSMutableAttributedString(attributedString: attrText)
@@ -615,9 +617,8 @@ struct MemoInput: View {
         }
         
         let insertPosition = range.location
-        let insertLength = text.count
+        let insertLength = (text as NSString).length
         
-        let newLength = mutableAttributedString.length + insertLength - range.length
         let newString = (mutableAttributedString.string as NSString).replacingCharacters(in: range, with: text)
         
         let newAttrString = NSMutableAttributedString(string: newString)
@@ -637,8 +638,10 @@ struct MemoInput: View {
         let styleRange = NSRange(location: insertPosition, length: insertLength)
         if mode == .underline {
             newAttrString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: styleRange)
+            print("📝 [InputMode] applied underline to range: \(styleRange)")
         } else {
             newAttrString.addAttribute(.backgroundColor, value: UIColor.systemYellow.withAlphaComponent(0.3), range: styleRange)
+            print("📝 [InputMode] applied highlight to range: \(styleRange)")
         }
         
         return newAttrString

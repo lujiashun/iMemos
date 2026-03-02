@@ -190,7 +190,17 @@ struct ToolboxMenu: View {
         }
         let position = cursorPosition
         print("📝 [Toggle] findStyleRangeAtCursor: position=\(position), attrText.length=\(attrText.length)")
-        guard position < attrText.length else { return nil }
+        
+        attrText.enumerateAttributes(in: NSRange(location: 0, length: attrText.length), options: []) { attrs, range, _ in
+            if !attrs.isEmpty {
+                print("📝 [Toggle] attributes at range \(range): \(attrs)")
+            }
+        }
+        
+        guard position < attrText.length else { 
+            print("📝 [Toggle] position >= length, returning nil")
+            return nil 
+        }
         
         var foundRange: NSRange?
         
