@@ -153,6 +153,8 @@ struct ToolboxMenu: View {
         print("📝 [Toggle] toggleUnderline called, hasSelection: \(hasSelection), selection: \(String(describing: selection))")
         if hasSelection {
             toggleStyleForSelection(isUnderline: true)
+        } else if let styleRange = findStyleRangeAtCursor(isUnderline: true) {
+            toggleStyleForRange(styleRange, isUnderline: true)
         } else {
             if inputMode == .underline {
                 inputMode = nil
@@ -166,6 +168,8 @@ struct ToolboxMenu: View {
         print("📝 [Toggle] toggleHighlight called, hasSelection: \(hasSelection), selection: \(String(describing: selection))")
         if hasSelection {
             toggleStyleForSelection(isUnderline: false)
+        } else if let styleRange = findStyleRangeAtCursor(isUnderline: false) {
+            toggleStyleForRange(styleRange, isUnderline: false)
         } else {
             if inputMode == .highlight {
                 inputMode = nil
@@ -173,6 +177,63 @@ struct ToolboxMenu: View {
                 inputMode = .highlight
             }
         }
+    }
+    
+    private func findStyleRangeAtCursor(isUnderline: Bool) -> NSRange? {
+        guard let attrText = attributedText else { return nil }
+        let position = cursorPosition
+        guard position < attrText.length else { return nil }
+        
+        var foundRange: NSRange?
+        
+        if isUnderline {
+            attrText.enumerateAttribute(.underlineStyle, in: NSRange(location: 0, length: attrText.length), options: []) { value, range, stop in
+                if let style = value as? Int, style == NSUnderlineStyle.single.rawValue {
+                    if NSLocationInRange(position, range) {
+                        foundRange = range
+                        stop.pointee = true
+                    }
+                }
+            }
+        } else {
+            #if canImport(UIKit)
+            attrText.enumerateAttribute(.backgroundColor, in: NSRange(location: 0, length: attrText.length), options: []) { value, range, stop in
+                if let color = value as? UIColor {
+                    var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+                    color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+                    if red > 0.9 && green > 0.7 && blue < 0.3 {
+                        if NSLocationInRange(position, range) {
+                            foundRange = range
+                            stop.pointee = true
+                        }
+                    }
+                }
+            }
+            #endif
+        }
+        
+        print("📝 [Toggle] findStyleRangeAtCursor: \(String(describing: foundRange))")
+        return foundRange
+    }
+    
+    private func toggleStyleForRange(_ range: NSRange, isUnderline: Bool) {
+        let mutableAttributedString: NSMutableAttributedString
+        if let attributedText = attributedText {
+            mutableAttributedString = NSMutableAttributedString(attributedString: attributedText)
+        } else {
+            mutableAttributedString = NSMutableAttributedString(string: text)
+            #if canImport(UIKit)
+            let defaultFont = UIFont.preferredFont(forTextStyle: .body)
+            let fullRange = NSRange(location: 0, length: mutableAttributedString.length)
+            mutableAttributedString.addAttribute(.font, value: defaultFont, range: fullRange)
+            #endif
+        }
+        
+        print("📝 [Toggle] toggleStyleForRange: \(range), isUnderline: \(isUnderline)")
+        removeStyle(mutableAttributedString, range: range, isUnderline: isUnderline)
+        
+        attributedText = mutableAttributedString
+        text = mutableAttributedString.string
     }
     
     private func toggleStyleForSelection(isUnderline: Bool) {
