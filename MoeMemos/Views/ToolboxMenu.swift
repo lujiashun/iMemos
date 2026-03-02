@@ -90,7 +90,7 @@ struct ToolboxMenu: View {
             }
         } label: {
             Image(systemName: "square.and.pencil")
-                .font(.system(size: 17))
+                .font(.system(size: 20))
         }
         .fixedSize()
         .contentShape(Rectangle())
@@ -119,22 +119,24 @@ struct ToolboxMenu: View {
                 toggleUnderline()
             } label: {
                 Image(systemName: "underline")
-                    .font(.system(size: 17))
+                    .font(.system(size: 20))
                     .foregroundColor(isUnderlineActive ? .accentColor : .primary)
-                    .padding(8)
+                    .padding(10)
                     .background(isUnderlineActive ? Color.accentColor.opacity(0.15) : Color.clear)
-                    .cornerRadius(6)
+                    .cornerRadius(8)
+                    .contentShape(Rectangle())
             }
             
             Button {
                 toggleHighlight()
             } label: {
                 Image(systemName: "highlighter")
-                    .font(.system(size: 17))
+                    .font(.system(size: 20))
                     .foregroundColor(isHighlightActive ? .accentColor : .primary)
-                    .padding(8)
+                    .padding(10)
                     .background(isHighlightActive ? Color.accentColor.opacity(0.15) : Color.clear)
-                    .cornerRadius(6)
+                    .cornerRadius(8)
+                    .contentShape(Rectangle())
             }
         }
         .padding(.horizontal, 16)

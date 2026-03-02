@@ -98,8 +98,8 @@ struct MemoInput: View {
     private func toolbar() -> some View {
         VStack(spacing: 0) {
             Divider()
-            HStack(alignment: .center) {
-                FormattingMenu(text: $text, selection: $selection)
+            HStack(alignment: .center, spacing: 8) {
+                FormattingMenu(text: $text, selection: $selection, attributedText: $attributedText)
                 ToolboxMenu(text: $text, selection: $selection, attributedText: $attributedText, inputMode: $inputMode)
                 
                 if !memosViewModel.tags.isEmpty {
@@ -117,6 +117,7 @@ struct MemoInput: View {
                             // Do nothing, pass through to the menu
                         } label: {
                             Image(systemName: "number")
+                                .font(.system(size: 20))
                         }
                         .allowsHitTesting(false)
                     }
@@ -125,45 +126,44 @@ struct MemoInput: View {
                         insert(tag: nil)
                     } label: {
                         Image(systemName: "number")
+                            .font(.system(size: 20))
                     }
-                }
-                Button {
-                    toggleTodoItem()
-                } label: {
-                    Image(systemName: "checkmark.square")
                 }
                 Button {
                     scanText()
                 } label: {
                     Image(systemName: "text.viewfinder")
+                        .font(.system(size: 20))
                 }
                 if shouldShowImageActions {
                     Button {
                         showingPhotoPicker = true
                     } label: {
                         Image(systemName: "photo.on.rectangle")
+                            .font(.system(size: 20))
                     }
                     Button {
                         showingImagePicker = true
                     } label: {
                         Image(systemName: "camera")
+                            .font(.system(size: 20))
                     }
                 }
                 if shouldShowAudioAction {
-                    // --- Voice button ---
                     Button {
                         startAudioRecording()
                     } label: {
                         Image(systemName: "mic.circle")
+                            .font(.system(size: 20))
                             .foregroundColor(isRecordingAudio ? .red : .accentColor)
                     }
                     .accessibilityLabel("Start Voice Input")
                 }
                 Spacer()
             }
-            .frame(height: 20)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
+            .frame(height: 32)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
             .background(.ultraThinMaterial)
         }
     }
@@ -790,12 +790,14 @@ struct MemoInput: View {
                 }
                 let newText = String(currentText[currentText.startIndex..<lineStartIndex]) + String(currentText[nextLineBreak..<currentText.endIndex])
                 self.text = newText
+                updateAttributedText(newText)
                 selection = lineStartIndex..<lineStartIndex
                 return false
             }
             
             let newText = String(currentText[currentText.startIndex..<range.lowerBound]) + "\n" + newPrefix + String(currentText[range.upperBound..<currentText.endIndex])
             self.text = newText
+            updateAttributedText(newText)
             let newCursorPos = newText.index(range.lowerBound, offsetBy: newPrefix.count + 1)
             selection = newCursorPos..<newCursorPos
             return false
@@ -821,17 +823,27 @@ struct MemoInput: View {
                 }
                 let newText = String(currentText[currentText.startIndex..<lineStartIndex]) + String(currentText[nextLineBreak..<currentText.endIndex])
                 self.text = newText
+                updateAttributedText(newText)
                 selection = lineStartIndex..<lineStartIndex
                 return false
             }
             
             let newText = String(currentText[currentText.startIndex..<range.lowerBound]) + "\n" + prefixStr + String(currentText[range.upperBound..<currentText.endIndex])
             self.text = newText
+            updateAttributedText(newText)
             let newCursorPos = newText.index(range.lowerBound, offsetBy: prefixStr.count + 1)
             selection = newCursorPos..<newCursorPos
             return false
         }
 
         return true
+    }
+    
+    private func updateAttributedText(_ newText: String) {
+        if let attrText = attributedText {
+            let mutableAttrText = NSMutableAttributedString(attributedString: attrText)
+            mutableAttrText.mutableString.setString(newText)
+            attributedText = mutableAttrText
+        }
     }
 }

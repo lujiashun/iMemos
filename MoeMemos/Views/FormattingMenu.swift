@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 enum ListType {
     case none
@@ -17,6 +20,7 @@ enum ListType {
 struct FormattingMenu: View {
     @Binding var text: String
     @Binding var selection: Range<String.Index>?
+    @Binding var attributedText: NSAttributedString?
     var onDismiss: (() -> Void)? = nil
     
     @State private var isExpanded = false
@@ -33,7 +37,7 @@ struct FormattingMenu: View {
             }
         } label: {
             Image(systemName: mainButtonIcon)
-                .font(.system(size: 17))
+                .font(.system(size: 20))
         }
         .fixedSize()
         .contentShape(Rectangle())
@@ -50,7 +54,6 @@ struct FormattingMenu: View {
                     formattingPanel
                         .offset(y: -44)
                         .transition(.opacity)
-                        .onTapGesture { }
                 }
             }
         }
@@ -114,9 +117,15 @@ struct FormattingMenu: View {
             }
         }) {
             Image(systemName: icon)
-                .font(.system(size: 17))
+                .font(.system(size: 20))
+                .foregroundColor(isActive ? .accentColor : .primary)
+                .padding(10)
+                .background(isActive ? Color.accentColor.opacity(0.15) : Color.clear)
+                .cornerRadius(8)
+                .contentShape(Rectangle())
         }
         .disabled(isDisabled)
+        .opacity(isDisabled ? 0.4 : 1.0)
         .accessibilityLabel(title)
     }
     
@@ -246,6 +255,12 @@ struct FormattingMenu: View {
         
         text = newText
         
+        if let attrText = attributedText {
+            let mutableAttrText = NSMutableAttributedString(attributedString: attrText)
+            mutableAttrText.mutableString.setString(newText)
+            attributedText = mutableAttrText
+        }
+        
         // Calculate cursor position: move to after the list prefix on the current line
         let lineStartOffset = currentText.distance(from: currentText.startIndex, to: lineStartIndex)
         let newCursorOffset = lineStartOffset + indentPrefix.count + prefix.count
@@ -297,6 +312,12 @@ struct FormattingMenu: View {
         let newText = String(currentText[currentText.startIndex..<lineStartIndex]) + indentToAdd + String(currentText[lineStartIndex..<currentText.endIndex])
         text = newText
         
+        if let attrText = attributedText {
+            let mutableAttrText = NSMutableAttributedString(attributedString: attrText)
+            mutableAttrText.mutableString.setString(newText)
+            attributedText = mutableAttrText
+        }
+        
         // Calculate cursor position based on distance from start
         let cursorOffsetFromStart = currentText.distance(from: currentText.startIndex, to: currentSelection.lowerBound) + 2
         let safeOffset = min(cursorOffsetFromStart, newText.count)
@@ -332,6 +353,12 @@ struct FormattingMenu: View {
         let newText = String(currentText[currentText.startIndex..<lineStartIndex]) + String(currentText[removeEndIndex..<currentText.endIndex])
         text = newText
         
+        if let attrText = attributedText {
+            let mutableAttrText = NSMutableAttributedString(attributedString: attrText)
+            mutableAttrText.mutableString.setString(newText)
+            attributedText = mutableAttrText
+        }
+        
         // Calculate cursor position based on distance from start
         let cursorOffsetFromStart = max(0, currentText.distance(from: currentText.startIndex, to: currentSelection.lowerBound) - removeCount)
         let safeOffset = min(cursorOffsetFromStart, newText.count)
@@ -344,6 +371,7 @@ struct FormattingMenu: View {
     struct PreviewWrapper: View {
         @State var text = "Hello world"
         @State var selection: Range<String.Index>? = nil
+        @State var attributedText: NSAttributedString? = nil
         
         var body: some View {
             VStack {
@@ -351,7 +379,7 @@ struct FormattingMenu: View {
                     .frame(height: 200)
                     .border(Color.gray)
                 
-                FormattingMenu(text: $text, selection: $selection)
+                FormattingMenu(text: $text, selection: $selection, attributedText: $attributedText)
             }
             .padding()
         }
