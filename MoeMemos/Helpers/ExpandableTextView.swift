@@ -532,8 +532,8 @@ struct ClickableTagTextViewInternal: UIViewRepresentable {
             }
             
             // MARK: - 解析普通标签格式（#标签名）
-            // 匹配 #标签名 格式（后面跟空格、斜杠、换行或结尾）
-            let tagPattern = "#([^#\\s/]+?)(?=[\\s/\\n]|$)"
+            // 匹配 #标签名 格式（后面跟空格、换行或结尾，标签内容可包含/）
+            let tagPattern = "#([^#\\s]+?)(?=[\\s\\n]|$)"
             guard let regex = try? NSRegularExpression(pattern: tagPattern, options: []) else {
                 return mutableAttrString
             }

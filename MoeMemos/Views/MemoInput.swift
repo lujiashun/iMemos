@@ -153,6 +153,10 @@ struct MemoInput: View {
                             .font(.system(size: 20))
                     }
                 }
+                
+                Spacer()
+                
+                // MARK: - 语音按钮（最右侧）
                 if shouldShowAudioAction {
                     Button {
                         startAudioRecording()
@@ -163,7 +167,6 @@ struct MemoInput: View {
                     }
                     .accessibilityLabel("Start Voice Input")
                 }
-                Spacer()
             }
             .frame(height: 32)
             .padding(.horizontal, 16)
@@ -759,9 +762,10 @@ struct MemoInput: View {
                 let nsRange = NSRange(tagStart.lowerBound..<tagEnd.upperBound, in: currentString)
                 result.replaceCharacters(in: nsRange, with: content)
                 
-                // MARK: 编辑页面标签样式：默认字体颜色、透明背景（保持简洁）
+                // MARK: 编辑页面标签样式：蓝色字体+透明背景
                 let newContentRange = NSRange(location: nsRange.location, length: content.count)
-                // 不设置 foregroundColor 和 backgroundColor，使用默认样式
+                result.addAttribute(.foregroundColor, value: UIColor.systemBlue, range: newContentRange)
+                result.addAttribute(.backgroundColor, value: UIColor.clear, range: newContentRange)
                 result.addAttribute(.font, value: defaultFont, range: newContentRange)
                 
                 currentString = result.string
@@ -778,10 +782,10 @@ struct MemoInput: View {
         return result
     }
     
-    // MARK: - 插入标签（编辑页面保持简洁样式，灵感页面显示彩色样式）
+    // MARK: - 插入标签（编辑页面：蓝色字体+透明背景）
     private func insert(tag: Tag?) {
         let tagName = tag?.name ?? ""
-        let tagText = "#\(tagName) "
+        let tagText = "#\(tagName)"
         
         // 获取当前 attributedText 或创建新的
         let mutableAttrString: NSMutableAttributedString
@@ -806,15 +810,16 @@ struct MemoInput: View {
             insertLocation = mutableAttrString.length
         }
         
-        // 创建标签文本（编辑页面使用简洁样式：默认字体颜色、透明背景）
+        // 创建标签文本（编辑页面：蓝色字体+透明背景）
         let styledTagText = NSMutableAttributedString(string: tagText)
         let tagRange = NSRange(location: 0, length: tagText.count)
         
         #if canImport(UIKit)
-        // 编辑页面：不设置特殊颜色，使用默认样式
+        // 编辑页面：蓝色字体+透明背景
         let font = UIFont.preferredFont(forTextStyle: .body)
         styledTagText.addAttribute(.font, value: font, range: tagRange)
-        // 背景透明（不设置 backgroundColor）
+        styledTagText.addAttribute(.foregroundColor, value: UIColor.systemBlue, range: tagRange)
+        styledTagText.addAttribute(.backgroundColor, value: UIColor.clear, range: tagRange)
         #endif
         
         // 插入到 attributedText
@@ -824,7 +829,7 @@ struct MemoInput: View {
         text = mutableAttrString.string
         attributedText = mutableAttrString
         
-        // 更新光标位置
+        // 更新光标位置（定位在标签后，不包括空格，这样新输入的文本使用默认颜色）
         let newCursorLocation = insertLocation + tagText.count
         if newCursorLocation <= text.count {
             let newCursorPos = text.index(text.startIndex, offsetBy: newCursorLocation)

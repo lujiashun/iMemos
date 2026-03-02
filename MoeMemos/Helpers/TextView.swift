@@ -103,6 +103,53 @@ struct TextView: UIViewRepresentable {
             
             NSLog("📝 [TextView] textViewDidChange: currentLength=\(currentLength), previousLength=\(previousTextLength), currentSelectedRange=\(currentSelectedRange), previousSelectedRange=\(previousSelectedRange), isComposing=\(isComposing), wasComposing=\(wasComposing)")
             
+            // MARK: - 实时标签识别和样式应用
+            let mutableAttrText = NSMutableAttributedString(attributedString: textView.attributedText)
+            let fullRange = NSRange(location: 0, length: mutableAttrText.length)
+            guard let currentText = textView.text else { return }
+            
+            // 识别所有标签（#开头，以空格、换行或结尾结束，标签内容可包含/）
+            let tagPattern = "#([^\\s#]+)"
+            if let regex = try? NSRegularExpression(pattern: tagPattern, options: []) {
+                let matches = regex.matches(in: currentText, options: [], range: fullRange)
+                
+                // 先清除所有非标签区域的蓝色样式
+                mutableAttrText.enumerateAttribute(.foregroundColor, in: fullRange, options: []) { value, range, _ in
+                    if let color = value as? UIColor {
+                        // 检查是否是标签蓝色
+                        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+                        color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+                        // 如果是系统蓝色（蓝色>0.9, 红色<0.2, 绿色<0.6）
+                        if blue > 0.9 && red < 0.2 && green < 0.6 {
+                            // 检查这个范围是否还是标签
+                            var isStillTag = false
+                            for match in matches {
+                                if NSEqualRanges(match.range, range) {
+                                    isStillTag = true
+                                    break
+                                }
+                            }
+                            if !isStillTag {
+                                // 不再是标签，移除蓝色样式
+                                mutableAttrText.removeAttribute(.foregroundColor, range: range)
+                                mutableAttrText.removeAttribute(.backgroundColor, range: range)
+                            }
+                        }
+                    }
+                }
+                
+                // 应用标签样式：蓝色字体+透明背景
+                for match in matches {
+                    let tagRange = match.range
+                    // 标签样式：蓝色字体+透明背景
+                    mutableAttrText.addAttribute(.foregroundColor, value: UIColor.systemBlue, range: tagRange)
+                    mutableAttrText.addAttribute(.backgroundColor, value: UIColor.clear, range: tagRange)
+                }
+            }
+            
+            // 更新 attributedText
+            textView.attributedText = mutableAttrText
+            
             if let onTextInsert = parent.onTextInsert {
                 if wasComposing && !isComposing {
                     if let startPos = composingStartPosition {

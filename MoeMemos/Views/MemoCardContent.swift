@@ -444,21 +444,26 @@ struct AudioPlayerView: View {
     }
     
     private func handlePlayButton() {
+        print("[AudioPlayer] handlePlayButton called, audioPlayer exists: \(audioPlayer != nil), isPlaying: \(isPlaying)")
         if let player = audioPlayer {
             if isPlaying {
+                print("[AudioPlayer] Pausing playback")
                 player.pause()
                 isPlaying = false
             } else {
+                print("[AudioPlayer] Resuming playback")
                 player.play()
                 isPlaying = true
             }
         } else {
+            print("[AudioPlayer] No existing player, loading and playing")
             loadAndPlay()
         }
     }
     
     // Centralized handlers to avoid duplicate logic and prints
     private func performPlayTapped() {
+        print("[AudioPlayer] performPlayTapped called")
         ignoreContentTap.wrappedValue = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { ignoreContentTap.wrappedValue = false }
         handlePlayButton()
@@ -607,38 +612,44 @@ struct AudioPlayerView: View {
     }
 
     private func loadAndPlay() {
+        print("[AudioPlayer] loadAndPlay called")
         // Cancel any existing task
         currentTask?.cancel()
         
-        guard !isLoading else { return }
+        guard !isLoading else { 
+            print("[AudioPlayer] Already loading, returning")
+            return 
+        }
         isLoading = true
-        
-        
         
         currentTask = Task {
             do {
                 // Set up audio session for playback (only if not already set)
                 let audioSession = AVAudioSession.sharedInstance()
+                print("[AudioPlayer] Current audio session category: \(audioSession.category)")
                 if audioSession.category != .playback {
                     try audioSession.setCategory(.playback, mode: .default)
                     try audioSession.setActive(true)
-                    
+                    print("[AudioPlayer] Audio session set to playback mode")
                 }
                 
                 if let service = accountManager.currentService {
-                    
+                    print("[AudioPlayer] Downloading audio from: \(resource.url)")
                     let url = try await service.download(url: resource.url, mimeType: resource.mimeType)
-                    
+                    print("[AudioPlayer] Audio downloaded to: \(url)")
                     
                     // Check if task was cancelled
-                    if Task.isCancelled { return }
+                    if Task.isCancelled { 
+                        print("[AudioPlayer] Task cancelled after download")
+                        return 
+                    }
                     
                     // Clean up existing player
                     if let existingPlayer = audioPlayer {
                         existingPlayer.pause()
                         // Don't replace the player if it already exists and is ready
                         if existingPlayer.currentItem?.status == .readyToPlay {
-                        
+                            print("[AudioPlayer] Using existing player")
                             existingPlayer.play()
                             self.isPlaying = true
                             isLoading = false
@@ -647,7 +658,7 @@ struct AudioPlayerView: View {
                     }
                     
                     // Initialize new player
-                    
+                    print("[AudioPlayer] Creating new AVPlayer")
                     let playerItem = AVPlayerItem(url: url)
                     let player = AVPlayer(playerItem: playerItem)
                     self.audioPlayer = player
@@ -657,21 +668,26 @@ struct AudioPlayerView: View {
                         do {
                             let duration = try await asset.load(.duration)
                             self.duration = CMTimeGetSeconds(duration)
-                            
+                            print("[AudioPlayer] Audio duration: \(self.duration)")
                         } catch {
-                        
+                            print("[AudioPlayer] Failed to load duration: \(error)")
                         }
                     }
                     
                     // Check if task was cancelled before starting playback
-                    if Task.isCancelled { return }
+                    if Task.isCancelled { 
+                        print("[AudioPlayer] Task cancelled before playback")
+                        return 
+                    }
                     
-                    
+                    print("[AudioPlayer] Starting playback")
                     player.play()
                     self.isPlaying = true
                 } else {
+                    print("[AudioPlayer] No account service available")
                 }
             } catch {
+                print("[AudioPlayer] Error: \(error)")
                 if !Task.isCancelled {
                     self.error = error
                 }
