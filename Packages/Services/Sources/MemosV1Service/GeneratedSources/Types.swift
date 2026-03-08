@@ -3426,7 +3426,25 @@ public enum Components {
             /// - Remark: Generated from `#/components/schemas/SendVerificationCodeResponse/success`.
             public var success: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/SendVerificationCodeResponse/sentAt`.
-            public var sentAt: Foundation.Date?
+            public struct sentAtPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `sentAtPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/SendVerificationCodeResponse/sentAt`.
+            public var sentAt: Components.Schemas.SendVerificationCodeResponse.sentAtPayload?
             /// Creates a new `SendVerificationCodeResponse`.
             ///
             /// - Parameters:
@@ -3434,7 +3452,7 @@ public enum Components {
             ///   - sentAt:
             public init(
                 success: Swift.Bool? = nil,
-                sentAt: Foundation.Date? = nil
+                sentAt: Components.Schemas.SendVerificationCodeResponse.sentAtPayload? = nil
             ) {
                 self.success = success
                 self.sentAt = sentAt

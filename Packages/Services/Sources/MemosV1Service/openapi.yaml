@@ -2949,8 +2949,8 @@ components:
                 success:
                     type: boolean
                 sentAt:
-                    type: string
-                    format: date-time
+                    type: object
+                    additionalProperties: true
             description: SendVerificationCodeResponse 发送验证码响应
         SetMemoAttachmentsRequest:
             required:
