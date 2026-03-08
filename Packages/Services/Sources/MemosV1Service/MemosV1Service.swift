@@ -127,7 +127,7 @@ public final class MemosV1Service: RemoteService {
     }
 
     /// 发送短信验证码
-    public func sendVerificationCode(phoneNumber: String, purpose: Components.Schemas.VerificationPurpose) async throws -> Bool {
+    public func sendVerificationCode(phoneNumber: String, purpose: Components.Schemas.SendVerificationCodeRequest.purposePayload) async throws -> Bool {
         let req = Components.Schemas.SendVerificationCodeRequest(
             phoneNumber: phoneNumber,
             purpose: purpose
@@ -146,7 +146,7 @@ public final class MemosV1Service: RemoteService {
     }
 
     /// 验证手机号
-    public func verifyPhone(phoneNumber: String, purpose: Components.Schemas.VerificationPurpose, authToken: String) async throws -> Bool {
+    public func verifyPhone(phoneNumber: String, purpose: Components.Schemas.VerifyPhoneRequest.purposePayload, authToken: String) async throws -> Bool {
         let req = Components.Schemas.VerifyPhoneRequest(
             phoneNumber: phoneNumber,
             purpose: purpose,

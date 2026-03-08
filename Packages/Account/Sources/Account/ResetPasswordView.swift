@@ -172,7 +172,7 @@ public struct ResetPasswordView: View {
             let service = createService()
             let success = try await service.sendVerificationCode(
                 phoneNumber: phoneNumber,
-                purpose: .RESET_PASSWORD
+                purpose: .FORGOT_PASSWORD
             )
             if success {
                 startCountdown()
@@ -199,7 +199,7 @@ public struct ResetPasswordView: View {
             let service = createService()
             let valid = try await service.verifyPhone(
                 phoneNumber: phoneNumber,
-                purpose: .RESET_PASSWORD,
+                purpose: .FORGOT_PASSWORD,
                 authToken: verificationCode
             )
             if valid {
