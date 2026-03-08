@@ -48,7 +48,7 @@ public struct RegisterMemosAccountView: View {
                     } else if countdown > 0 {
                         Text("\(countdown)s")
                     } else {
-                        Text("发送验证码")
+                        Text("获取验证码")
                     }
                 }
                 .buttonStyle(.bordered)

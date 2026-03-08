@@ -116,35 +116,44 @@ public struct AddMemosAccountView: View {
                 }
                 .buttonStyle(.plain)
 
-                Group {
-                    Text("login.agree.prefix")
-                    Link("login.agree.terms", destination: appInfo.terms)
-                    Text("login.agree.conjunction")
-                    Link("login.agree.privacy", destination: appInfo.privacy)
-                }
+                Text("login.agree.prefix")
+                Link("login.agree.terms", destination: appInfo.terms)
+                    .underline()
+                Text("login.agree.conjunction")
+                Link("login.agree.privacy", destination: appInfo.privacy)
+                    .underline()
             }
-            .font(.footnote)
+            .font(.callout)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 10)
 
-            Button {
-                showingRegister = true
-            } label: {
-                Text("没有账号？注册新账号")
-                    .font(.footnote)
-                    .foregroundColor(.blue)
+            HStack(spacing: 40) {
+                Button {
+                    showingResetPassword = true
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: "key.fill")
+                            .font(.system(size: 20))
+                        Text("忘记密码")
+                            .font(.subheadline)
+                    }
+                }
+                .foregroundStyle(.blue)
+
+                Button {
+                    showingRegister = true
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: "person.badge.plus")
+                            .font(.system(size: 20))
+                        Text("立即注册")
+                            .font(.subheadline)
+                    }
+                }
+                .foregroundStyle(.blue)
             }
-            .padding(.top, 8)
-            
-            Button {
-                showingResetPassword = true
-            } label: {
-                Text("忘记密码？")
-                    .font(.footnote)
-                    .foregroundColor(.blue)
-            }
-            .padding(.top, 4)
+            .padding(.top, 16)
         }
         .padding()
         .sheet(isPresented: $showingRegister) {
