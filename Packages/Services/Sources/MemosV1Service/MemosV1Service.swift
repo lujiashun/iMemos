@@ -128,18 +128,24 @@ public final class MemosV1Service: RemoteService {
 
     /// 发送短信验证码
     public func sendVerificationCode(phoneNumber: String, purpose: Components.Schemas.SendVerificationCodeRequest.purposePayload) async throws -> Bool {
+        print("[MemosV1Service] sendVerificationCode start phoneNumber:\(phoneNumber) purpose:\(purpose)")
         let req = Components.Schemas.SendVerificationCodeRequest(
             phoneNumber: phoneNumber,
             purpose: purpose
         )
+        print("[MemosV1Service] sendVerificationCode request created")
         let resp = try await client.AuthService_SendVerificationCode(body: .json(req))
+        print("[MemosV1Service] sendVerificationCode response received")
         switch resp {
         case .ok(let okResponse):
             let data = try okResponse.body.json
+            print("[MemosV1Service] sendVerificationCode success: \(data.success ?? false)")
             return data.success ?? false
         case .default(let statusCode, let defaultResponse):
+            print("[MemosV1Service] sendVerificationCode error statusCode: \(statusCode)")
             switch defaultResponse.body {
             case .json(let status):
+                print("[MemosV1Service] sendVerificationCode error status: \(status)")
                 throw MoeMemosError.invalidStatusCode(statusCode, Self.formatStatusMessage(status, statusCode: statusCode))
             }
         }

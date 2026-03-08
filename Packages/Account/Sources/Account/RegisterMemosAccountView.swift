@@ -198,15 +198,19 @@ public struct RegisterMemosAccountView: View {
     private func sendVerificationCode() async {
         do {
             isSendingCode = true
+            print("[RegisterMemosAccountView] sendVerificationCode start phoneNumber:\(phoneNumber)")
             let service = createService()
+            print("[RegisterMemosAccountView] service created")
             let success = try await service.sendVerificationCode(
                 phoneNumber: phoneNumber,
                 purpose: .REGISTER
             )
+            print("[RegisterMemosAccountView] sendVerificationCode result: \(success)")
             if success {
                 startCountdown()
             }
         } catch {
+            print("[RegisterMemosAccountView] sendVerificationCode error: \(error)")
             registerError = error
             showingErrorToast = true
         }
