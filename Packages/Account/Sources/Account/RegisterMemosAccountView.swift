@@ -154,10 +154,11 @@ public struct RegisterMemosAccountView: View {
     
     private func startCountdown() {
         countdown = 60
-        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
-            Task { @MainActor in
-                countdown -= 1
-                if countdown <= 0 {
+        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] timer in
+            Task { @MainActor [weak self] in
+                guard let self = self else { timer.invalidate(); return }
+                self.countdown -= 1
+                if self.countdown <= 0 {
                     timer.invalidate()
                 }
             }
