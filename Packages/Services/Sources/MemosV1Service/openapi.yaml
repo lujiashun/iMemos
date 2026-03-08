@@ -2948,9 +2948,6 @@ components:
             properties:
                 success:
                     type: boolean
-                sentAt:
-                    type: object
-                    additionalProperties: true
             description: SendVerificationCodeResponse 发送验证码响应
         SetMemoAttachmentsRequest:
             required:

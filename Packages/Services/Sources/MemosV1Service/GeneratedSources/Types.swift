@@ -3425,41 +3425,15 @@ public enum Components {
         public struct SendVerificationCodeResponse: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/SendVerificationCodeResponse/success`.
             public var success: Swift.Bool?
-            /// - Remark: Generated from `#/components/schemas/SendVerificationCodeResponse/sentAt`.
-            public struct sentAtPayload: Codable, Hashable, Sendable {
-                /// A container of undocumented properties.
-                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
-                /// Creates a new `sentAtPayload`.
-                ///
-                /// - Parameters:
-                ///   - additionalProperties: A container of undocumented properties.
-                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
-                    self.additionalProperties = additionalProperties
-                }
-                public init(from decoder: any Decoder) throws {
-                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
-                }
-                public func encode(to encoder: any Encoder) throws {
-                    try encoder.encodeAdditionalProperties(additionalProperties)
-                }
-            }
-            /// - Remark: Generated from `#/components/schemas/SendVerificationCodeResponse/sentAt`.
-            public var sentAt: Components.Schemas.SendVerificationCodeResponse.sentAtPayload?
             /// Creates a new `SendVerificationCodeResponse`.
             ///
             /// - Parameters:
             ///   - success:
-            ///   - sentAt:
-            public init(
-                success: Swift.Bool? = nil,
-                sentAt: Components.Schemas.SendVerificationCodeResponse.sentAtPayload? = nil
-            ) {
+            public init(success: Swift.Bool? = nil) {
                 self.success = success
-                self.sentAt = sentAt
             }
             public enum CodingKeys: String, CodingKey {
                 case success
-                case sentAt
             }
         }
         /// - Remark: Generated from `#/components/schemas/SetMemoAttachmentsRequest`.
