@@ -142,6 +142,7 @@ extension View {
             case .addAccount:
                 AddMemosAccountView()
                     .withEnvironments()
+                    .interactiveDismissDisabled()
             }
         }
     }

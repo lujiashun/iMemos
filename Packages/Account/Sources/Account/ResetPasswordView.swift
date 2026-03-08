@@ -9,18 +9,12 @@ public struct ResetPasswordView: View {
     @State private var phoneNumber = ""
     @State private var verificationCode = ""
     @State private var newPassword = ""
-    @State private var confirmPassword = ""
-    @State private var isPhoneVerified = false
     @State private var isSendingCode = false
     @State private var countdown = 0
     @State private var errorMessage: String?
     @State private var showLoadingToast = false
     @State private var showSuccessToast = false
     @Environment(\.dismiss) private var dismiss
-
-#if DEBUG
-    @AppStorage("allowInsecureTLS") private var allowInsecureTLS = false
-#endif
     
     public init(host: String) {
         _host = State(initialValue: host)
@@ -28,83 +22,38 @@ public struct ResetPasswordView: View {
     
     public var body: some View {
         VStack(spacing: 16) {
-            Text("重置密码")
-                .font(.title2)
-                .padding(.bottom, 10)
+            TextField("手机号", text: $phoneNumber)
+                .textFieldStyle(.roundedBorder)
+                .keyboardType(.phonePad)
             
-            // 手机号输入
-            VStack(alignment: .leading, spacing: 8) {
-                Text("手机号")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                HStack {
-                    TextField("请输入手机号", text: $phoneNumber)
-                        .textFieldStyle(.roundedBorder)
-                        .keyboardType(.phonePad)
-                        .disabled(isPhoneVerified)
-                    
-                    Button {
-                        Task {
-                            await sendVerificationCode()
-                        }
-                    } label: {
-                        if isSendingCode {
-                            ProgressView()
-                                .progressViewStyle(.circular)
-                        } else if countdown > 0 {
-                            Text("\(countdown)s")
-                        } else {
-                            Text(isPhoneVerified ? "已验证" : "发送验证码")
-                        }
+            HStack {
+                TextField("验证码", text: $verificationCode)
+                    .textFieldStyle(.roundedBorder)
+                    .keyboardType(.numberPad)
+                
+                Button {
+                    Task {
+                        await sendVerificationCode()
                     }
-                    .buttonStyle(.bordered)
-                    .disabled(phoneNumber.isEmpty || isSendingCode || countdown > 0 || isPhoneVerified)
-                }
-            }
-            
-            // 验证码输入
-            VStack(alignment: .leading, spacing: 8) {
-                Text("验证码")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                HStack {
-                    TextField("请输入验证码", text: $verificationCode)
-                        .textFieldStyle(.roundedBorder)
-                        .keyboardType(.numberPad)
-                        .disabled(isPhoneVerified)
-                    
-                    Button {
-                        Task {
-                            await verifyCode()
-                        }
-                    } label: {
-                        Text(isPhoneVerified ? "已验证" : "验证")
+                } label: {
+                    if isSendingCode {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                    } else if countdown > 0 {
+                        Text("\(countdown)s")
+                    } else {
+                        Text("发送验证码")
                     }
-                    .buttonStyle(.bordered)
-                    .disabled(verificationCode.isEmpty || isPhoneVerified)
                 }
+                .buttonStyle(.bordered)
+                .disabled(phoneNumber.isEmpty || isSendingCode || countdown > 0)
             }
             
             Divider()
                 .padding(.vertical, 8)
             
-            // 新密码输入
-            VStack(alignment: .leading, spacing: 8) {
-                Text("新密码")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                SecureField("请输入新密码", text: $newPassword)
-                    .textFieldStyle(.roundedBorder)
-            }
-            
-            // 确认密码输入
-            VStack(alignment: .leading, spacing: 8) {
-                Text("确认密码")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                SecureField("请再次输入新密码", text: $confirmPassword)
-                    .textFieldStyle(.roundedBorder)
-            }
+            SecureField("新密码", text: $newPassword)
+                .textFieldStyle(.roundedBorder)
             
             if let errorMessage = errorMessage {
                 Text(errorMessage)
@@ -161,9 +110,8 @@ public struct ResetPasswordView: View {
     
     private var isFormValid: Bool {
         !newPassword.isEmpty &&
-        newPassword == confirmPassword &&
         !phoneNumber.isEmpty &&
-        isPhoneVerified
+        !verificationCode.isEmpty
     }
     
     private func sendVerificationCode() async {
@@ -199,36 +147,10 @@ public struct ResetPasswordView: View {
         }
     }
     
-    private func verifyCode() async {
-        do {
-            showLoadingToast = true
-            let service = createService()
-            let valid = try await service.verifyPhone(
-                phoneNumber: phoneNumber,
-                purpose: .FORGOT_PASSWORD,
-                authToken: verificationCode
-            )
-            if valid {
-                isPhoneVerified = true
-            } else {
-                errorMessage = "验证码无效"
-            }
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-        showLoadingToast = false
-    }
-    
     private func resetPassword() async {
         do {
             showLoadingToast = true
             errorMessage = nil
-            
-            guard newPassword == confirmPassword else {
-                errorMessage = "两次输入的密码不一致"
-                showLoadingToast = false
-                return
-            }
             
             let service = createService()
             try await service.resetPassword(
@@ -252,11 +174,6 @@ public struct ResetPasswordView: View {
             hostAddress.removeLast()
         }
         let hostURL = URL(string: hostAddress)!
-        
-#if DEBUG
-        return MemosV1Service(hostURL: hostURL, username: nil, password: nil, userId: nil, allowInsecureTLS: allowInsecureTLS)
-#else
         return MemosV1Service(hostURL: hostURL, username: nil, password: nil, userId: nil)
-#endif
     }
 }
