@@ -369,7 +369,7 @@ struct AudioPlayerView: View {
                         .padding(.horizontal, 4)
                     }
 
-                    if let err = punctuateError {
+                    if punctuateError != nil {
                         Text("（原文恢复失败，显示可用文字）")
                             .font(.caption)
                             .foregroundStyle(.secondary)

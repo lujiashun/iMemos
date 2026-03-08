@@ -225,7 +225,7 @@ public func download(urlSession: URLSession, url: URL, mimeType: String? = nil, 
     var attempt = 0
     var baseDelay: TimeInterval = 1
     var pendingResumeData: Data?
-    var useDataTask = true // 默认使用 dataTask，更安全
+    let useDataTask = true // 默认使用 dataTask，更安全
 
     while true {
         attempt += 1

@@ -104,7 +104,7 @@ public final class MemosV1Service: RemoteService {
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        var payload: [String: Any] = [
+        let payload: [String: Any] = [
             "user": [
                 "username": username,
                 "password": password,

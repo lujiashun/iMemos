@@ -40,7 +40,7 @@ struct TextView: UIViewRepresentable {
         context.coordinator.isUpdatingView = true
         defer { context.coordinator.isUpdatingView = false }
         
-        var attrs = uiView.typingAttributes ?? [:]
+        var attrs = uiView.typingAttributes
         if let mode = inputMode {
             if mode.contains(.underline) {
                 attrs[.underlineStyle] = NSUnderlineStyle.single.rawValue

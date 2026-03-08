@@ -692,7 +692,7 @@ struct MemoInput: View {
         let mutableAttrString = NSMutableAttributedString(string: html)
         let defaultFont = UIFont.preferredFont(forTextStyle: .body)
         
-        var result = mutableAttrString
+        let result = mutableAttrString
         var currentString = result.string
         
         while true {

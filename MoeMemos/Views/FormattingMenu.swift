@@ -237,20 +237,16 @@ struct FormattingMenu: View {
         let existingPrefix = getExistingListPrefix(from: lineString)
         let indentPrefix = getIndentPrefix(from: lineString)
         
-        var newText: String
-        var prefixLengthChange = 0
+        let newText: String
         
         if let existing = existingPrefix {
             if existing == prefix {
                 newText = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + lineString.replacingOccurrences(of: "^" + existing, with: "", options: .regularExpression) + String(currentText[nextLineBreak..<currentText.endIndex])
-                prefixLengthChange = -existing.count
             } else {
                 newText = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + prefix + lineString.replacingOccurrences(of: "^" + existing.replacingOccurrences(of: "([.])", with: "\\$1", options: .regularExpression), with: "", options: .regularExpression) + String(currentText[nextLineBreak..<currentText.endIndex])
-                prefixLengthChange = prefix.count - existing.count
             }
         } else {
             newText = String(currentText[currentText.startIndex..<lineStartIndex]) + indentPrefix + prefix + lineString + String(currentText[nextLineBreak..<currentText.endIndex])
-            prefixLengthChange = prefix.count
         }
         
         text = newText
