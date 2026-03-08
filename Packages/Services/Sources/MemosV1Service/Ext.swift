@@ -17,7 +17,7 @@ public typealias MemosV1Profile = Components.Schemas.InstanceProfile
 extension MemosV1Memo {
     func toMemo(host: URL) -> Memo {
         return Memo(
-            content: content ?? "",
+            content: content,
             pinned: pinned ?? false,
             rowStatus: state == .ARCHIVED ? .archived : .normal,
             visibility: visibility.toMemoVisibility(),

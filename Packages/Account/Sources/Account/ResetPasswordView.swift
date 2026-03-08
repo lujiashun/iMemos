@@ -186,9 +186,11 @@ public struct ResetPasswordView: View {
     private func startCountdown() {
         countdown = 60
         Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
-            countdown -= 1
-            if countdown <= 0 {
-                timer.invalidate()
+            Task { @MainActor in
+                countdown -= 1
+                if countdown <= 0 {
+                    timer.invalidate()
+                }
             }
         }
     }
