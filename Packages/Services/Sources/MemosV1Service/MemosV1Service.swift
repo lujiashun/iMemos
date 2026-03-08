@@ -97,6 +97,102 @@ public final class MemosV1Service: RemoteService {
         print("[MemosV1Service] signUp success for username:\(username)")
     }
 
+    /// 使用短信验证码注册新用户
+    public func signUpWithSMS(username: String, password: String, phoneNumber: String, verificationCode: String) async throws {
+        let signupURL = hostURL.appending(path: "api").appending(path: "v1").appending(path: "users")
+        var req = URLRequest(url: signupURL)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let payload: [String: Any] = [
+            "username": username,
+            "password": password,
+            "phoneNumber": phoneNumber,
+            "smsVerificationCode": verificationCode
+        ]
+        req.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
+
+        print("[MemosV1Service] signUpWithSMS request url:\(signupURL.absoluteString) method:\(req.httpMethod ?? "") headers:\(req.allHTTPHeaderFields ?? [:])")
+        if let body = req.httpBody, let bodyString = String(data: body, encoding: .utf8) {
+            print("[MemosV1Service] signUpWithSMS request body:\(bodyString)")
+        }
+
+        let (data, response) = try await urlSession.data(for: req)
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            let bodyString = String(data: data, encoding: .utf8) ?? ""
+            print("[MemosV1Service] signUpWithSMS HTTP \(http.statusCode) body:\(bodyString)")
+            throw URLError(.badServerResponse)
+        }
+        print("[MemosV1Service] signUpWithSMS response body:\(String(data: data, encoding: .utf8) ?? "")")
+        print("[MemosV1Service] signUpWithSMS success for username:\(username)")
+    }
+
+    /// 发送短信验证码
+    public func sendVerificationCode(phoneNumber: String, purpose: Components.Schemas.VerificationPurpose) async throws -> Bool {
+        let req = Components.Schemas.SendVerificationCodeRequest(
+            phoneNumber: phoneNumber,
+            purpose: purpose
+        )
+        let resp = try await client.AuthService_SendVerificationCode(body: .json(req))
+        switch resp {
+        case .ok(let okResponse):
+            let data = try okResponse.body.json
+            return data.success ?? false
+        case .default(let statusCode, let defaultResponse):
+            switch defaultResponse.body {
+            case .json(let status):
+                throw MoeMemosError.invalidStatusCode(statusCode, Self.formatStatusMessage(status, statusCode: statusCode))
+            }
+        }
+    }
+
+    /// 验证手机号
+    public func verifyPhone(phoneNumber: String, purpose: Components.Schemas.VerificationPurpose, authToken: String) async throws -> Bool {
+        let req = Components.Schemas.VerifyPhoneRequest(
+            phoneNumber: phoneNumber,
+            purpose: purpose,
+            authToken: authToken
+        )
+        let resp = try await client.AuthService_VerifyPhone(body: .json(req))
+        switch resp {
+        case .ok(let okResponse):
+            let data = try okResponse.body.json
+            return data.valid ?? false
+        case .default(let statusCode, let defaultResponse):
+            switch defaultResponse.body {
+            case .json(let status):
+                throw MoeMemosError.invalidStatusCode(statusCode, Self.formatStatusMessage(status, statusCode: statusCode))
+            }
+        }
+    }
+
+    /// 重置密码
+    public func resetPassword(phoneNumber: String, verificationCode: String, newPassword: String) async throws {
+        let resetURL = hostURL.appending(path: "api").appending(path: "v1").appending(path: "auth").appending(path: "reset-password")
+        var req = URLRequest(url: resetURL)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let payload: [String: Any] = [
+            "phoneNumber": phoneNumber,
+            "smsVerificationCode": verificationCode,
+            "newPassword": newPassword
+        ]
+        req.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
+
+        print("[MemosV1Service] resetPassword request url:\(resetURL.absoluteString) method:\(req.httpMethod ?? "") headers:\(req.allHTTPHeaderFields ?? [:])")
+        if let body = req.httpBody, let bodyString = String(data: body, encoding: .utf8) {
+            print("[MemosV1Service] resetPassword request body:\(bodyString)")
+        }
+
+        let (data, response) = try await urlSession.data(for: req)
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            let bodyString = String(data: data, encoding: .utf8) ?? ""
+            print("[MemosV1Service] resetPassword HTTP \(http.statusCode) body:\(bodyString)")
+            throw URLError(.badServerResponse)
+        }
+        print("[MemosV1Service] resetPassword response body:\(String(data: data, encoding: .utf8) ?? "")")
+        print("[MemosV1Service] resetPassword success for phoneNumber:\(phoneNumber)")
+    }
+
     private func signInIfNeeded() async throws {
         if accessToken != nil { return }
         guard let username = username, let password = password, !username.isEmpty, !password.isEmpty else { return }

@@ -18,6 +18,7 @@ public struct AddMemosAccountView: View {
     @State private var username = ""
     @State private var password = ""
     @State private var showingRegister = false
+    @State private var showingResetPassword = false
         @Environment(\.dismiss) private var dismiss
     @Environment(AppInfo.self) private var appInfo: AppInfo
     @Environment(AccountViewModel.self) private var accountViewModel
@@ -135,11 +136,25 @@ public struct AddMemosAccountView: View {
                     .foregroundColor(.blue)
             }
             .padding(.top, 8)
+            
+            Button {
+                showingResetPassword = true
+            } label: {
+                Text("忘记密码？")
+                    .font(.footnote)
+                    .foregroundColor(.blue)
+            }
+            .padding(.top, 4)
         }
         .padding()
         .sheet(isPresented: $showingRegister) {
             NavigationStack {
                 RegisterMemosAccountView()
+            }
+        }
+        .sheet(isPresented: $showingResetPassword) {
+            NavigationStack {
+                ResetPasswordView(host: host)
             }
         }
         .safeToast(isPresenting: $showingErrorToast, message: loginError.map(userFacingErrorMessage), systemImage: "xmark.circle")

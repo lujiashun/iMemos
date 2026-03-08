@@ -4,30 +4,31 @@ import ServiceUtils
 import MemosV1Service
 
 @MainActor
-public struct RegisterMemosAccountView: View {
-    @State private var host = "memos.yingshun.xin"
-    @State private var username = ""
-    @State private var password = ""
-    @State private var confirmPassword = ""
+public struct ResetPasswordView: View {
+    @State private var host = ""
     @State private var phoneNumber = ""
     @State private var verificationCode = ""
+    @State private var newPassword = ""
+    @State private var confirmPassword = ""
     @State private var isPhoneVerified = false
     @State private var isSendingCode = false
     @State private var countdown = 0
-    @State private var registerError: Error?
-    @State private var showingErrorToast = false
+    @State private var errorMessage: String?
     @State private var showLoadingToast = false
+    @State private var showSuccessToast = false
     @Environment(\.dismiss) private var dismiss
 
 #if DEBUG
     @AppStorage("allowInsecureTLS") private var allowInsecureTLS = false
 #endif
     
-    public init() {}
+    public init(host: String) {
+        _host = State(initialValue: host)
+    }
     
     public var body: some View {
         VStack(spacing: 16) {
-            Text("注册新账号")
+            Text("重置密码")
                 .font(.title2)
                 .padding(.bottom, 10)
             
@@ -87,23 +88,12 @@ public struct RegisterMemosAccountView: View {
             Divider()
                 .padding(.vertical, 8)
             
-            // 用户名输入
+            // 新密码输入
             VStack(alignment: .leading, spacing: 8) {
-                Text("用户名")
+                Text("新密码")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                TextField("请输入用户名", text: $username)
-                    .textFieldStyle(.roundedBorder)
-                    .autocapitalization(.none)
-                    .autocorrectionDisabled()
-            }
-            
-            // 密码输入
-            VStack(alignment: .leading, spacing: 8) {
-                Text("密码")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                SecureField("请输入密码", text: $password)
+                SecureField("请输入新密码", text: $newPassword)
                     .textFieldStyle(.roundedBorder)
             }
             
@@ -112,35 +102,22 @@ public struct RegisterMemosAccountView: View {
                 Text("确认密码")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                SecureField("请再次输入密码", text: $confirmPassword)
+                SecureField("请再次输入新密码", text: $confirmPassword)
                     .textFieldStyle(.roundedBorder)
             }
-
-#if DEBUG
-            Toggle("允许不安全证书（仅调试）", isOn: $allowInsecureTLS)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .padding(.top, 8)
-#endif
+            
+            if let errorMessage = errorMessage {
+                Text(errorMessage)
+                    .foregroundStyle(.red)
+                    .font(.subheadline)
+            }
             
             Button {
                 Task {
-                    do {
-                        print("[RegisterMemosAccountView] register button tapped host:\(host) username:\(username) phoneNumber:\(phoneNumber)")
-                        showLoadingToast = true
-                        try await doRegister()
-                        print("[RegisterMemosAccountView] register succeeded host:\(host) username:\(username)")
-                        registerError = nil
-                        dismiss()
-                    } catch {
-                        print("[RegisterMemosAccountView] register failed host:\(host) username:\(username) error:\(error)")
-                        registerError = error
-                        showingErrorToast = true
-                    }
-                    showLoadingToast = false
+                    await resetPassword()
                 }
             } label: {
-                Text("注册")
+                Text("重置密码")
                     .frame(maxWidth: .infinity, alignment: .center)
             }
             .buttonStyle(.borderedProminent)
@@ -150,18 +127,6 @@ public struct RegisterMemosAccountView: View {
             .disabled(!isFormValid)
         }
         .padding()
-        .overlay(alignment: .top) {
-            if showingErrorToast, let err = registerError {
-                Text(userFacingErrorMessage(err))
-                    .multilineTextAlignment(.center)
-                    .padding()
-                    .background(.regularMaterial)
-                    .cornerRadius(10)
-                    .padding(.horizontal)
-                    .onTapGesture { showingErrorToast = false }
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
         .overlay {
             if showLoadingToast {
                 ProgressView()
@@ -173,7 +138,14 @@ public struct RegisterMemosAccountView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             }
         }
-        .navigationTitle("注册账号")
+        .alert("密码重置成功", isPresented: $showSuccessToast) {
+            Button("确定") {
+                dismiss()
+            }
+        } message: {
+            Text("请使用新密码登录")
+        }
+        .navigationTitle("重置密码")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -188,9 +160,8 @@ public struct RegisterMemosAccountView: View {
     }
     
     private var isFormValid: Bool {
-        !username.isEmpty &&
-        !password.isEmpty &&
-        password == confirmPassword &&
+        !newPassword.isEmpty &&
+        newPassword == confirmPassword &&
         !phoneNumber.isEmpty &&
         isPhoneVerified
     }
@@ -201,14 +172,13 @@ public struct RegisterMemosAccountView: View {
             let service = createService()
             let success = try await service.sendVerificationCode(
                 phoneNumber: phoneNumber,
-                purpose: .REGISTER
+                purpose: .RESET_PASSWORD
             )
             if success {
                 startCountdown()
             }
         } catch {
-            registerError = error
-            showingErrorToast = true
+            errorMessage = error.localizedDescription
         }
         isSendingCode = false
     }
@@ -229,46 +199,42 @@ public struct RegisterMemosAccountView: View {
             let service = createService()
             let valid = try await service.verifyPhone(
                 phoneNumber: phoneNumber,
-                purpose: .REGISTER,
+                purpose: .RESET_PASSWORD,
                 authToken: verificationCode
             )
             if valid {
                 isPhoneVerified = true
             } else {
-                registerError = MoeMemosError.invalidParams
-                showingErrorToast = true
+                errorMessage = "验证码无效"
             }
         } catch {
-            registerError = error
-            showingErrorToast = true
+            errorMessage = error.localizedDescription
         }
         showLoadingToast = false
     }
     
-    private func doRegister() async throws {
-        print("[RegisterMemosAccountView] doRegister start host:\(host)")
-
-        let trimmedUsername = username.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedPhone = phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedCode = verificationCode.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        guard !trimmedUsername.isEmpty, !trimmedPassword.isEmpty, !trimmedPhone.isEmpty, !trimmedCode.isEmpty else {
-            throw MoeMemosError.invalidParams
+    private func resetPassword() async {
+        do {
+            showLoadingToast = true
+            errorMessage = nil
+            
+            guard newPassword == confirmPassword else {
+                errorMessage = "两次输入的密码不一致"
+                showLoadingToast = false
+                return
+            }
+            
+            let service = createService()
+            try await service.resetPassword(
+                phoneNumber: phoneNumber,
+                verificationCode: verificationCode,
+                newPassword: newPassword
+            )
+            showSuccessToast = true
+        } catch {
+            errorMessage = error.localizedDescription
         }
-
-        guard trimmedPassword == confirmPassword.trimmingCharacters(in: .whitespacesAndNewlines) else {
-            throw MoeMemosError.invalidParams
-        }
-
-        let service = createService()
-        try await service.signUpWithSMS(
-            username: trimmedUsername,
-            password: trimmedPassword,
-            phoneNumber: trimmedPhone,
-            verificationCode: trimmedCode
-        )
-        print("[RegisterMemosAccountView] doRegister finished")
+        showLoadingToast = false
     }
     
     private func createService() -> MemosV1Service {

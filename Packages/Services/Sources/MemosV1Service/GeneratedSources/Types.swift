@@ -60,6 +60,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/v1/auth/refresh`.
     /// - Remark: Generated from `#/paths//api/v1/auth/refresh/post(AuthService_RefreshToken)`.
     func AuthService_RefreshToken(_ input: Operations.AuthService_RefreshToken.Input) async throws -> Operations.AuthService_RefreshToken.Output
+    /// ResetPassword 重置密码
+    ///
+    /// - Remark: HTTP `POST /api/v1/auth/reset-password`.
+    /// - Remark: Generated from `#/paths//api/v1/auth/reset-password/post(AuthService_ResetPassword)`.
+    func AuthService_ResetPassword(_ input: Operations.AuthService_ResetPassword.Input) async throws -> Operations.AuthService_ResetPassword.Output
     /// SignIn authenticates a user with credentials and returns tokens.
     ///  On success, returns an access token and sets a refresh token cookie.
     ///  Supports password-based and SSO authentication methods.
@@ -73,6 +78,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/v1/auth/signout`.
     /// - Remark: Generated from `#/paths//api/v1/auth/signout/post(AuthService_SignOut)`.
     func AuthService_SignOut(_ input: Operations.AuthService_SignOut.Input) async throws -> Operations.AuthService_SignOut.Output
+    /// SendVerificationCode 发送验证码
+    ///
+    /// - Remark: HTTP `POST /api/v1/auth/verification-code`.
+    /// - Remark: Generated from `#/paths//api/v1/auth/verification-code/post(AuthService_SendVerificationCode)`.
+    func AuthService_SendVerificationCode(_ input: Operations.AuthService_SendVerificationCode.Input) async throws -> Operations.AuthService_SendVerificationCode.Output
+    /// VerifyPhone 验证手机号
+    ///
+    /// - Remark: HTTP `POST /api/v1/auth/verify-phone`.
+    /// - Remark: Generated from `#/paths//api/v1/auth/verify-phone/post(AuthService_VerifyPhone)`.
+    func AuthService_VerifyPhone(_ input: Operations.AuthService_VerifyPhone.Input) async throws -> Operations.AuthService_VerifyPhone.Output
     /// ListIdentityProviders lists identity providers.
     ///
     /// - Remark: HTTP `GET /api/v1/identity-providers`.
@@ -453,6 +468,19 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// ResetPassword 重置密码
+    ///
+    /// - Remark: HTTP `POST /api/v1/auth/reset-password`.
+    /// - Remark: Generated from `#/paths//api/v1/auth/reset-password/post(AuthService_ResetPassword)`.
+    public func AuthService_ResetPassword(
+        headers: Operations.AuthService_ResetPassword.Input.Headers = .init(),
+        body: Operations.AuthService_ResetPassword.Input.Body
+    ) async throws -> Operations.AuthService_ResetPassword.Output {
+        try await AuthService_ResetPassword(Operations.AuthService_ResetPassword.Input(
+            headers: headers,
+            body: body
+        ))
+    }
     /// SignIn authenticates a user with credentials and returns tokens.
     ///  On success, returns an access token and sets a refresh token cookie.
     ///  Supports password-based and SSO authentication methods.
@@ -475,6 +503,32 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//api/v1/auth/signout/post(AuthService_SignOut)`.
     public func AuthService_SignOut(headers: Operations.AuthService_SignOut.Input.Headers = .init()) async throws -> Operations.AuthService_SignOut.Output {
         try await AuthService_SignOut(Operations.AuthService_SignOut.Input(headers: headers))
+    }
+    /// SendVerificationCode 发送验证码
+    ///
+    /// - Remark: HTTP `POST /api/v1/auth/verification-code`.
+    /// - Remark: Generated from `#/paths//api/v1/auth/verification-code/post(AuthService_SendVerificationCode)`.
+    public func AuthService_SendVerificationCode(
+        headers: Operations.AuthService_SendVerificationCode.Input.Headers = .init(),
+        body: Operations.AuthService_SendVerificationCode.Input.Body
+    ) async throws -> Operations.AuthService_SendVerificationCode.Output {
+        try await AuthService_SendVerificationCode(Operations.AuthService_SendVerificationCode.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// VerifyPhone 验证手机号
+    ///
+    /// - Remark: HTTP `POST /api/v1/auth/verify-phone`.
+    /// - Remark: Generated from `#/paths//api/v1/auth/verify-phone/post(AuthService_VerifyPhone)`.
+    public func AuthService_VerifyPhone(
+        headers: Operations.AuthService_VerifyPhone.Input.Headers = .init(),
+        body: Operations.AuthService_VerifyPhone.Input.Body
+    ) async throws -> Operations.AuthService_VerifyPhone.Output {
+        try await AuthService_VerifyPhone(Operations.AuthService_VerifyPhone.Input(
+            headers: headers,
+            body: body
+        ))
     }
     /// ListIdentityProviders lists identity providers.
     ///
@@ -1934,6 +1988,8 @@ public enum Components {
             public var memoRelatedSetting: Components.Schemas.InstanceSetting_MemoRelatedSetting?
             /// - Remark: Generated from `#/components/schemas/InstanceSetting/openaiSetting`.
             public var openaiSetting: Components.Schemas.InstanceSetting_OpenAISetting?
+            /// - Remark: Generated from `#/components/schemas/InstanceSetting/smsSetting`.
+            public var smsSetting: Components.Schemas.InstanceSetting_SmsSetting?
             /// Creates a new `InstanceSetting`.
             ///
             /// - Parameters:
@@ -1942,18 +1998,21 @@ public enum Components {
             ///   - storageSetting:
             ///   - memoRelatedSetting:
             ///   - openaiSetting:
+            ///   - smsSetting:
             public init(
                 name: Swift.String? = nil,
                 generalSetting: Components.Schemas.InstanceSetting_GeneralSetting? = nil,
                 storageSetting: Components.Schemas.InstanceSetting_StorageSetting? = nil,
                 memoRelatedSetting: Components.Schemas.InstanceSetting_MemoRelatedSetting? = nil,
-                openaiSetting: Components.Schemas.InstanceSetting_OpenAISetting? = nil
+                openaiSetting: Components.Schemas.InstanceSetting_OpenAISetting? = nil,
+                smsSetting: Components.Schemas.InstanceSetting_SmsSetting? = nil
             ) {
                 self.name = name
                 self.generalSetting = generalSetting
                 self.storageSetting = storageSetting
                 self.memoRelatedSetting = memoRelatedSetting
                 self.openaiSetting = openaiSetting
+                self.smsSetting = smsSetting
             }
             public enum CodingKeys: String, CodingKey {
                 case name
@@ -1961,6 +2020,7 @@ public enum Components {
                 case storageSetting
                 case memoRelatedSetting
                 case openaiSetting
+                case smsSetting
             }
         }
         /// General instance settings configuration.
@@ -2144,6 +2204,60 @@ public enum Components {
                 case apiKey
                 case baseUrl
                 case model
+            }
+        }
+        /// SMS related instance settings.
+        ///
+        /// - Remark: Generated from `#/components/schemas/InstanceSetting_SmsSetting`.
+        public struct InstanceSetting_SmsSetting: Codable, Hashable, Sendable {
+            /// verification_method is the verification method to use.
+            ///  Possible values: phone, sms
+            ///
+            /// - Remark: Generated from `#/components/schemas/InstanceSetting_SmsSetting/verificationMethod`.
+            public var verificationMethod: Swift.String?
+            /// api_key is the API key for the SMS service.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InstanceSetting_SmsSetting/apiKey`.
+            public var apiKey: Swift.String?
+            /// api_secret is the API secret for the SMS service.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InstanceSetting_SmsSetting/apiSecret`.
+            public var apiSecret: Swift.String?
+            /// template_id is the template ID for the SMS service.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InstanceSetting_SmsSetting/templateId`.
+            public var templateId: Swift.String?
+            /// endpoint is the API endpoint for the SMS service.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InstanceSetting_SmsSetting/endpoint`.
+            public var endpoint: Swift.String?
+            /// Creates a new `InstanceSetting_SmsSetting`.
+            ///
+            /// - Parameters:
+            ///   - verificationMethod: verification_method is the verification method to use.
+            ///   - apiKey: api_key is the API key for the SMS service.
+            ///   - apiSecret: api_secret is the API secret for the SMS service.
+            ///   - templateId: template_id is the template ID for the SMS service.
+            ///   - endpoint: endpoint is the API endpoint for the SMS service.
+            public init(
+                verificationMethod: Swift.String? = nil,
+                apiKey: Swift.String? = nil,
+                apiSecret: Swift.String? = nil,
+                templateId: Swift.String? = nil,
+                endpoint: Swift.String? = nil
+            ) {
+                self.verificationMethod = verificationMethod
+                self.apiKey = apiKey
+                self.apiSecret = apiSecret
+                self.templateId = templateId
+                self.endpoint = endpoint
+            }
+            public enum CodingKeys: String, CodingKey {
+                case verificationMethod
+                case apiKey
+                case apiSecret
+                case templateId
+                case endpoint
             }
         }
         /// Storage configuration settings for instance attachments.
@@ -3220,6 +3334,116 @@ public enum Components {
                 case expiresAt
             }
         }
+        /// ResetPasswordRequest 重置密码请求
+        ///
+        /// - Remark: Generated from `#/components/schemas/ResetPasswordRequest`.
+        public struct ResetPasswordRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ResetPasswordRequest/phoneNumber`.
+            public var phoneNumber: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ResetPasswordRequest/smsCode`.
+            public var smsCode: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ResetPasswordRequest/verificationId`.
+            public var verificationId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ResetPasswordRequest/newPassword`.
+            public var newPassword: Swift.String
+            /// Creates a new `ResetPasswordRequest`.
+            ///
+            /// - Parameters:
+            ///   - phoneNumber:
+            ///   - smsCode:
+            ///   - verificationId:
+            ///   - newPassword:
+            public init(
+                phoneNumber: Swift.String,
+                smsCode: Swift.String? = nil,
+                verificationId: Swift.String? = nil,
+                newPassword: Swift.String
+            ) {
+                self.phoneNumber = phoneNumber
+                self.smsCode = smsCode
+                self.verificationId = verificationId
+                self.newPassword = newPassword
+            }
+            public enum CodingKeys: String, CodingKey {
+                case phoneNumber
+                case smsCode
+                case verificationId
+                case newPassword
+            }
+        }
+        /// ResetPasswordResponse 重置密码响应
+        ///
+        /// - Remark: Generated from `#/components/schemas/ResetPasswordResponse`.
+        public struct ResetPasswordResponse: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ResetPasswordResponse/success`.
+            public var success: Swift.Bool?
+            /// Creates a new `ResetPasswordResponse`.
+            ///
+            /// - Parameters:
+            ///   - success:
+            public init(success: Swift.Bool? = nil) {
+                self.success = success
+            }
+            public enum CodingKeys: String, CodingKey {
+                case success
+            }
+        }
+        /// SendVerificationCodeRequest 发送验证码请求
+        ///
+        /// - Remark: Generated from `#/components/schemas/SendVerificationCodeRequest`.
+        public struct SendVerificationCodeRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SendVerificationCodeRequest/phoneNumber`.
+            public var phoneNumber: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SendVerificationCodeRequest/purpose`.
+            @frozen public enum purposePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case PURPOSE_UNSPECIFIED = "PURPOSE_UNSPECIFIED"
+                case REGISTER = "REGISTER"
+                case FORGOT_PASSWORD = "FORGOT_PASSWORD"
+            }
+            /// - Remark: Generated from `#/components/schemas/SendVerificationCodeRequest/purpose`.
+            public var purpose: Components.Schemas.SendVerificationCodeRequest.purposePayload
+            /// Creates a new `SendVerificationCodeRequest`.
+            ///
+            /// - Parameters:
+            ///   - phoneNumber:
+            ///   - purpose:
+            public init(
+                phoneNumber: Swift.String,
+                purpose: Components.Schemas.SendVerificationCodeRequest.purposePayload
+            ) {
+                self.phoneNumber = phoneNumber
+                self.purpose = purpose
+            }
+            public enum CodingKeys: String, CodingKey {
+                case phoneNumber
+                case purpose
+            }
+        }
+        /// SendVerificationCodeResponse 发送验证码响应
+        ///
+        /// - Remark: Generated from `#/components/schemas/SendVerificationCodeResponse`.
+        public struct SendVerificationCodeResponse: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SendVerificationCodeResponse/success`.
+            public var success: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/SendVerificationCodeResponse/sentAt`.
+            public var sentAt: Foundation.Date?
+            /// Creates a new `SendVerificationCodeResponse`.
+            ///
+            /// - Parameters:
+            ///   - success:
+            ///   - sentAt:
+            public init(
+                success: Swift.Bool? = nil,
+                sentAt: Foundation.Date? = nil
+            ) {
+                self.success = success
+                self.sentAt = sentAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case success
+                case sentAt
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/SetMemoAttachmentsRequest`.
         public struct SetMemoAttachmentsRequest: Codable, Hashable, Sendable {
             /// Required. The resource name of the memo.
@@ -3733,6 +3957,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/User/description`.
             public var description: Swift.String?
+            /// Optional. The phone number of the user.
+            ///
+            /// - Remark: Generated from `#/components/schemas/User/phoneNumber`.
+            public var phoneNumber: Swift.String?
             /// Input only. The password for the user.
             ///
             /// - Remark: Generated from `#/components/schemas/User/password`.
@@ -3767,6 +3995,7 @@ public enum Components {
             ///   - displayName: Optional. The display name of the user.
             ///   - avatarUrl: Optional. The avatar URL of the user.
             ///   - description: Optional. The description of the user.
+            ///   - phoneNumber: Optional. The phone number of the user.
             ///   - password: Input only. The password for the user.
             ///   - state: The state of the user.
             ///   - createTime: Output only. The creation timestamp.
@@ -3779,6 +4008,7 @@ public enum Components {
                 displayName: Swift.String? = nil,
                 avatarUrl: Swift.String? = nil,
                 description: Swift.String? = nil,
+                phoneNumber: Swift.String? = nil,
                 password: Swift.String? = nil,
                 state: Components.Schemas.User.statePayload,
                 createTime: Foundation.Date? = nil,
@@ -3791,6 +4021,7 @@ public enum Components {
                 self.displayName = displayName
                 self.avatarUrl = avatarUrl
                 self.description = description
+                self.phoneNumber = phoneNumber
                 self.password = password
                 self.state = state
                 self.createTime = createTime
@@ -3804,6 +4035,7 @@ public enum Components {
                 case displayName
                 case avatarUrl
                 case description
+                case phoneNumber
                 case password
                 case state
                 case createTime
@@ -4178,6 +4410,68 @@ public enum Components {
                 case displayName
                 case createTime
                 case updateTime
+            }
+        }
+        /// VerifyPhoneRequest 验证手机号请求
+        ///
+        /// - Remark: Generated from `#/components/schemas/VerifyPhoneRequest`.
+        public struct VerifyPhoneRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/VerifyPhoneRequest/phoneNumber`.
+            public var phoneNumber: Swift.String
+            /// - Remark: Generated from `#/components/schemas/VerifyPhoneRequest/purpose`.
+            @frozen public enum purposePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case PURPOSE_UNSPECIFIED = "PURPOSE_UNSPECIFIED"
+                case REGISTER = "REGISTER"
+                case FORGOT_PASSWORD = "FORGOT_PASSWORD"
+            }
+            /// - Remark: Generated from `#/components/schemas/VerifyPhoneRequest/purpose`.
+            public var purpose: Components.Schemas.VerifyPhoneRequest.purposePayload
+            /// - Remark: Generated from `#/components/schemas/VerifyPhoneRequest/authToken`.
+            public var authToken: Swift.String
+            /// Creates a new `VerifyPhoneRequest`.
+            ///
+            /// - Parameters:
+            ///   - phoneNumber:
+            ///   - purpose:
+            ///   - authToken:
+            public init(
+                phoneNumber: Swift.String,
+                purpose: Components.Schemas.VerifyPhoneRequest.purposePayload,
+                authToken: Swift.String
+            ) {
+                self.phoneNumber = phoneNumber
+                self.purpose = purpose
+                self.authToken = authToken
+            }
+            public enum CodingKeys: String, CodingKey {
+                case phoneNumber
+                case purpose
+                case authToken
+            }
+        }
+        /// VerifyPhoneResponse 验证手机号响应
+        ///
+        /// - Remark: Generated from `#/components/schemas/VerifyPhoneResponse`.
+        public struct VerifyPhoneResponse: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/VerifyPhoneResponse/valid`.
+            public var valid: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/VerifyPhoneResponse/verificationId`.
+            public var verificationId: Swift.String?
+            /// Creates a new `VerifyPhoneResponse`.
+            ///
+            /// - Parameters:
+            ///   - valid:
+            ///   - verificationId:
+            public init(
+                valid: Swift.Bool? = nil,
+                verificationId: Swift.String? = nil
+            ) {
+                self.valid = valid
+                self.verificationId = verificationId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case valid
+                case verificationId
             }
         }
     }
@@ -5826,6 +6120,174 @@ public enum Operations {
             }
         }
     }
+    /// ResetPassword 重置密码
+    ///
+    /// - Remark: HTTP `POST /api/v1/auth/reset-password`.
+    /// - Remark: Generated from `#/paths//api/v1/auth/reset-password/post(AuthService_ResetPassword)`.
+    public enum AuthService_ResetPassword {
+        public static let id: Swift.String = "AuthService_ResetPassword"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/api/v1/auth/reset-password/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AuthService_ResetPassword.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AuthService_ResetPassword.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.AuthService_ResetPassword.Input.Headers
+            /// - Remark: Generated from `#/paths/api/v1/auth/reset-password/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/v1/auth/reset-password/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ResetPasswordRequest)
+            }
+            public var body: Operations.AuthService_ResetPassword.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.AuthService_ResetPassword.Input.Headers = .init(),
+                body: Operations.AuthService_ResetPassword.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/v1/auth/reset-password/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/v1/auth/reset-password/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ResetPasswordResponse)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ResetPasswordResponse {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AuthService_ResetPassword.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AuthService_ResetPassword.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK
+            ///
+            /// - Remark: Generated from `#/paths//api/v1/auth/reset-password/post(AuthService_ResetPassword)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.AuthService_ResetPassword.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.AuthService_ResetPassword.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct Default: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/v1/auth/reset-password/POST/responses/default/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/v1/auth/reset-password/POST/responses/default/content/application\/json`.
+                    case json(Components.Schemas.Status)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Status {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AuthService_ResetPassword.Output.Default.Body
+                /// Creates a new `Default`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AuthService_ResetPassword.Output.Default.Body) {
+                    self.body = body
+                }
+            }
+            /// Default error response
+            ///
+            /// - Remark: Generated from `#/paths//api/v1/auth/reset-password/post(AuthService_ResetPassword)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Operations.AuthService_ResetPassword.Output.Default)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Operations.AuthService_ResetPassword.Output.Default {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// SignIn authenticates a user with credentials and returns tokens.
     ///  On success, returns an access token and sets a refresh token cookie.
     ///  Supports password-based and SSO authentication methods.
@@ -6099,6 +6561,342 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.`default``.
             /// - SeeAlso: `.`default``.
             public var `default`: Operations.AuthService_SignOut.Output.Default {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// SendVerificationCode 发送验证码
+    ///
+    /// - Remark: HTTP `POST /api/v1/auth/verification-code`.
+    /// - Remark: Generated from `#/paths//api/v1/auth/verification-code/post(AuthService_SendVerificationCode)`.
+    public enum AuthService_SendVerificationCode {
+        public static let id: Swift.String = "AuthService_SendVerificationCode"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/api/v1/auth/verification-code/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AuthService_SendVerificationCode.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AuthService_SendVerificationCode.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.AuthService_SendVerificationCode.Input.Headers
+            /// - Remark: Generated from `#/paths/api/v1/auth/verification-code/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/v1/auth/verification-code/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.SendVerificationCodeRequest)
+            }
+            public var body: Operations.AuthService_SendVerificationCode.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.AuthService_SendVerificationCode.Input.Headers = .init(),
+                body: Operations.AuthService_SendVerificationCode.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/v1/auth/verification-code/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/v1/auth/verification-code/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SendVerificationCodeResponse)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SendVerificationCodeResponse {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AuthService_SendVerificationCode.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AuthService_SendVerificationCode.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK
+            ///
+            /// - Remark: Generated from `#/paths//api/v1/auth/verification-code/post(AuthService_SendVerificationCode)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.AuthService_SendVerificationCode.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.AuthService_SendVerificationCode.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct Default: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/v1/auth/verification-code/POST/responses/default/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/v1/auth/verification-code/POST/responses/default/content/application\/json`.
+                    case json(Components.Schemas.Status)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Status {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AuthService_SendVerificationCode.Output.Default.Body
+                /// Creates a new `Default`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AuthService_SendVerificationCode.Output.Default.Body) {
+                    self.body = body
+                }
+            }
+            /// Default error response
+            ///
+            /// - Remark: Generated from `#/paths//api/v1/auth/verification-code/post(AuthService_SendVerificationCode)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Operations.AuthService_SendVerificationCode.Output.Default)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Operations.AuthService_SendVerificationCode.Output.Default {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// VerifyPhone 验证手机号
+    ///
+    /// - Remark: HTTP `POST /api/v1/auth/verify-phone`.
+    /// - Remark: Generated from `#/paths//api/v1/auth/verify-phone/post(AuthService_VerifyPhone)`.
+    public enum AuthService_VerifyPhone {
+        public static let id: Swift.String = "AuthService_VerifyPhone"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/api/v1/auth/verify-phone/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AuthService_VerifyPhone.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AuthService_VerifyPhone.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.AuthService_VerifyPhone.Input.Headers
+            /// - Remark: Generated from `#/paths/api/v1/auth/verify-phone/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/v1/auth/verify-phone/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.VerifyPhoneRequest)
+            }
+            public var body: Operations.AuthService_VerifyPhone.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.AuthService_VerifyPhone.Input.Headers = .init(),
+                body: Operations.AuthService_VerifyPhone.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/v1/auth/verify-phone/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/v1/auth/verify-phone/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.VerifyPhoneResponse)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.VerifyPhoneResponse {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AuthService_VerifyPhone.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AuthService_VerifyPhone.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK
+            ///
+            /// - Remark: Generated from `#/paths//api/v1/auth/verify-phone/post(AuthService_VerifyPhone)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.AuthService_VerifyPhone.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.AuthService_VerifyPhone.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct Default: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/v1/auth/verify-phone/POST/responses/default/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/v1/auth/verify-phone/POST/responses/default/content/application\/json`.
+                    case json(Components.Schemas.Status)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Status {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AuthService_VerifyPhone.Output.Default.Body
+                /// Creates a new `Default`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AuthService_VerifyPhone.Output.Default.Body) {
+                    self.body = body
+                }
+            }
+            /// Default error response
+            ///
+            /// - Remark: Generated from `#/paths//api/v1/auth/verify-phone/post(AuthService_VerifyPhone)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Operations.AuthService_VerifyPhone.Output.Default)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Operations.AuthService_VerifyPhone.Output.Default {
                 get throws {
                     switch self {
                     case let .`default`(_, response):
@@ -10999,20 +11797,30 @@ public enum Operations {
                 ///
                 /// - Remark: Generated from `#/paths/api/v1/users/POST/query/requestId`.
                 public var requestId: Swift.String?
+                /// - Remark: Generated from `#/paths/api/v1/users/POST/query/smsVerificationCode`.
+                public var smsVerificationCode: Swift.String?
+                /// - Remark: Generated from `#/paths/api/v1/users/POST/query/phoneVerificationId`.
+                public var phoneVerificationId: Swift.String?
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
                 ///   - userId: Optional. The user ID to use for this user.
                 ///   - validateOnly: Optional. If set, validate the request but don't actually create the user.
                 ///   - requestId: Optional. An idempotency token that can be used to ensure that multiple
+                ///   - smsVerificationCode:
+                ///   - phoneVerificationId:
                 public init(
                     userId: Swift.String? = nil,
                     validateOnly: Swift.Bool? = nil,
-                    requestId: Swift.String? = nil
+                    requestId: Swift.String? = nil,
+                    smsVerificationCode: Swift.String? = nil,
+                    phoneVerificationId: Swift.String? = nil
                 ) {
                     self.userId = userId
                     self.validateOnly = validateOnly
                     self.requestId = requestId
+                    self.smsVerificationCode = smsVerificationCode
+                    self.phoneVerificationId = phoneVerificationId
                 }
             }
             public var query: Operations.UserService_CreateUser.Input.Query
