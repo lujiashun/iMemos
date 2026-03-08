@@ -181,9 +181,9 @@ public final class MemosV1Service: RemoteService {
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let payload: [String: Any] = [
-            "phoneNumber": phoneNumber,
-            "smsVerificationCode": verificationCode,
-            "newPassword": newPassword
+            "phone_number": phoneNumber,
+            "sms_code": verificationCode,
+            "new_password": newPassword
         ]
         req.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
 
