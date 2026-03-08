@@ -130,7 +130,7 @@ public final class MemosV1Service: RemoteService {
     public func sendVerificationCode(phoneNumber: String, purpose: Components.Schemas.SendVerificationCodeRequest.purposePayload) async throws -> Bool {
         print("[MemosV1Service] sendVerificationCode start phoneNumber:\(phoneNumber) purpose:\(purpose)")
         let req = Components.Schemas.SendVerificationCodeRequest(
-            phoneNumber: phoneNumber,
+            phone_number: phoneNumber,
             purpose: purpose
         )
         print("[MemosV1Service] sendVerificationCode request created")
@@ -154,9 +154,9 @@ public final class MemosV1Service: RemoteService {
     /// 验证手机号
     public func verifyPhone(phoneNumber: String, purpose: Components.Schemas.VerifyPhoneRequest.purposePayload, authToken: String) async throws -> Bool {
         let req = Components.Schemas.VerifyPhoneRequest(
-            phoneNumber: phoneNumber,
+            phone_number: phoneNumber,
             purpose: purpose,
-            authToken: authToken
+            auth_token: authToken
         )
         let resp = try await client.AuthService_VerifyPhone(body: .json(req))
         switch resp {

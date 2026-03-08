@@ -2929,11 +2929,11 @@ components:
             description: ResetPasswordResponse 重置密码响应
         SendVerificationCodeRequest:
             required:
-                - phoneNumber
+                - phone_number
                 - purpose
             type: object
             properties:
-                phoneNumber:
+                phone_number:
                     type: string
                 purpose:
                     enum:
@@ -3347,12 +3347,12 @@ components:
             description: UserWebhook represents a webhook owned by a user.
         VerifyPhoneRequest:
             required:
-                - phoneNumber
+                - phone_number
                 - purpose
-                - authToken
+                - auth_token
             type: object
             properties:
-                phoneNumber:
+                phone_number:
                     type: string
                 purpose:
                     enum:
@@ -3361,7 +3361,7 @@ components:
                         - FORGOT_PASSWORD
                     type: string
                     format: enum
-                authToken:
+                auth_token:
                     type: string
             description: VerifyPhoneRequest 验证手机号请求
         VerifyPhoneResponse:

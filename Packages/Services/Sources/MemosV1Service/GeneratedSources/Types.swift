@@ -3392,8 +3392,8 @@ public enum Components {
         ///
         /// - Remark: Generated from `#/components/schemas/SendVerificationCodeRequest`.
         public struct SendVerificationCodeRequest: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/SendVerificationCodeRequest/phoneNumber`.
-            public var phoneNumber: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SendVerificationCodeRequest/phone_number`.
+            public var phone_number: Swift.String
             /// - Remark: Generated from `#/components/schemas/SendVerificationCodeRequest/purpose`.
             @frozen public enum purposePayload: String, Codable, Hashable, Sendable, CaseIterable {
                 case PURPOSE_UNSPECIFIED = "PURPOSE_UNSPECIFIED"
@@ -3405,17 +3405,17 @@ public enum Components {
             /// Creates a new `SendVerificationCodeRequest`.
             ///
             /// - Parameters:
-            ///   - phoneNumber:
+            ///   - phone_number:
             ///   - purpose:
             public init(
-                phoneNumber: Swift.String,
+                phone_number: Swift.String,
                 purpose: Components.Schemas.SendVerificationCodeRequest.purposePayload
             ) {
-                self.phoneNumber = phoneNumber
+                self.phone_number = phone_number
                 self.purpose = purpose
             }
             public enum CodingKeys: String, CodingKey {
-                case phoneNumber
+                case phone_number
                 case purpose
             }
         }
@@ -4408,8 +4408,8 @@ public enum Components {
         ///
         /// - Remark: Generated from `#/components/schemas/VerifyPhoneRequest`.
         public struct VerifyPhoneRequest: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/VerifyPhoneRequest/phoneNumber`.
-            public var phoneNumber: Swift.String
+            /// - Remark: Generated from `#/components/schemas/VerifyPhoneRequest/phone_number`.
+            public var phone_number: Swift.String
             /// - Remark: Generated from `#/components/schemas/VerifyPhoneRequest/purpose`.
             @frozen public enum purposePayload: String, Codable, Hashable, Sendable, CaseIterable {
                 case PURPOSE_UNSPECIFIED = "PURPOSE_UNSPECIFIED"
@@ -4418,27 +4418,27 @@ public enum Components {
             }
             /// - Remark: Generated from `#/components/schemas/VerifyPhoneRequest/purpose`.
             public var purpose: Components.Schemas.VerifyPhoneRequest.purposePayload
-            /// - Remark: Generated from `#/components/schemas/VerifyPhoneRequest/authToken`.
-            public var authToken: Swift.String
+            /// - Remark: Generated from `#/components/schemas/VerifyPhoneRequest/auth_token`.
+            public var auth_token: Swift.String
             /// Creates a new `VerifyPhoneRequest`.
             ///
             /// - Parameters:
-            ///   - phoneNumber:
+            ///   - phone_number:
             ///   - purpose:
-            ///   - authToken:
+            ///   - auth_token:
             public init(
-                phoneNumber: Swift.String,
+                phone_number: Swift.String,
                 purpose: Components.Schemas.VerifyPhoneRequest.purposePayload,
-                authToken: Swift.String
+                auth_token: Swift.String
             ) {
-                self.phoneNumber = phoneNumber
+                self.phone_number = phone_number
                 self.purpose = purpose
-                self.authToken = authToken
+                self.auth_token = auth_token
             }
             public enum CodingKeys: String, CodingKey {
-                case phoneNumber
+                case phone_number
                 case purpose
-                case authToken
+                case auth_token
             }
         }
         /// VerifyPhoneResponse 验证手机号响应
