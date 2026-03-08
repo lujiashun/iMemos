@@ -10,7 +10,6 @@ public struct RegisterMemosAccountView: View {
     @State private var password = ""
     @State private var phoneNumber = ""
     @State private var verificationCode = ""
-    @State private var isPhoneVerified = false
     @State private var isSendingCode = false
     @State private var countdown = 0
     @State private var registerError: Error?
@@ -22,85 +21,43 @@ public struct RegisterMemosAccountView: View {
     
     public var body: some View {
         VStack(spacing: 16) {
-            Text("注册新账号")
-                .font(.title2)
-                .padding(.bottom, 10)
+            TextField("用户名", text: $username)
+                .textFieldStyle(.roundedBorder)
+                .autocapitalization(.none)
+                .autocorrectionDisabled()
             
-            // 用户名输入
-            VStack(alignment: .leading, spacing: 8) {
-                Text("用户名")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                TextField("请输入用户名", text: $username)
-                    .textFieldStyle(.roundedBorder)
-                    .autocapitalization(.none)
-                    .autocorrectionDisabled()
-            }
-            
-            // 密码输入
-            VStack(alignment: .leading, spacing: 8) {
-                Text("密码")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                SecureField("请输入密码", text: $password)
-                    .textFieldStyle(.roundedBorder)
-            }
+            SecureField("密码", text: $password)
+                .textFieldStyle(.roundedBorder)
             
             Divider()
                 .padding(.vertical, 8)
             
-            // 手机号输入
-            VStack(alignment: .leading, spacing: 8) {
-                Text("手机号")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                HStack {
-                    TextField("请输入手机号", text: $phoneNumber)
-                        .textFieldStyle(.roundedBorder)
-                        .keyboardType(.phonePad)
-                        .disabled(isPhoneVerified)
-                    
-                    Button {
-                        Task {
-                            await sendVerificationCode()
-                        }
-                    } label: {
-                        if isSendingCode {
-                            ProgressView()
-                                .progressViewStyle(.circular)
-                        } else if countdown > 0 {
-                            Text("\(countdown)s")
-                        } else {
-                            Text(isPhoneVerified ? "已验证" : "发送验证码")
-                        }
+            HStack {
+                TextField("手机号", text: $phoneNumber)
+                    .textFieldStyle(.roundedBorder)
+                    .keyboardType(.phonePad)
+                
+                Button {
+                    Task {
+                        await sendVerificationCode()
                     }
-                    .buttonStyle(.bordered)
-                    .disabled(phoneNumber.isEmpty || isSendingCode || countdown > 0 || isPhoneVerified)
+                } label: {
+                    if isSendingCode {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                    } else if countdown > 0 {
+                        Text("\(countdown)s")
+                    } else {
+                        Text("发送验证码")
+                    }
                 }
+                .buttonStyle(.bordered)
+                .disabled(phoneNumber.isEmpty || isSendingCode || countdown > 0)
             }
             
-            // 验证码输入
-            VStack(alignment: .leading, spacing: 8) {
-                Text("验证码")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                HStack {
-                    TextField("请输入验证码", text: $verificationCode)
-                        .textFieldStyle(.roundedBorder)
-                        .keyboardType(.numberPad)
-                        .disabled(isPhoneVerified)
-                    
-                    Button {
-                        Task {
-                            await verifyCode()
-                        }
-                    } label: {
-                        Text(isPhoneVerified ? "已验证" : "验证")
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(verificationCode.isEmpty || isPhoneVerified)
-                }
-            }
+            TextField("验证码", text: $verificationCode)
+                .textFieldStyle(.roundedBorder)
+                .keyboardType(.numberPad)
             
             Button {
                 Task {
@@ -170,7 +127,7 @@ public struct RegisterMemosAccountView: View {
         !username.isEmpty &&
         !password.isEmpty &&
         !phoneNumber.isEmpty &&
-        isPhoneVerified
+        !verificationCode.isEmpty
     }
     
     private func sendVerificationCode() async {
@@ -203,28 +160,6 @@ public struct RegisterMemosAccountView: View {
                 timer.invalidate()
             }
         }
-    }
-    
-    private func verifyCode() async {
-        do {
-            showLoadingToast = true
-            let service = createService()
-            let valid = try await service.verifyPhone(
-                phoneNumber: phoneNumber,
-                purpose: .REGISTER,
-                authToken: verificationCode
-            )
-            if valid {
-                isPhoneVerified = true
-            } else {
-                registerError = MoeMemosError.invalidParams
-                showingErrorToast = true
-            }
-        } catch {
-            registerError = error
-            showingErrorToast = true
-        }
-        showLoadingToast = false
     }
     
     private func doRegister() async throws {
