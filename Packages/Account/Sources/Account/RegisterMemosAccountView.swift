@@ -8,7 +8,6 @@ public struct RegisterMemosAccountView: View {
     @State private var host = "memos.yingshun.xin"
     @State private var username = ""
     @State private var password = ""
-    @State private var confirmPassword = ""
     @State private var phoneNumber = ""
     @State private var verificationCode = ""
     @State private var isPhoneVerified = false
@@ -18,10 +17,6 @@ public struct RegisterMemosAccountView: View {
     @State private var showingErrorToast = false
     @State private var showLoadingToast = false
     @Environment(\.dismiss) private var dismiss
-
-#if DEBUG
-    @AppStorage("allowInsecureTLS") private var allowInsecureTLS = false
-#endif
     
     public init() {}
     
@@ -30,6 +25,29 @@ public struct RegisterMemosAccountView: View {
             Text("注册新账号")
                 .font(.title2)
                 .padding(.bottom, 10)
+            
+            // 用户名输入
+            VStack(alignment: .leading, spacing: 8) {
+                Text("用户名")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                TextField("请输入用户名", text: $username)
+                    .textFieldStyle(.roundedBorder)
+                    .autocapitalization(.none)
+                    .autocorrectionDisabled()
+            }
+            
+            // 密码输入
+            VStack(alignment: .leading, spacing: 8) {
+                Text("密码")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                SecureField("请输入密码", text: $password)
+                    .textFieldStyle(.roundedBorder)
+            }
+            
+            Divider()
+                .padding(.vertical, 8)
             
             // 手机号输入
             VStack(alignment: .leading, spacing: 8) {
@@ -83,45 +101,6 @@ public struct RegisterMemosAccountView: View {
                     .disabled(verificationCode.isEmpty || isPhoneVerified)
                 }
             }
-            
-            Divider()
-                .padding(.vertical, 8)
-            
-            // 用户名输入
-            VStack(alignment: .leading, spacing: 8) {
-                Text("用户名")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                TextField("请输入用户名", text: $username)
-                    .textFieldStyle(.roundedBorder)
-                    .autocapitalization(.none)
-                    .autocorrectionDisabled()
-            }
-            
-            // 密码输入
-            VStack(alignment: .leading, spacing: 8) {
-                Text("密码")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                SecureField("请输入密码", text: $password)
-                    .textFieldStyle(.roundedBorder)
-            }
-            
-            // 确认密码输入
-            VStack(alignment: .leading, spacing: 8) {
-                Text("确认密码")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                SecureField("请再次输入密码", text: $confirmPassword)
-                    .textFieldStyle(.roundedBorder)
-            }
-
-#if DEBUG
-            Toggle("允许不安全证书（仅调试）", isOn: $allowInsecureTLS)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .padding(.top, 8)
-#endif
             
             Button {
                 Task {
@@ -190,7 +169,6 @@ public struct RegisterMemosAccountView: View {
     private var isFormValid: Bool {
         !username.isEmpty &&
         !password.isEmpty &&
-        password == confirmPassword &&
         !phoneNumber.isEmpty &&
         isPhoneVerified
     }
@@ -261,10 +239,6 @@ public struct RegisterMemosAccountView: View {
             throw MoeMemosError.invalidParams
         }
 
-        guard trimmedPassword == confirmPassword.trimmingCharacters(in: .whitespacesAndNewlines) else {
-            throw MoeMemosError.invalidParams
-        }
-
         let service = createService()
         try await service.signUpWithSMS(
             username: trimmedUsername,
@@ -284,11 +258,6 @@ public struct RegisterMemosAccountView: View {
             hostAddress.removeLast()
         }
         let hostURL = URL(string: hostAddress)!
-        
-#if DEBUG
-        return MemosV1Service(hostURL: hostURL, username: nil, password: nil, userId: nil, allowInsecureTLS: allowInsecureTLS)
-#else
         return MemosV1Service(hostURL: hostURL, username: nil, password: nil, userId: nil)
-#endif
     }
 }
