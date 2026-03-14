@@ -10,6 +10,7 @@ import Models
 import Env
 import Account
 import Factory
+import Subscription
 
 struct SidebarToggleAction: @unchecked Sendable {
     let perform: () -> Void
@@ -143,6 +144,17 @@ extension View {
                 AddMemosAccountView()
                     .withEnvironments()
                     .interactiveDismissDisabled()
+            case .subscription:
+                if let viewModel = Container.shared.appPath().subscriptionViewModel as? SubscriptionViewModel {
+                    SubscriptionView(viewModel: viewModel)
+                        .withEnvironments()
+                        .onAppear {
+                            print("[Route.swift] Subscription sheet appeared")
+                        }
+                        .onDisappear {
+                            print("[Route.swift] Subscription sheet disappeared")
+                        }
+                }
             }
         }
     }

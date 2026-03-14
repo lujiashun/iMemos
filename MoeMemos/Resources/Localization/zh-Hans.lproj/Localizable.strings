@@ -59,13 +59,12 @@
 "input.edit" = "编辑";
 "input.save" = "记下";
 "input.visibility" = "MEMO 可见性";
-
 "login.host" = "服务器地址";
 "login.access-token" = "Access Token";
 "login.access-token.hint" = "从 ✍️memos 设置中创建 Access Token。";
 "login.hint" = "请输入您的 [✍️memos](https://github.com/usememos/memos) 服务器的登录信息。";
 "login.hint.line1" = "嗨，好久不见";
-"login.hint.line1.part1" = "嗨，";
+"login.hint.line1.part1" = "嗨,";
 "login.hint.line1.part2" = "好久不见";
 "login.hint.line2" = "我们不仅在写笔记";
 "login.hint.line3" = "还是在增援未来的自己";
@@ -77,24 +76,17 @@
 "login.passwd" = "密码";
 "login.user" = "用户名";
 "login.user-password.hint" = "使用您在 memos 的用户名与密码。";
-
 "stats.day" = "天";
 "stats.memo" = "灵感";
 "stats.tag" = "标签";
-
 "resources" = "资源";
-
 "tags" = "标签";
-
 "widget.memories" = "回忆";
 "widget.memories.description" = "回忆过去的 MEMO。";
 "widget.memo-graph" = "日记方格";
 "widget.memo-graph.description" = "用方格显示每天写下的 MEMO 数量。";
-
 "share.memo-saved" = "已保存 MEMO";
-
 "explore" = "探索";
-
 // Account
 "account.local-user" = "Local user";
 "account.add-account" = "Add Account";
@@ -111,18 +103,40 @@
 "account.password.old" = "旧密码";
 "account.password.new" = "新密码";
 "account.password.confirm" = "确认新密码";
-"account.password.mismatch" = "两次输入的新密码不一致。";
-"account.password.old.wrong" = "旧密码不正确。";
+"account.password.mismatch" = "两次输入的新密码不一致";
+"account.password.old.wrong" = "旧密码不正确";
 "account.password.unsupported" = "当前账号不支持修改密码。";
-
 "account.section.basic-info" = "基本信息";
 "account.section.account-settings" = "账号设置";
 "account.section.service-info" = "服务信息";
 "account.section.sign-out" = "注销账号";
-
 "account.section.delete-account" = "删除我的账号和所有相关数据";
 "account.delete-account-and-data" = "删除我的账号和所有相关数据";
 "account.delete-account" = "删除";
 "account.delete-account.message" = "此操作会从本设备移除该账号，并清除此账号在本地缓存的数据。";
-
 "settings.sign-out.confirm" = "确定要退出登录吗？";
+// Subscription
+"subscription.title" = "订阅";
+"subscription.restore" = "恢复购买";
+"subscription.purchase.success" = "购买成功";
+"subscription.restore.success" = "恢复成功";
+"subscription.purchase.title" = "升级到 VIP";
+"subscription.purchase.button" = "立即订阅";
+"subscription.terms.intro" = "订阅将通过 Apple ID 账户自动续订， 除非在当前周期结束前至少 24 小时取消。。订阅自动续订， 除非在当前周期结束前至少 24 小时取消。";
+"subscription.terms.link" = "服务条款";
+"subscription.privacy.link" = "隐私政策";
+"subscription.vip.active" = "VIP 会员";
+"subscription.vip.inactive" = "普通会员";
+"subscription.expires" = "到期时间";
+"subscription.trial.daysRemaining" = "试用剩余天数";
+"subscription.storage.title" = "存储空间";
+"subscription.storage.exceeded" = "存储空间已满，升级 VIP 获取更多存储空间。";
+"subscription.error.userCancelled" = "购买已取消";
+"subscription.error.pending" = "购买待批准";
+"subscription.error.verificationFailed" = "收据验证失败";
+"subscription.error.noProductsAvailable" = "暂无产品可用";
+"subscription.error.invalidResponse" = "服务器响应无效";
+"subscription.error.notAuthenticated" = "请先登录";
+"common.close" = "关闭";
+"common.ok" = "确定";
+"common.error" = "错误";

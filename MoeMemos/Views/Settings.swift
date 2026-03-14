@@ -9,6 +9,8 @@ import SwiftUI
 import Models
 import Account
 import Env
+import Subscription
+import MemosV1Service
 
 
 struct Settings: View {
@@ -50,6 +52,24 @@ struct Settings: View {
                         appPath.presentedSheet = .addAccount
                     } label: {
                         Label("账号与密码", systemImage: "key")
+                    }
+                }
+            }
+            
+            if accountManager.currentService is MemosV1Service {
+                Section {
+                    Button {
+                        print("[Settings] Subscription button tapped")
+                        if let service = accountManager.currentService as? MemosV1Service {
+                            appPath.subscriptionViewModel = SubscriptionFactory.createViewModel(service: service)
+                            appPath.presentedSheet = .subscription
+                        }
+                    } label: {
+                        Label {
+                            Text("subscription.title")
+                        } icon: {
+                            Image(systemName: "crown")
+                        }
                     }
                 }
             }
@@ -105,6 +125,5 @@ struct Settings: View {
             }
         }
         .navigationTitle("settings")
-
     }
 }

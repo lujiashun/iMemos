@@ -11,13 +11,13 @@
 "memo.archived" = "Archived";
 "memo.copy" = "Copy";
 "memo.delete" = "Delete";
-"memo.delete.confirm" = "Delete this memo?";
+"memo.delete.confirm" = "Are you sure you delete this memo?";
 "memo.edit" = "Edit";
 "memo.memos" = "Memos";
 "memo.daily-review" = "Daily Review";
 "memo.daily-review.generate" = "Generate";
-"memo.daily-review.result" = "Result";
-"memo.daily-review.empty" = "No content.";
+"memo.daily-review.result" = "Review content";
+"memo.daily-review.empty" = "No content";
 "memo.deep-insight" = "Deep Insight";
 "memo.deep-insight.generate" = "Generate";
 "memo.deep-insight.range" = "Insight Range";
@@ -26,75 +26,66 @@
 "memo.deep-insight.range.preset" = "Preset";
 "memo.deep-insight.range.preset.today" = "Today";
 "memo.deep-insight.range.preset.last7days" = "Last 7 days";
-"memo.deep-insight.range.preset.last30days" = "Last 30 days";
+"memo.deep-insight.range.preset.last30days" = "last 30 days";
 "memo.deep-insight.range.preset.custom" = "Custom";
 "memo.deep-insight.result" = "Result";
-"memo.deep-insight.empty" = "No content.";
+"memo.deep-insight.empty" = "No content";
 "memo.deep-insight.prompt" = "Prompt";
 "memo.deep-insight.prompt.save" = "Save";
 "memo.deep-insight.tag" = "Tag";
-"memo.deep-insight.tag.all" = "All Tags";
-"memo.action.cancel" = "No";
+"memo.deep-insight.tag.all" = "All tags";
+"memo.action.cancel" = "Cancel";
 "memo.pin" = "Pin";
 "memo.restore" = "Restore";
 "memo.share" = "Share";
 "memo.unpin" = "Unpin";
-"memo.action.ok" = "Yes";
-"memo.visibility.public" = "Visible to guests";
-"memo.visibility.protected" = "Visible to local members";
-"memo.visibility.private" = "Only visible to you";
+"memo.action.ok" = "OK";
+"memo.visibility.public" = "Public";
+"memo.visibility.protected" = "Protected";
+"memo.visibility.private" = "Private";
 
 "settings" = "Settings";
 "settings.about" = "About Moe Memos";
 "settings.check-update" = "Check for Updates";
 "settings.privacy" = "Privacy Policy";
-"settings.report" = "Report an Issue";
+"settings.report" = "Report a Bug";
 "settings.sign-out" = "Sign out";
 "settings.website" = "Website";
 "settings.acknowledgements" = "Acknowledgements";
-
 "input.placeholder" = "Any thoughts…";
 "input.close" = "Close";
 "input.compose" = "Compose";
-"input.edit" = "Edit Memo";
+"input.edit" = "Edit";
 "input.save" = "Save";
 "input.visibility" = "Memo visibility";
-
 "login.host" = "Host";
 "login.access-token" = "Access Token";
-"login.access-token.hint" = "Create an Access Token from Setting in ✍️memos.";
-"login.hint" = "Please input the login information of your\n[✍️memos](https://github.com/usememos/memos) server.";
+"login.access-token.hint" = "Create an Access Token from ✍️memos settings.";
+"login.hint" = "Please input the login information of your [✍️memos](https://github.com/usememos/memos) server.";
 "login.hint.line1" = "Hi, welcome back";
-"login.hint.line1.part1" = "Hi, ";
+ "login.hint.line1.part1" = "Hi, ";
 "login.hint.line1.part2" = "welcome back";
-"login.hint.line2" = "We’re not just taking notes";
-"login.hint.line3" = "We’re supporting our future selves";
+"login.hint.line2" = "We're not just taking notes";
+"login.hint.line3" = "We're supporting our future selves";
 "login.agree.prefix" = "I have read and agree to the " ;
 "login.agree.terms" = "Terms of Service";
-"login.agree.conjunction" = " and " ;
+"login.agree.conjunction" = " and ";
 "login.agree.privacy" = "Privacy Policy";
 "login.sign-in" = "Sign in";
 "login.passwd" = "Password";
 "login.user" = "User";
 "login.user-password.hint" = "Use your memos username and password.";
-
 "stats.day" = "Day";
 "stats.memo" = "Memo";
 "stats.tag" = "Tag";
-
 "resources" = "Resources";
-
 "tags" = "Tags";
-
 "widget.memories" = "Memories";
 "widget.memories.description" = "Remember your past memos.";
 "widget.memo-graph" = "Memos Graph";
-"widget.memo-graph.description" = "The graph to display how much memos you composed every day in recent weeks.";
-
-"share.memo-saved" = "Memo saved.";
-
+"widget.memo-graph.description" = "The graph to display how much memos you composed every day in recent weeks";
+"share.memo-saved" = "Memo saved";
 "explore" = "Explore";
-
 // Account
 "account.local-user" = "Local user";
 "account.add-account" = "Add Account";
@@ -111,18 +102,40 @@
 "account.password.old" = "Old Password";
 "account.password.new" = "New Password";
 "account.password.confirm" = "Confirm New Password";
-"account.password.mismatch" = "New passwords do not match.";
-"account.password.old.wrong" = "Old password is incorrect.";
-"account.password.unsupported" = "Password change is not supported for this account.";
-
+"account.password.mismatch" = "New passwords do not match";
+"account.password.old.wrong" = "Old password is incorrect";
+"account.password.unsupported" = "Password change is not supported for this account";
 "account.section.basic-info" = "Basic Info";
 "account.section.account-settings" = "Account Settings";
 "account.section.service-info" = "Service Info";
 "account.section.sign-out" = "Deactivate Account";
-
 "account.section.delete-account" = "Delete my account and all related data";
 "account.delete-account-and-data" = "Delete my account and all related data";
 "account.delete-account" = "Delete";
-"account.delete-account.message" = "This will remove this account from this device and delete locally cached data for it.";
-
+"account.delete-account.message" = "This will remove this account from this device and delete locally cached data for it";
 "settings.sign-out.confirm" = "Are you sure you want to sign out?";
+// Subscription
+"subscription.title" = "Subscription";
+"subscription.restore" = "Restore Purchases";
+"subscription.purchase.success" = "Purchase Successful";
+"subscription.restore.success" = "Restored Successfully";
+"subscription.purchase.title" = "Upgrade to VIP";
+"subscription.purchase.button" = "Subscribe Now";
+"subscription.terms.intro" = "Subscription will auto-renew through your Apple ID account unless canceled at least 24 hours before the end of the current period. Subscription auto-renews unless canceled at least 24 hours before the end of the current period.";
+"subscription.terms.link" = "Terms of Service";
+"subscription.privacy.link" = "Privacy Policy";
+"subscription.vip.active" = "VIP Member";
+"subscription.vip.inactive" = "Regular Member";
+"subscription.expires" = "Expires";
+"subscription.trial.daysRemaining" = "Trial Days Remaining";
+"subscription.storage.title" = "Storage";
+"subscription.storage.exceeded" = "Storage quota exceeded. Upgrade to VIP for more storage.";
+"subscription.error.userCancelled" = "Purchase cancelled";
+"subscription.error.pending" = "Purchase pending approval";
+"subscription.error.verificationFailed" = "Receipt verification failed";
+"subscription.error.noProductsAvailable" = "No products available";
+"subscription.error.invalidResponse" = "Invalid server response";
+"subscription.error.notAuthenticated" = "Please sign in first";
+"common.close" = "Close";
+"common.ok" = "OK";
+"common.error" = "Error";

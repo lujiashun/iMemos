@@ -20,15 +20,15 @@ import ServiceUtils
 
 @MainActor
 public final class MemosV1Service: RemoteService {
-    private let hostURL: URL
-    private let urlSession: URLSession
+    let hostURL: URL
+    let urlSession: URLSession
     private let urlSessionDelegate: (any URLSessionDelegate)?
     private var client: Client
     private let username: String?
     private let password: String?
     private let userId: String?
-    private let grpcSetCookieMiddleware = GRPCSetCookieMiddleware()
-    private var accessToken: String?
+    let grpcSetCookieMiddleware = GRPCSetCookieMiddleware()
+    var accessToken: String?
 
     private func cookieHeaderValue(from setCookieHeaderValue: String) -> String {
         // Request header expects: "name=value" (not the full Set-Cookie attributes).
@@ -202,7 +202,7 @@ public final class MemosV1Service: RemoteService {
         print("[MemosV1Service] resetPassword success for phoneNumber:\(phoneNumber)")
     }
 
-    private func signInIfNeeded() async throws {
+    func signInIfNeeded() async throws {
         if accessToken != nil { return }
         guard let username = username, let password = password, !username.isEmpty, !password.isEmpty else { return }
         do {

@@ -26,6 +26,7 @@ public enum SheetDestination: Identifiable, Hashable {
     case newMemo
     case editMemo(Memo)
     case addAccount
+    case subscription
     
     public var id: String {
         switch self {
@@ -35,6 +36,8 @@ public enum SheetDestination: Identifiable, Hashable {
             return "editMemo"
         case .addAccount:
             return "addAccount"
+        case .subscription:
+            return "subscription"
         }
     }
 }
@@ -54,6 +57,10 @@ public enum SheetDestination: Identifiable, Hashable {
     // When set, the memos list should filter to this day.
     @MainActor
     public var selectedMemoDay: Date?
+    
+    // Subscription view model
+    @MainActor
+    public var subscriptionViewModel: Any?
     
     public init() {}
 }
