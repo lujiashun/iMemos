@@ -1,0 +1,5 @@
+"settings.subscription" = "订阅";
+"settings.subscription.title" = "会员";
+"subscription.restore" = "恢复购买";
+"subscription.purchase.success" = "购买成功";
+"subscription.restore.success" = "恢复成功";

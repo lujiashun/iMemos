@@ -1,0 +1,36 @@
+"subscription.title" = "订阅管理";
+"subscription.restore" = "恢复购买";
+"subscription.purchase.success" = "购买成功";
+"subscription.restore.success" = "购买已恢复";
+"subscription.purchase.title" = "升级为VIP";
+"subscription.purchase.button" = "立即订阅";
+
+"subscription.vip.active" = "VIP会员";
+"subscription.vip.inactive" = "普通会员";
+"subscription.expires" = "到期时间";
+
+"subscription.trial.daysRemaining" = "试用剩余天数";
+
+"subscription.storage.title" = "存储空间";
+"subscription.storage.exceeded" = "存储空间已满，升级VIP获取更多空间";
+
+"subscription.terms.intro" = "订阅将从您的Apple ID账户扣费。订阅会在当前周期结束前24小时自动续费，除非您取消订阅。";
+"subscription.terms.link" = "服务条款";
+"subscription.privacy.link" = "隐私政策";
+
+"subscription.error.userCancelled" = "购买已取消";
+"subscription.error.pending" = "购买等待审批中";
+"subscription.error.verificationFailed" = "收据验证失败";
+"subscription.error.noProductsAvailable" = "暂无可用产品";
+"subscription.error.invalidResponse" = "服务器响应无效";
+"subscription.error.notAuthenticated" = "请先登录";
+
+"subscription.api.unavailable" = "此服务器的订阅服务暂不可用，请更新服务器到最新版本。";
+"subscription.authentication.error" = "登录状态已过期，请重新登录后再试。";
+"subscription.loading.products" = "正在加载产品...";
+"subscription.products.unavailable" = "产品不可用";
+"subscription.products.unavailable.hint" = "请确保您已登录 App Store 并再试一次。";
+
+"common.close" = "关闭";
+"common.ok" = "确定";
+"common.error" = "错误";

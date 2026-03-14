@@ -1,0 +1,106 @@
+{
+  "identifier" : "Subscription",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "zh_CN",
+    "_storefront" : "CHN",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "MemosVIP",
+      "localizations" : [
+
+      ],
+      "name" : "Memos VIP",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "68.00",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "com.memos.vip.yearly",
+          "introductoryOffer" : {
+            "internalID" : "trial_offer",
+            "numberOfPeriods" : 10,
+            "paymentMode" : "free",
+            "type" : "introductory"
+          },
+          "localizations" : [
+            {
+              "description" : "解锁5GB存储空间、无限备忘录、无广告体验",
+              "displayName" : "Memos VIP 年度会员",
+              "locale" : "zh_CN"
+            },
+            {
+              "description" : "Unlock 5GB storage, unlimited memos, ad-free experience",
+              "displayName" : "Memos VIP Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.memos.vip.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Memos VIP Annual Subscription",
+          "subscriptionGroupID" : "MemosVIP",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

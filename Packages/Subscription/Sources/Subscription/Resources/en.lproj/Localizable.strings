@@ -1,0 +1,36 @@
+"subscription.title" = "Subscription";
+"subscription.restore" = "Restore Purchases";
+"subscription.purchase.success" = "Purchase Successful";
+"subscription.restore.success" = "Purchases Restored";
+"subscription.purchase.title" = "Upgrade to VIP";
+"subscription.purchase.button" = "Subscribe Now";
+
+"subscription.vip.active" = "VIP Member";
+"subscription.vip.inactive" = "Regular Member";
+"subscription.expires" = "Expires";
+
+"subscription.trial.daysRemaining" = "Trial Days Remaining";
+
+"subscription.storage.title" = "Storage Usage";
+"subscription.storage.exceeded" = "Storage quota exceeded. Upgrade to VIP for more storage.";
+
+"subscription.terms.intro" = "Subscriptions will be charged to your Apple ID account. Subscription automatically renews unless canceled at least 24 hours before the end of the current period.";
+"subscription.terms.link" = "Terms of Service";
+"subscription.privacy.link" = "Privacy Policy";
+
+"subscription.error.userCancelled" = "Purchase was cancelled";
+"subscription.error.pending" = "Purchase is pending approval";
+"subscription.error.verificationFailed" = "Receipt verification failed";
+"subscription.error.noProductsAvailable" = "No products available";
+"subscription.error.invalidResponse" = "Invalid server response";
+"subscription.error.notAuthenticated" = "Please sign in to continue";
+
+"subscription.api.unavailable" = "Subscription service is not available on this server. Please update your server to the latest version.";
+"subscription.authentication.error" = "Your session has expired. Please sign in again.";
+"subscription.loading.products" = "Loading products...";
+"subscription.products.unavailable" = "Products unavailable";
+"subscription.products.unavailable.hint" = "Please make sure you're signed in to the App Store and try again.";
+
+"common.close" = "Close";
+"common.ok" = "OK";
+"common.error" = "Error";
