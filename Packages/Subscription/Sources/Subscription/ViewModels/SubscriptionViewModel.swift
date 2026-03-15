@@ -152,19 +152,33 @@ public class SubscriptionViewModel: ObservableObject, Identifiable {
         print("[SubscriptionViewModel] StoreKit products loaded, count: \(storeKitManager.products.count)")
         
         do {
-            print("[SubscriptionViewModel] Fetching subscription status and storage usage...")
+            print("[SubscriptionViewModel] Fetching subscription status and storage usage from server...")
             async let loadStatus = apiClient.getSubscriptionStatus()
             async let loadStorage = apiClient.getStorageUsage()
             
-            subscriptionStatus = try await loadStatus
-            print("[SubscriptionViewModel] Subscription status loaded: isVip=\(subscriptionStatus?.isVip ?? false)")
+            let serverStatus = try await loadStatus
+            let serverStorage = try await loadStorage
             
-            storageUsage = try await loadStorage
-            print("[SubscriptionViewModel] Storage usage loaded: \(storageUsage?.formattedUsed ?? "N/A") / \(storageUsage?.formattedQuota ?? "N/A")")
+            print("[SubscriptionViewModel] Server subscription status: isVip=\(serverStatus.isVip), vipType=\(serverStatus.vipType)")
+            print("[SubscriptionViewModel] Server storage usage: \(serverStorage.formattedUsed) / \(serverStorage.formattedQuota)")
+            
+            // 优先使用服务器状态（方案2的核心）
+            subscriptionStatus = serverStatus
+            storageUsage = serverStorage
+            
+            // 如果服务器显示是VIP，但StoreKit本地没有购买记录（模拟器重启后的情况）
+            // 我们仍然显示VIP状态，因为服务器是可信的
+            if serverStatus.isVip && storeKitManager.purchasedSubscriptions.isEmpty {
+                print("[SubscriptionViewModel] ⚠️ Server shows VIP but StoreKit local is empty (simulator restart?)")
+                print("[SubscriptionViewModel] ✅ Using server state as authoritative source")
+            }
             
             apiUnavailable = false
             authenticationError = false
             error = nil
+            
+            print("[SubscriptionViewModel] ✅ Data loaded successfully from server")
+            
         } catch {
             print("[SubscriptionViewModel] API error: \(error)")
             print("[SubscriptionViewModel] Error type: \(type(of: error))")
@@ -183,6 +197,8 @@ public class SubscriptionViewModel: ObservableObject, Identifiable {
                 print("[SubscriptionViewModel] Unknown error, treating as API unavailable")
             }
             
+            // API 不可用时，使用默认的非VIP状态
+            print("[SubscriptionViewModel] Using default non-VIP state due to API error")
             subscriptionStatus = SubscriptionStatus(
                 name: "users/me/subscription",
                 isVip: false,
@@ -257,54 +273,80 @@ public class SubscriptionViewModel: ObservableObject, Identifiable {
         // 模拟网络延迟
         try? await Task.sleep(nanoseconds: 1_000_000_000)
         
-        // 模拟购买成功，先更新本地状态为 VIP
-        print("[SubscriptionViewModel] Mock purchase successful, updating local state to VIP")
+        print("[SubscriptionViewModel] Mock purchase successful, syncing to server...")
         
         let expiresDate = Date().addingTimeInterval(365 * 24 * 60 * 60) // 1年后过期
         
-        // 创建模拟的 Subscription
-        let subscription = Subscription(
-            productId: mockProduct.id,
-            state: .active,
-            purchaseDate: Date(),
-            expiresDate: expiresDate,
-            isTrial: false,
-            willRenew: true,
-            originalTransactionId: "mock_\(mockProduct.id)"
-        )
-        
-        // 创建模拟的 VIP 订阅状态
-        subscriptionStatus = SubscriptionStatus(
-            name: "users/me/subscription",
-            isVip: true,
-            vipType: .subscription,
-            subscription: subscription,
-            trialInfo: nil,
-            storageQuotaBytes: 5 * 1024 * 1024 * 1024, // 5GB
-            storageUsedBytes: storageUsage?.usedBytes ?? 0,
-            storageExceeded: false
-        )
-        
-        // 更新存储配额为 5GB
-        if let currentUsage = storageUsage {
-            let quotaBytes: Int64 = 5 * 1024 * 1024 * 1024
-            let usedPercentageDouble = quotaBytes > 0 ? Double(currentUsage.usedBytes) / Double(quotaBytes) * 100 : 0
-            let usedPercentage = Int32(usedPercentageDouble)
-            storageUsage = StorageUsage(
-                name: currentUsage.name,
-                usedBytes: currentUsage.usedBytes,
-                quotaBytes: quotaBytes,
-                usedPercentage: usedPercentage,
-                breakdown: currentUsage.breakdown,
-                quotaExceeded: false
+        do {
+            // 同步到服务器（关键修改：DEBUG 模式也要同步到服务器）
+            let updatedStatus = try await apiClient.syncSubscriptionStatus(
+                isVip: true,
+                productId: mockProduct.id,
+                expiresDate: expiresDate
             )
+            
+            print("[SubscriptionViewModel] ✅ Server sync completed, isVip=\(updatedStatus.isVip)")
+            
+            // 使用服务器返回的状态
+            subscriptionStatus = updatedStatus
+            
+            // 刷新存储使用情况
+            storageUsage = try await apiClient.getStorageUsage()
+            print("[SubscriptionViewModel] Storage usage refreshed: \(storageUsage?.formattedUsed ?? "N/A") / \(storageUsage?.formattedQuota ?? "N/A")")
+            
+            apiUnavailable = false
+            authenticationError = false
+            
+            // 显示购买成功提示
+            showingPurchaseSuccess = true
+            
+            print("[SubscriptionViewModel] ✅ Mock purchase completed and synced to server")
+            
+        } catch {
+            print("[SubscriptionViewModel] ❌ Failed to sync to server: \(error)")
+            
+            // 同步失败时，仍然更新本地状态（保持原有行为）
+            let subscription = Subscription(
+                productId: mockProduct.id,
+                state: .active,
+                purchaseDate: Date(),
+                expiresDate: expiresDate,
+                isTrial: false,
+                willRenew: true,
+                originalTransactionId: "mock_\(mockProduct.id)"
+            )
+            
+            subscriptionStatus = SubscriptionStatus(
+                name: "users/me/subscription",
+                isVip: true,
+                vipType: .subscription,
+                subscription: subscription,
+                trialInfo: nil,
+                storageQuotaBytes: 5 * 1024 * 1024 * 1024,
+                storageUsedBytes: storageUsage?.usedBytes ?? 0,
+                storageExceeded: false
+            )
+            
+            // 更新存储配额
+            if let currentUsage = storageUsage {
+                let quotaBytes: Int64 = 5 * 1024 * 1024 * 1024
+                let usedPercentageDouble = quotaBytes > 0 ? Double(currentUsage.usedBytes) / Double(quotaBytes) * 100 : 0
+                let usedPercentage = Int32(usedPercentageDouble)
+                storageUsage = StorageUsage(
+                    name: currentUsage.name,
+                    usedBytes: currentUsage.usedBytes,
+                    quotaBytes: quotaBytes,
+                    usedPercentage: usedPercentage,
+                    breakdown: currentUsage.breakdown,
+                    quotaExceeded: false
+                )
+            }
+            
+            showingPurchaseSuccess = true
+            
+            print("[SubscriptionViewModel] ⚠️ Local state updated, but server sync failed")
+            print("[SubscriptionViewModel] Note: VIP status will be lost after app restart")
         }
-        
-        // 显示购买成功提示
-        showingPurchaseSuccess = true
-        
-        print("[SubscriptionViewModel] Local state updated to VIP (DEBUG mode)")
-        print("[SubscriptionViewModel] Note: Server state not updated in DEBUG mode")
     }
     #endif
     
@@ -372,32 +414,47 @@ public class SubscriptionViewModel: ObservableObject, Identifiable {
         }
         
         do {
-                print("[SubscriptionViewModel] Calling StoreKit restorePurchases...")
-                try await storeKitManager.restorePurchases()
-                print("[SubscriptionViewModel] StoreKit restore completed")
+            print("[SubscriptionViewModel] Calling StoreKit restorePurchases...")
+            try await storeKitManager.restorePurchases()
+            print("[SubscriptionViewModel] StoreKit restore completed")
+            
+            do {
+                print("[SubscriptionViewModel] Calling API restorePurchases...")
+                let restoredStatus = try await apiClient.restorePurchases()
+                print("[SubscriptionViewModel] API restore completed, isVip=\(restoredStatus.isVip)")
                 
-                do {
-                    print("[SubscriptionViewModel] Calling API restorePurchases...")
-                    subscriptionStatus = try await apiClient.restorePurchases()
-                    print("[SubscriptionViewModel] API restore completed, isVip=\(subscriptionStatus?.isVip ?? false)")
-                    
-                    storageUsage = try await apiClient.getStorageUsage()
-                    print("[SubscriptionViewModel] Storage usage refreshed")
-                    apiUnavailable = false
-                    authenticationError = false
-                } catch {
-                    if isAuthenticationError(error) {
-                        authenticationError = true
-                        print("[SubscriptionViewModel] Authentication error during restore")
-                    } else {
-                        apiUnavailable = true
-                        print("[SubscriptionViewModel] Restore API error: \(error)")
-                    }
+                // 使用服务器返回的状态
+                subscriptionStatus = restoredStatus
+                
+                storageUsage = try await apiClient.getStorageUsage()
+                print("[SubscriptionViewModel] Storage usage refreshed: \(storageUsage?.formattedUsed ?? "N/A") / \(storageUsage?.formattedQuota ?? "N/A")")
+                
+                apiUnavailable = false
+                authenticationError = false
+                
+                // 根据恢复结果显示提示
+                if restoredStatus.isVip {
+                    showingRestoreSuccess = true
+                    print("[SubscriptionViewModel] ✅ Purchases restored successfully")
+                } else {
+                    print("[SubscriptionViewModel] ⚠️ No active subscriptions found on server")
                 }
                 
-                showingRestoreSuccess = true
                 error = nil
-                print("[SubscriptionViewModel] Restore flow completed, showingRestoreSuccess=\(showingRestoreSuccess)")
+                print("[SubscriptionViewModel] Restore flow completed successfully")
+                
+            } catch {
+                if isAuthenticationError(error) {
+                    authenticationError = true
+                    apiUnavailable = false
+                    print("[SubscriptionViewModel] Authentication error during restore")
+                } else {
+                    apiUnavailable = true
+                    authenticationError = false
+                    print("[SubscriptionViewModel] Restore API error: \(error)")
+                }
+                self.error = error
+            }
             
         } catch {
             self.error = error
