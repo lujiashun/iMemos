@@ -55,6 +55,7 @@ public struct SubscriptionView: View {
                     if viewModel.subscriptionStatus?.isVip == false {
                         PurchaseSection(
                             products: viewModel.storeKitManager.products,
+                            mockProducts: viewModel.storeKitManager.mockProducts,
                             isLoading: viewModel.isLoading,
                             onPurchase: {
                                 print("[SubscriptionView] Purchase button tapped")
@@ -249,6 +250,9 @@ struct StorageUsageCard: View {
 
 struct PurchaseSection: View {
     let products: [Product]
+    #if DEBUG
+    let mockProducts: [StoreKitManager.MockProduct]
+    #endif
     let isLoading: Bool
     let onPurchase: () -> Void
     
@@ -264,7 +268,19 @@ struct PurchaseSection: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-            } else if products.isEmpty {
+            } else if !products.isEmpty {
+                // 使用真实的 StoreKit 产品
+                ForEach(products) { product in
+                    ProductCard(product: product, onPurchase: onPurchase)
+                }
+            } else if hasMockProducts {
+                // 使用模拟产品（DEBUG 真机测试）
+                #if DEBUG
+                ForEach(mockProducts) { mockProduct in
+                    MockProductCard(mockProduct: mockProduct, onPurchase: onPurchase)
+                }
+                #endif
+            } else {
                 VStack(spacing: 12) {
                     Text("subscription.products.unavailable".localized)
                         .font(.subheadline)
@@ -273,14 +289,59 @@ struct PurchaseSection: View {
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
-            } else {
-                ForEach(products) { product in
-                    ProductCard(product: product, onPurchase: onPurchase)
-                }
             }
         }
     }
+    
+    private var hasMockProducts: Bool {
+        #if DEBUG
+        return !mockProducts.isEmpty
+        #else
+        return false
+        #endif
+    }
 }
+
+#if DEBUG
+struct MockProductCard: View {
+    let mockProduct: StoreKitManager.MockProduct
+    let onPurchase: () -> Void
+    
+    var body: some View {
+        Button {
+            onPurchase()
+        } label: {
+            VStack(spacing: 8) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(mockProduct.displayName)
+                            .font(.headline)
+                        Text(mockProduct.description)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Text(mockProduct.displayPrice)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                }
+                
+                Text("subscription.purchase.button".localized)
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(.blue)
+                    .foregroundStyle(.white)
+                    .cornerRadius(8)
+            }
+            .padding()
+            .background(Color(.systemBackground))
+            .cornerRadius(16)
+            .shadow(radius: 2)
+        }
+    }
+}
+#endif
 
 struct ProductCard: View {
     let product: Product

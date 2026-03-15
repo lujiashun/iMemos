@@ -64,4 +64,34 @@ public final class MockSubscriptionService: SubscriptionServiceProtocol {
             quotaExceeded: false
         )
     }
+    
+    public func syncSubscriptionStatus(isVip: Bool, productId: String?, expiresDate: Date?) async throws -> SubscriptionStatus {
+        print("[MockSubscriptionService] syncSubscriptionStatus called, isVip=\(isVip)")
+        
+        let subscription: Subscription?
+        if isVip {
+            subscription = Subscription(
+                productId: productId ?? "mock",
+                state: .active,
+                purchaseDate: Date(),
+                expiresDate: expiresDate ?? Date().addingTimeInterval(365 * 24 * 60 * 60),
+                isTrial: false,
+                willRenew: true,
+                originalTransactionId: "mock_\(productId ?? "")"
+            )
+        } else {
+            subscription = nil
+        }
+        
+        return SubscriptionStatus(
+            name: "mock",
+            isVip: isVip,
+            vipType: isVip ? .subscription : .none,
+            subscription: subscription,
+            trialInfo: nil,
+            storageQuotaBytes: isVip ? 5 * 1024 * 1024 * 1024 : 50 * 1024 * 1024,
+            storageUsedBytes: 0,
+            storageExceeded: false
+        )
+    }
 }

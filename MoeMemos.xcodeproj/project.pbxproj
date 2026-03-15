@@ -60,8 +60,6 @@
 		197123032CEBB96E00CEEECC /* AppShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197123022CEBB96B00CEEECC /* AppShortcuts.swift */; };
 		197123DF2CEBC21900CEEECC /* AccountEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197123DE2CEBC21700CEEECC /* AccountEntity.swift */; };
 		1973B7D72916308D003C3710 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1973B7D62916308D003C3710 /* Constants.swift */; };
-		8B2F4A1E2D73A8B400E1C3D5 /* ImageCompressor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B2F4A1D2D73A8B400E1C3D5 /* ImageCompressor.swift */; };
-		8B3G5B2F3E84B9C500F2D4E6 /* ExpandableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3G5B2E3E84B9C500F2D4E6 /* ExpandableTextView.swift */; };
 		197A4D3329599C300027427E /* MemoCardImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197A4D3229599C300027427E /* MemoCardImageView.swift */; };
 		197BEF472B00998F0025C17B /* Models in Frameworks */ = {isa = PBXBuildFile; productRef = 197BEF462B00998F0025C17B /* Models */; };
 		197D9D47292D4B160033AF33 /* ImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197D9D46292D4B160033AF33 /* ImagePicker.swift */; };
@@ -114,6 +112,10 @@
 		31EE786129B9F3A2005F62D0 /* Highlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31EE786029B9F3A2005F62D0 /* Highlighter.swift */; };
 		5F7A1A842345678900ABCDEF /* AudioMemoRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F7A1A832345678900ABCDEF /* AudioMemoRecorder.swift */; };
 		5F7A1A872345678900ABCDEF /* AudioRecordingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F7A1A862345678900ABCDEF /* AudioRecordingPanel.swift */; };
+		8B2F4A1E2D73A8B400E1C3D5 /* ImageCompressor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B2F4A1D2D73A8B400E1C3D5 /* ImageCompressor.swift */; };
+		8B3G5B2F3E84B9C500F2D4E6 /* ExpandableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3G5B2E3E84B9C500F2D4E6 /* ExpandableTextView.swift */; };
+		A4F11FE12F64DFBC00FE1653 /* Subscription in Frameworks */ = {isa = PBXBuildFile; productRef = A4F11FE02F64DFBC00FE1653 /* Subscription */; };
+		A4F11FE32F64DFBC00FE1655 /* Subscription.storekit in Resources */ = {isa = PBXBuildFile; fileRef = A4F11FE22F64DFBC00FE1654 /* Subscription.storekit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -203,8 +205,6 @@
 		197123DE2CEBC21700CEEECC /* AccountEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountEntity.swift; sourceTree = "<group>"; };
 		1973B7D529160F48003C3710 /* MoeMemos.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MoeMemos.entitlements; sourceTree = "<group>"; };
 		1973B7D62916308D003C3710 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
-		8B2F4A1D2D73A8B400E1C3D5 /* ImageCompressor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCompressor.swift; sourceTree = "<group>"; };
-		8B3G5B2E3E84B9C500F2D4E6 /* ExpandableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandableTextView.swift; sourceTree = "<group>"; };
 		197A4D3229599C300027427E /* MemoCardImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoCardImageView.swift; sourceTree = "<group>"; };
 		197D9D46292D4B160033AF33 /* ImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePicker.swift; sourceTree = "<group>"; };
 		199009B82CE4F43100578B04 /* SaveMemoIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveMemoIntent.swift; sourceTree = "<group>"; };
@@ -244,10 +244,15 @@
 		1AD6B0E531E0BEEF00C0FF01 /* MemoInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoInsight.swift; sourceTree = "<group>"; };
 		31EE785529B83D1B005F62D0 /* LazyImageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazyImageProvider.swift; sourceTree = "<group>"; };
 		31EE786029B9F3A2005F62D0 /* Highlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Highlighter.swift; sourceTree = "<group>"; };
-		EE17AC762D8E12E500C01504 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/MainInterface.strings; sourceTree = "<group>"; };
-		EE17AC772D8E12E500C01504 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
 		5F7A1A832345678900ABCDEF /* AudioMemoRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMemoRecorder.swift; sourceTree = "<group>"; };
 		5F7A1A862345678900ABCDEF /* AudioRecordingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecordingPanel.swift; sourceTree = "<group>"; };
+		8B2F4A1D2D73A8B400E1C3D5 /* ImageCompressor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCompressor.swift; sourceTree = "<group>"; };
+		8B3G5B2E3E84B9C500F2D4E6 /* ExpandableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandableTextView.swift; sourceTree = "<group>"; };
+		A4B442E22F65A7BB000AF2A0 /* Subscription.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Subscription.storekit; sourceTree = "<group>"; };
+		A4F11FE12F64DFBC00FE1652 /* Subscription */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = Subscription; path = Packages/Subscription; sourceTree = "<group>"; };
+		A4F11FE22F64DFBC00FE1654 /* Subscription.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Subscription.storekit; sourceTree = SOURCE_ROOT; };
+		EE17AC762D8E12E500C01504 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/MainInterface.strings; sourceTree = "<group>"; };
+		EE17AC772D8E12E500C01504 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -272,6 +277,7 @@
 				19E866612AB84EBA00E33521 /* KeychainSwift in Frameworks */,
 				1990357E2C14A55B0011B985 /* Factory in Frameworks */,
 				19113B8D2C1D97A200365C05 /* Env in Frameworks */,
+				A4F11FE12F64DFBC00FE1653 /* Subscription in Frameworks */,
 				193D274D29C8D1EB00BDE4A2 /* MarkdownUI in Frameworks */,
 				31EE785F29B9E6F4005F62D0 /* Highlightr in Frameworks */,
 			);
@@ -369,11 +375,14 @@
 		194B272428C3973400A48675 = {
 			isa = PBXGroup;
 			children = (
+				A4B442E22F65A7BB000AF2A0 /* Subscription.storekit */,
 				191489F22B00837D00577BD1 /* Account */,
 				19BB8C702B83207B007BFEBF /* DesignSystem */,
 				19113B8B2C1D95B700365C05 /* Env */,
 				191489EC2B0082C700577BD1 /* Models */,
 				199C6CC92B00A7DB005C6921 /* Services */,
+				A4F11FE12F64DFBC00FE1652 /* Subscription */,
+				A4F11FE22F64DFBC00FE1654 /* Subscription.storekit */,
 				194C4C362BC6FCBE00076DEE /* PrivacyInfo.xcprivacy */,
 				191339AD291D7288001F2B2E /* Frameworks */,
 				194B272F28C3973400A48675 /* MoeMemos */,
@@ -545,6 +554,7 @@
 				197BEF462B00998F0025C17B /* Models */,
 				1990357D2C14A55B0011B985 /* Factory */,
 				19113B8C2C1D97A200365C05 /* Env */,
+				A4F11FE02F64DFBC00FE1653 /* Subscription */,
 			);
 			productName = MoeMemos;
 			productReference = 194B272D28C3973400A48675 /* MoeMemos.app */;
@@ -581,7 +591,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1410;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					191339AB291D7288001F2B2E = {
 						CreatedOnToolsVersion = 14.1;
@@ -647,6 +657,7 @@
 				1948CCAD2996B3FA00AB1986 /* Localizable.strings in Resources */,
 				194C4C372BC6FCBE00076DEE /* PrivacyInfo.xcprivacy in Resources */,
 				194B273528C3973600A48675 /* Assets.xcassets in Resources */,
+				A4F11FE32F64DFBC00FE1655 /* Subscription.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -819,7 +830,6 @@
 				CODE_SIGN_ENTITLEMENTS = MoeMemosWidgets/MoeMemosWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 61;
-				DEVELOPMENT_TEAM = CT636VL97M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MoeMemosWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MoeMemosWidgets;
@@ -853,7 +863,6 @@
 				CODE_SIGN_ENTITLEMENTS = MoeMemosWidgets/MoeMemosWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 61;
-				DEVELOPMENT_TEAM = CT636VL97M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MoeMemosWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MoeMemosWidgets;
@@ -914,6 +923,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = CT636VL97M;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -936,6 +946,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -977,6 +988,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = CT636VL97M;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -992,6 +1004,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
@@ -1007,7 +1020,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 61;
 				DEVELOPMENT_ASSET_PATHS = "\"MoeMemos/Preview Content\"";
-				DEVELOPMENT_TEAM = CT636VL97M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MoeMemos/Info.plist;
@@ -1047,7 +1059,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 61;
 				DEVELOPMENT_ASSET_PATHS = "\"MoeMemos/Preview Content\"";
-				DEVELOPMENT_TEAM = CT636VL97M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MoeMemos/Info.plist;
@@ -1085,7 +1096,6 @@
 				CODE_SIGN_ENTITLEMENTS = MoeMemosShareExtension/MoeMemosShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 61;
-				DEVELOPMENT_TEAM = CT636VL97M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MoeMemosShareExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MoeMemosShareExtension;
@@ -1117,7 +1127,6 @@
 				CODE_SIGN_ENTITLEMENTS = MoeMemosShareExtension/MoeMemosShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 61;
-				DEVELOPMENT_TEAM = CT636VL97M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MoeMemosShareExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MoeMemosShareExtension;
@@ -1183,6 +1192,41 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		19113B8B2C1D97A200365C05 /* XCLocalSwiftPackageReference "Packages/Env" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Env;
+		};
+		191489EE2B00832C00577BD1 /* XCLocalSwiftPackageReference "Packages/Account" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Account;
+		};
+		196C7DBE2B087A0000EDD8B6 /* XCLocalSwiftPackageReference "Packages/Account" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Account;
+		};
+		196C7DC02B088A8800EDD8B6 /* XCLocalSwiftPackageReference "Packages/Account" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Account;
+		};
+		197BEF452B00998F0025C17B /* XCLocalSwiftPackageReference "Packages/Models" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Models;
+		};
+		199C6CC42B009F19005C6921 /* XCLocalSwiftPackageReference "Packages/Models" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Models;
+		};
+		199C6CC62B009F2F005C6921 /* XCLocalSwiftPackageReference "Packages/Models" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Models;
+		};
+		A4F11FE02F64DFBC00FE1652 /* XCLocalSwiftPackageReference "Packages/Subscription" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Subscription;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		190755972B66512200451E6D /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1226,37 +1270,6 @@
 		};
 /* End XCRemoteSwiftPackageReference section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		19113B8B2C1D97A200365C05 /* XCLocalSwiftPackageReference "Env" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/Env;
-		};
-		191489EE2B00832C00577BD1 /* XCLocalSwiftPackageReference "Account" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/Account;
-		};
-		197BEF452B00998F0025C17B /* XCLocalSwiftPackageReference "Models" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/Models;
-		};
-		199C6CC42B009F19005C6921 /* XCLocalSwiftPackageReference "Models" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/Models;
-		};
-		199C6CC62B009F2F005C6921 /* XCLocalSwiftPackageReference "Models" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/Models;
-		};
-		196C7DBE2B087A0000EDD8B6 /* XCLocalSwiftPackageReference "Account" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/Account;
-		};
-		196C7DC02B088A8800EDD8B6 /* XCLocalSwiftPackageReference "Account" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/Account;
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCSwiftPackageProductDependency section */
 		190755982B66512200451E6D /* Markdown */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -1265,12 +1278,12 @@
 		};
 		19113B8C2C1D97A200365C05 /* Env */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 19113B8B2C1D97A200365C05 /* XCLocalSwiftPackageReference "Env" */;
+			package = 19113B8B2C1D97A200365C05 /* XCLocalSwiftPackageReference "Packages/Env" */;
 			productName = Env;
 		};
 		191489EF2B00832C00577BD1 /* Account */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 191489EE2B00832C00577BD1 /* XCLocalSwiftPackageReference "Account" */;
+			package = 191489EE2B00832C00577BD1 /* XCLocalSwiftPackageReference "Packages/Account" */;
 			productName = Account;
 		};
 		193D274C29C8D1EB00BDE4A2 /* MarkdownUI */ = {
@@ -1280,17 +1293,17 @@
 		};
 		196C7DBF2B087A0000EDD8B6 /* Account */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 196C7DBE2B087A0000EDD8B6 /* XCLocalSwiftPackageReference "Account" */;
+			package = 196C7DBE2B087A0000EDD8B6 /* XCLocalSwiftPackageReference "Packages/Account" */;
 			productName = Account;
 		};
 		196C7DC12B088A8800EDD8B6 /* Account */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 196C7DC02B088A8800EDD8B6 /* XCLocalSwiftPackageReference "Account" */;
+			package = 196C7DC02B088A8800EDD8B6 /* XCLocalSwiftPackageReference "Packages/Account" */;
 			productName = Account;
 		};
 		197BEF462B00998F0025C17B /* Models */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 197BEF452B00998F0025C17B /* XCLocalSwiftPackageReference "Models" */;
+			package = 197BEF452B00998F0025C17B /* XCLocalSwiftPackageReference "Packages/Models" */;
 			productName = Models;
 		};
 		1990357D2C14A55B0011B985 /* Factory */ = {
@@ -1300,12 +1313,12 @@
 		};
 		199C6CC52B009F19005C6921 /* Models */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 199C6CC42B009F19005C6921 /* XCLocalSwiftPackageReference "Models" */;
+			package = 199C6CC42B009F19005C6921 /* XCLocalSwiftPackageReference "Packages/Models" */;
 			productName = Models;
 		};
 		199C6CC72B009F2F005C6921 /* Models */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 199C6CC62B009F2F005C6921 /* XCLocalSwiftPackageReference "Models" */;
+			package = 199C6CC62B009F2F005C6921 /* XCLocalSwiftPackageReference "Packages/Models" */;
 			productName = Models;
 		};
 		19E866602AB84EBA00E33521 /* KeychainSwift */ = {
@@ -1327,6 +1340,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 31EE785D29B9E6F4005F62D0 /* XCRemoteSwiftPackageReference "Highlightr" */;
 			productName = Highlightr;
+		};
+		A4F11FE02F64DFBC00FE1653 /* Subscription */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A4F11FE02F64DFBC00FE1652 /* XCLocalSwiftPackageReference "Packages/Subscription" */;
+			productName = Subscription;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

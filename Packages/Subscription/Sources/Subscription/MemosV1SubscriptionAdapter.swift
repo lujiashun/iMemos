@@ -68,6 +68,33 @@ public final class MemosV1SubscriptionAdapter: SubscriptionServiceProtocol {
         decoder.dateDecodingStrategy = .customISO8601
         return try decoder.decode(StorageUsage.self, from: data)
     }
+    
+    public func syncSubscriptionStatus(isVip: Bool, productId: String?, expiresDate: Date?) async throws -> SubscriptionStatus {
+        let url = service.subscriptionHostURL.appendingPathComponent("api/v1/users/me/subscription:sync")
+        
+        var body: [String: Any] = [
+            "parent": "users/me",
+            "isVip": isVip
+        ]
+        
+        if let productId = productId {
+            body["productId"] = productId
+        }
+        
+        if let expiresDate = expiresDate {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime]
+            body["expiresDate"] = formatter.string(from: expiresDate)
+        }
+        
+        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        
+        let data = try await service.authenticatedDataRequest(url: url, method: "POST", body: bodyData)
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .customISO8601
+        return try decoder.decode(SubscriptionStatus.self, from: data)
+    }
 }
 
 private struct ValidateReceiptResponse: Codable {

@@ -20,6 +20,80 @@ public class SubscriptionViewModel: ObservableObject, Identifiable {
         self.storeKitManager = storeKitManager
         self.apiClient = apiClient
         print("[SubscriptionViewModel] init completed")
+        
+        // 设置订阅状态变化回调
+        setupSubscriptionChangeHandler()
+    }
+    
+    /// 设置订阅状态变化处理
+    private func setupSubscriptionChangeHandler() {
+        storeKitManager.onSubscriptionChanged = { [weak self] change in
+            Task { @MainActor in
+                await self?.handleSubscriptionChange(change)
+            }
+        }
+    }
+    
+    /// 处理订阅状态变化
+    private func handleSubscriptionChange(_ change: StoreKitManager.SubscriptionChange) async {
+        print("[SubscriptionViewModel] Subscription changed: type=\(change.changeType), isVip=\(change.isVip)")
+        
+        do {
+            // 同步到后端
+            let updatedStatus = try await apiClient.syncSubscriptionStatus(
+                isVip: change.isVip,
+                productId: change.productId,
+                expiresDate: change.expiresDate
+            )
+            
+            print("[SubscriptionViewModel] Backend sync completed, new status: isVip=\(updatedStatus.isVip)")
+            
+            // 更新本地状态
+            self.subscriptionStatus = updatedStatus
+            
+            // 根据变化类型显示提示
+            switch change.changeType {
+            case .refund:
+                print("[SubscriptionViewModel] Refund detected, subscription cancelled")
+            case .purchase:
+                print("[SubscriptionViewModel] New purchase confirmed")
+                self.showingPurchaseSuccess = true
+            case .restore:
+                print("[SubscriptionViewModel] Purchase restored")
+                self.showingRestoreSuccess = true
+            case .expiration:
+                print("[SubscriptionViewModel] Subscription expired")
+            }
+            
+        } catch {
+            print("[SubscriptionViewModel] Failed to sync subscription to backend: \(error)")
+            // 即使同步失败，也更新本地 StoreKit 状态
+            let subscription: Subscription?
+            if change.isVip {
+                subscription = Subscription(
+                    productId: change.productId ?? "",
+                    state: .active,
+                    purchaseDate: Date(),
+                    expiresDate: change.expiresDate ?? Date().addingTimeInterval(365 * 24 * 60 * 60),
+                    isTrial: false,
+                    willRenew: true,
+                    originalTransactionId: "local_\(change.productId ?? "")"
+                )
+            } else {
+                subscription = nil
+            }
+            
+            self.subscriptionStatus = SubscriptionStatus(
+                name: "users/me/subscription",
+                isVip: change.isVip,
+                vipType: change.isVip ? .subscription : .none,
+                subscription: subscription,
+                trialInfo: nil,
+                storageQuotaBytes: change.isVip ? 5 * 1024 * 1024 * 1024 : 50 * 1024 * 1024,
+                storageUsedBytes: self.storageUsage?.usedBytes ?? 0,
+                storageExceeded: false
+            )
+        }
     }
     
     public func updateApiClient(_ client: SubscriptionServiceProtocol) {
@@ -132,13 +206,110 @@ public class SubscriptionViewModel: ObservableObject, Identifiable {
     
     public func purchaseSubscription() async {
         print("[SubscriptionViewModel] purchaseSubscription started")
-        guard let product = storeKitManager.products.first else {
-            print("[SubscriptionViewModel] No products available for purchase")
-            error = SubscriptionError.noProductsAvailable
-            return
+        print("[SubscriptionViewModel] Current products count: \(storeKitManager.products.count)")
+        #if DEBUG
+        print("[SubscriptionViewModel] Current mock products count: \(storeKitManager.mockProducts.count)")
+        #endif
+        
+        // 如果产品为空，尝试重新加载
+        if storeKitManager.products.isEmpty {
+            print("[SubscriptionViewModel] Products empty, reloading...")
+            await storeKitManager.loadProducts()
+            print("[SubscriptionViewModel] After reload, products count: \(storeKitManager.products.count)")
+            #if DEBUG
+            print("[SubscriptionViewModel] After reload, mock products count: \(storeKitManager.mockProducts.count)")
+            #endif
         }
         
-        print("[SubscriptionViewModel] Purchasing product: \(product.id)")
+        // 检查是否有真实产品
+        if let product = storeKitManager.products.first {
+            // 使用真实 StoreKit 产品购买
+            print("[SubscriptionViewModel] Purchasing real product: \(product.id)")
+            await purchaseRealProduct(product)
+        } else {
+            // 没有真实产品，检查是否有模拟产品（DEBUG 模式）
+            await handleNoRealProducts()
+        }
+    }
+    
+    /// 处理没有真实产品的情况
+    private func handleNoRealProducts() async {
+        #if DEBUG
+        if let mockProduct = storeKitManager.mockProducts.first {
+            // 使用模拟产品购买（DEBUG 模式）
+            print("[SubscriptionViewModel] Purchasing mock product: \(mockProduct.id)")
+            await purchaseMockProduct(mockProduct)
+            return
+        }
+        #endif
+        
+        print("[SubscriptionViewModel] No products available for purchase")
+        error = SubscriptionError.noProductsAvailable
+    }
+    
+    #if DEBUG
+    /// 模拟产品购买流程（用于 DEBUG 模式）
+    private func purchaseMockProduct(_ mockProduct: StoreKitManager.MockProduct) async {
+        print("[SubscriptionViewModel] Starting mock purchase for: \(mockProduct.id)")
+        isLoading = true
+        defer { isLoading = false }
+        
+        // 模拟网络延迟
+        try? await Task.sleep(nanoseconds: 1_000_000_000)
+        
+        // 模拟购买成功，先更新本地状态为 VIP
+        print("[SubscriptionViewModel] Mock purchase successful, updating local state to VIP")
+        
+        let expiresDate = Date().addingTimeInterval(365 * 24 * 60 * 60) // 1年后过期
+        
+        // 创建模拟的 Subscription
+        let subscription = Subscription(
+            productId: mockProduct.id,
+            state: .active,
+            purchaseDate: Date(),
+            expiresDate: expiresDate,
+            isTrial: false,
+            willRenew: true,
+            originalTransactionId: "mock_\(mockProduct.id)"
+        )
+        
+        // 创建模拟的 VIP 订阅状态
+        subscriptionStatus = SubscriptionStatus(
+            name: "users/me/subscription",
+            isVip: true,
+            vipType: .subscription,
+            subscription: subscription,
+            trialInfo: nil,
+            storageQuotaBytes: 5 * 1024 * 1024 * 1024, // 5GB
+            storageUsedBytes: storageUsage?.usedBytes ?? 0,
+            storageExceeded: false
+        )
+        
+        // 更新存储配额为 5GB
+        if let currentUsage = storageUsage {
+            let quotaBytes: Int64 = 5 * 1024 * 1024 * 1024
+            let usedPercentageDouble = quotaBytes > 0 ? Double(currentUsage.usedBytes) / Double(quotaBytes) * 100 : 0
+            let usedPercentage = Int32(usedPercentageDouble)
+            storageUsage = StorageUsage(
+                name: currentUsage.name,
+                usedBytes: currentUsage.usedBytes,
+                quotaBytes: quotaBytes,
+                usedPercentage: usedPercentage,
+                breakdown: currentUsage.breakdown,
+                quotaExceeded: false
+            )
+        }
+        
+        // 显示购买成功提示
+        showingPurchaseSuccess = true
+        
+        print("[SubscriptionViewModel] Local state updated to VIP (DEBUG mode)")
+        print("[SubscriptionViewModel] Note: Server state not updated in DEBUG mode")
+    }
+    #endif
+    
+    /// 真实产品购买流程
+    private func purchaseRealProduct(_ product: Product) async {
         isLoading = true
         defer { isLoading = false }
         

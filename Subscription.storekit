@@ -4,7 +4,26 @@
 
   ],
   "products" : [
-
+    {
+      "displayPrice" : "68.00",
+      "familyShareable" : false,
+      "internalID" : "com.memos.vip.yearly",
+      "localizations" : [
+        {
+          "description" : "解锁5GB存储空间、无限备忘录、无广告体验",
+          "displayName" : "Memos VIP 年度会员",
+          "locale" : "zh_CN"
+        },
+        {
+          "description" : "Unlock 5GB storage, unlimited memos, ad-free experience",
+          "displayName" : "Memos VIP Annual",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.memos.vip.yearly",
+      "referenceName" : "Memos VIP Annual Subscription",
+      "type" : "AutoRenewableSubscription"
+    }
   ],
   "settings" : {
     "_failTransactionsEnabled" : false,

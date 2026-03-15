@@ -285,4 +285,6 @@ public protocol SubscriptionServiceProtocol: Sendable {
     func validateReceipt(receiptData: String, sandbox: Bool) async throws -> SubscriptionStatus
     func restorePurchases() async throws -> SubscriptionStatus
     func getStorageUsage() async throws -> StorageUsage
+    /// 同步订阅状态到后端（用于退款检测后通知后端更新）
+    func syncSubscriptionStatus(isVip: Bool, productId: String?, expiresDate: Date?) async throws -> SubscriptionStatus
 }
